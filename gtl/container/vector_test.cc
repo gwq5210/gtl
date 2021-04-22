@@ -4,7 +4,7 @@
 
 using gtl::vector;
 
-template<class Iterator>
+template <class Iterator>
 void print(Iterator first, Iterator end) {
   auto it = first;
   printf("[");

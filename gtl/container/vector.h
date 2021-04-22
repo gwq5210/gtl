@@ -1,8 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <iterator>
 #include <vector>
-#include <algorithm>
 
 namespace gtl {
 
@@ -21,7 +21,9 @@ class vector {
   typedef size_t size_type;
   static const int initial_capacity = 16;
   static const int max_allocated_size = 32 * 1024 * 1024;
-  vector() : cap_(initial_capacity), size_(0), next_cap_(cap_ * 2), data_(nullptr) { data_ = new value_type(cap_); }
+  vector() : cap_(initial_capacity), size_(0), next_cap_(cap_ * 2), data_(nullptr) {
+    data_ = new value_type(cap_);
+  }
   ~vector() { delete[] data_; }
 
   // element access
@@ -57,8 +59,14 @@ class vector {
   void reserve(size_t new_capacity) { grow(new_capacity); }
 
   // modifiers
-  void push_back(const_reference v) { *end() = v; size_++; }
-  void push_back(T&& v) { *end() = std::move(v); size_++; }
+  void push_back(const_reference v) {
+    *end() = v;
+    size_++;
+  }
+  void push_back(T&& v) {
+    *end() = std::move(v);
+    size_++;
+  }
   void insert(const_iterator pos, const_reference v) {
     auto insert_pos = const_cast<iterator>(pos);
     size_++;
@@ -87,16 +95,15 @@ class vector {
   }
 
  private:
-  template<class Iterator>
+  template <class Iterator>
   void move_to(Iterator first, Iterator last, int k) {
     if (k > 0) {
       move_to_back(first, last, k);
-    }
-    else {
+    } else {
       move_to_front(first, last, -k);
     }
   }
-  template<class Iterator>
+  template <class Iterator>
   void move_to_back(Iterator first, Iterator last, int k) {
     if (k == 0) {
       return;
@@ -110,7 +117,7 @@ class vector {
       begin++;
     }
   }
-  template<class Iterator>
+  template <class Iterator>
   void move_to_front(Iterator first, Iterator last, int k) {
     if (k == 0) {
       return;
@@ -133,7 +140,7 @@ class vector {
     while (next_cap_ < new_capacity) {
       next_cap_ *= 2;
     }
-    auto *new_data = new value_type[next_cap_];
+    auto* new_data = new value_type[next_cap_];
     memcpy(new_data, data_, size_ * sizeof(value_type));
     cap_ = next_cap_;
     delete[] data_;
@@ -146,5 +153,4 @@ class vector {
   value_type* data_;
 };
 
-}  // namespace
-   // gtl
+}  // namespace gtl
