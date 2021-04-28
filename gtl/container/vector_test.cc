@@ -1,6 +1,7 @@
 #include <cstdio>
+#include <vector>
 
-#include "gtest/gtest.h"
+// #include "gtest/gtest.h"
 
 #include "vector.h"
 
@@ -28,7 +29,11 @@ void print(const vector<T> &vec) {
 
 int main(int argc, char *argv[]) {
   int n = 10;
-  vector<int> arr;
+  std::vector<int> std_arr;
+  vector<vector<int>> arr2;
+  vector<int> arr = {1, 3, 4, 5};
+  printf("size = %zu, capacity = %zu, sizeof(vector) = %zu/%zu/%zu\n", std_arr.size(), std_arr.capacity(), sizeof(std_arr), sizeof(arr), sizeof(arr2));
+  arr = {2, 3, 4, 5};
   for (int i = 0; i < n; i++) {
     arr.push_back(i);
   }

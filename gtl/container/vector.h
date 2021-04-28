@@ -19,12 +19,58 @@ class vector {
   typedef std::reverse_iterator<iterator> reverse_iterator;
   typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
   typedef size_t size_type;
-  static const int min_capacity = 16;
-  static const int max_allocated_size = 32 * 1024 * 1024;
-  vector(size_t size = 0, const_reference v = value_type()) : cap_(min_capacity), size_(size), data_(new value_type[cap_]) {
+  static const size_type min_capacity = 16;
+  static const size_type max_allocated_size = 32 * 1024 * 1024;
+  vector(size_t size = 0, const_reference v = value_type()) {
+    printf("%s\n", __FUNCTION__);
+    init();
     resize(size, v);
   }
-  ~vector() { delete[] data_; }
+  template <class II>
+  vector(II first, II last) {
+    printf("%s range\n", __FUNCTION__);
+    init();
+    resize(last - first);
+    std::copy(first, last, begin());
+  }
+  vector(const std::initializer_list<value_type>& init_list) {
+    printf("%s init_list\n", __FUNCTION__);
+    init();
+    resize(init_list.size());
+    std::copy(init_list.begin(), init_list.end(), begin());
+  }
+  vector(const vector<value_type>& other) { *this = other; }
+  vector(vector<value_type>&& other) { *this = other; }
+  vector<value_type>& operator=(const vector<value_type>& other) {
+    printf("%s\n", __FUNCTION__);
+    if (this == &other) {
+      return *this;
+    }
+    resize(other.size());
+    std::copy(other.begin(), other.end(), begin());
+    return *this;
+  }
+  vector<value_type>& operator=(vector<value_type>&& other) {
+    printf("%s move\n", __FUNCTION__);
+    if (this == &other) {
+      return *this;
+    }
+
+    destory();
+    size_ = other.size_;
+    cap_ = other.cap_;
+    data_ = other.data_;
+    other.init();
+
+    return *this;
+  }
+  vector<value_type>& operator=(std::initializer_list<value_type>& init_list) {
+    printf("%s init_list\n", __FUNCTION__);
+    resize(init_list.size());
+    std::copy(init_list.begin(), init_list.end(), begin());
+    return *this;
+  }
+  ~vector() { destory(); }
 
   // element access
   reference at(size_type i) { return *(begin() + i); }
@@ -88,6 +134,7 @@ class vector {
     }
     size_ = new_size;
   }
+  void clear() { size_ = 0; }
 
  private:
   template <class Iterator>
@@ -114,7 +161,7 @@ class vector {
     if (cap_ >= new_capacity) {
       return;
     }
-    size_t next_cap = cap_;
+    size_t next_cap = std::max(cap_, min_capacity);
     while (next_cap < new_capacity) {
       next_cap *= 2;
     }
@@ -123,6 +170,19 @@ class vector {
     cap_ = next_cap;
     delete[] data_;
     data_ = new_data;
+  }
+  void destory() {
+    if (data_) {
+      delete[] data_;
+      data_ = nullptr;
+    }
+    size_ = 0;
+    cap_ = 0;
+  }
+  void init() {
+    size_ = 0;
+    cap_ = 0;
+    data_ = nullptr;
   }
 
   size_type cap_;
