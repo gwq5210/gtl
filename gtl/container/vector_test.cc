@@ -55,4 +55,6 @@ int main(int argc, char *argv[]) {
   print(arr);
   arr.push_back(123);
   print(arr);
+  arr.push_back(1234);
+  print(arr);
 }

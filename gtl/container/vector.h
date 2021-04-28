@@ -109,15 +109,23 @@ class vector {
   void push_back(T&& v) { insert(end(), v); }
   void insert(const_iterator pos, const_reference v) {
     auto insert_pos = const_cast<iterator>(pos);
-    reserve(++size_);
-    move_to(insert_pos, end() - 1, 1);
+    if (full()) {
+      reserve(size_ + 1);
+      insert_pos = begin() + size_;
+    }
+    move_to(insert_pos, end(), 1);
     *insert_pos = v;
+    size_++;
   }
   void insert(const_iterator pos, T&& v) {
     auto insert_pos = const_cast<iterator>(pos);
-    reserve(++size_);
-    move_to(insert_pos, end() - 1, 1);
+    if (full()) {
+      reserve(size_ + 1);
+      insert_pos = begin() + size_;
+    }
+    move_to(insert_pos, end(), 1);
     *insert_pos = std::move(v);
+    size_++;
   }
   void push_front(const_reference v) { insert(begin(), v); }
   void pop_back() { size_--; }
@@ -183,6 +191,9 @@ class vector {
     size_ = 0;
     cap_ = 0;
     data_ = nullptr;
+  }
+  bool full() const {
+    return cap_ == size_;
   }
 
   size_type cap_;
