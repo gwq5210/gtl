@@ -19,10 +19,10 @@ class vector {
   typedef std::reverse_iterator<iterator> reverse_iterator;
   typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
   typedef size_t size_type;
-  static const int initial_capacity = 16;
+  static const int min_capacity = 16;
   static const int max_allocated_size = 32 * 1024 * 1024;
-  vector() : cap_(initial_capacity), size_(0), next_cap_(cap_ * 2), data_(nullptr) {
-    data_ = new value_type(cap_);
+  vector(size_t size = 0, const_reference v = value_type()) : cap_(min_capacity), size_(size), data_(new value_type[cap_]) {
+    resize(size, v);
   }
   ~vector() { delete[] data_; }
 
@@ -59,23 +59,17 @@ class vector {
   void reserve(size_t new_capacity) { grow(new_capacity); }
 
   // modifiers
-  void push_back(const_reference v) {
-    *end() = v;
-    size_++;
-  }
-  void push_back(T&& v) {
-    *end() = std::move(v);
-    size_++;
-  }
+  void push_back(const_reference v) { insert(end(), v); }
+  void push_back(T&& v) { insert(end(), v); }
   void insert(const_iterator pos, const_reference v) {
     auto insert_pos = const_cast<iterator>(pos);
-    size_++;
+    reserve(++size_);
     move_to(insert_pos, end() - 1, 1);
     *insert_pos = v;
   }
   void insert(const_iterator pos, T&& v) {
     auto insert_pos = const_cast<iterator>(pos);
-    size_++;
+    reserve(++size_);
     move_to(insert_pos, end() - 1, 1);
     *insert_pos = std::move(v);
   }
@@ -88,6 +82,7 @@ class vector {
     size_ = new_size;
   }
   void resize(size_type new_size, const_reference v = value_type()) {
+    reserve(new_size);
     if (new_size > size_) {
       assign_range(end(), end() + new_size - size_, v);
     }
@@ -97,33 +92,12 @@ class vector {
  private:
   template <class Iterator>
   void move_to(Iterator first, Iterator last, int k) {
-    if (k > 0) {
-      move_to_back(first, last, k);
-    } else {
-      move_to_front(first, last, -k);
-    }
-  }
-  template <class Iterator>
-  void move_to_back(Iterator first, Iterator last, int k) {
     if (k == 0) {
       return;
-    } else if (k < 0) {
-      return move_to_front(first, last, -k);
+    } else if (k > 0) {
+      return move_to(reverse_iterator(last), reverse_iterator(first), -k);
     }
-    auto begin = reverse_iterator(last);
-    auto end = reverse_iterator(first);
-    while (begin != end) {
-      *begin = std::move(*(begin + k));
-      begin++;
-    }
-  }
-  template <class Iterator>
-  void move_to_front(Iterator first, Iterator last, int k) {
-    if (k == 0) {
-      return;
-    } else if (k < 0) {
-      return move_to_back(first, last, -k);
-    }
+    k = -k;
     auto begin = first;
     auto end = last;
     while (begin != end) {
@@ -137,19 +111,22 @@ class vector {
     }
   }
   void grow(size_t new_capacity) {
-    while (next_cap_ < new_capacity) {
-      next_cap_ *= 2;
+    if (cap_ >= new_capacity) {
+      return;
     }
-    auto* new_data = new value_type[next_cap_];
-    memcpy(new_data, data_, size_ * sizeof(value_type));
-    cap_ = next_cap_;
+    size_t next_cap = cap_;
+    while (next_cap < new_capacity) {
+      next_cap *= 2;
+    }
+    auto* new_data = new value_type[next_cap];
+    std::copy(begin(), end(), new_data);
+    cap_ = next_cap;
     delete[] data_;
     data_ = new_data;
   }
 
   size_type cap_;
   size_type size_;
-  size_type next_cap_;
   value_type* data_;
 };
 
