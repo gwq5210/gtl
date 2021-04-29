@@ -36,7 +36,7 @@ class vector {
   vector(II first, II last) {
     printf("%s range\n", __FUNCTION__);
     init();
-    resize(last - first);
+    resize(std::distance(first, last));
     std::copy(first, last, begin());
   }
   vector(std::initializer_list<T> init_list) {
@@ -118,32 +118,63 @@ class vector {
   // modifiers
   void push_back(const T& v) { insert(end(), v); }
   void push_back(T&& v) { insert(end(), std::move(v)); }
-  void insert(const_iterator pos, const T& v) {
+  iterator insert(const_iterator pos, size_type count, const T& v) {
     size_type insert_pos = pos - begin();
-    if (full()) {
-      reserve(size_ + 1);
+    if (count == 0) {
+      return begin() + insert_pos;
     }
-    move_to(begin() + insert_pos, end(), 1);
-    at(insert_pos) = v;
-    size_++;
+    if (size_ + count > cap_) {
+      reserve(size_ + count);
+    }
+    move_to(begin() + insert_pos, end(), count);
+    size_ += count;
+    for (int i = 0; i < count; i++) {
+      at(insert_pos + i) = v;
+    }
+    return begin() + insert_pos;
   }
-  void insert(const_iterator pos, T&& v) {
+  iterator insert(const_iterator pos, const T& v) { return insert(pos, 1, v); }
+  iterator insert(const_iterator pos, T&& v) {
     size_type insert_pos = pos - begin();
-    if (full()) {
+    if (size_ + 1 > cap_) {
       reserve(size_ + 1);
     }
     move_to(begin() + insert_pos, end(), 1);
     at(insert_pos) = std::move(v);
     size_++;
+    return begin() + insert_pos;
+  }
+  iterator insert(const_iterator pos, std::initializer_list<T> init_list) {
+    return insert(pos, init_list.begin(), init_list.end());
+  }
+  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
+  iterator insert(const_iterator pos, II first, II last) {
+    size_type count = std::distance(first, last);
+    if (count == 0) {
+      return pos;
+    }
+    size_type insert_pos = std::distance(begin(), pos);
+    if (size_ + count > cap_) {
+      reserve(size_ + count);
+    }
+    move_to(begin() + insert_pos, end(), count);
+    std::copy(first, last, begin() + insert_pos);
+    size_ += count;
+    return begin() + insert_pos;
   }
   void push_front(const T& v) { insert(begin(), v); }
   void push_front(T&& v) { insert(begin(), std::move(v)); }
   void pop_back() { size_--; }
+  void remove_at(size_type idx) { erase(begin() + idx); }
   void erase(const_iterator pos) { erase(pos, pos + 1); }
   void erase(const_iterator first, const_iterator last) {
-    size_type new_size = size_ - (last - first);
-    move_to(const_cast<iterator>(last), end(), first - last);
+    size_type erase_count = std::distance(first, last);
+    move_to(const_cast<iterator>(last), end(), size_ - erase_count);
     size_ = new_size;
+  }
+  template <typename Args...>
+  iterator emplace(const_iterator pos, Args&&... args) {
+    
   }
   void resize(size_type new_size, VT v = T()) {
     reserve(new_size);
@@ -153,6 +184,13 @@ class vector {
     size_ = new_size;
   }
   void clear() { size_ = 0; }
+  void swap(vector<T>& other) {
+    if (this != &other) {
+      std::swap(data_, other.data_);
+      std::swap(size_, other.size_);
+      std::swap(cap_, other.cap_);
+    }
+  }
 
  private:
   template <typename Iterator>
@@ -202,7 +240,6 @@ class vector {
     cap_ = 0;
     data_ = nullptr;
   }
-  bool full() const { return cap_ == size_; }
 
   size_type cap_;
   size_type size_;
