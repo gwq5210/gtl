@@ -1,0 +1,8 @@
+@PACKAGE_INIT@
+
+set(GTL_VERSION "@gtl_VERSION@")
+set_and_check(GTL_INCLUDE_DIR "@PACKAGE_CONFIG_INC_DIR@")
+set_and_check(GTL_LIB_DIR "@PACKAGE_CONFIG_LIB_DIR@")
+set_and_check(GTL_BIN_DIR "@PACKAGE_CONFIG_BIN_DIR@")
+
+check_required_components(gtl)

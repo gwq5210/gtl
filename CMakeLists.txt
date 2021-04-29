@@ -1,18 +1,21 @@
 cmake_minimum_required(VERSION 3.6)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=c++17")
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type")
 endif()
 if(NOT CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX /opt/sogou CACHE STRING "Install prefix")
+  set(CMAKE_INSTALL_PREFIX /usr/local CACHE STRING "Install prefix")
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 project(gtl VERSION 0.0.1)
+set(TEST_NAME ${PROJECT_NAME}_test)
+enable_testing()
 
-set(INC_DIR ${PROJECT_SOURCE_DIR}/include CACHE PATH "gtl inc")
+set(GTL_DIR ${PROJECT_SOURCE_DIR}/gtl)
+set(INC_DIR ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME} CACHE PATH "gtl inc")
 set(LIB_DIR ${PROJECT_SOURCE_DIR}/lib CACHE PATH "gtl lib")
 set(BIN_DIR ${PROJECT_SOURCE_DIR}/bin CACHE PATH "gtl bin")
 
@@ -22,14 +25,19 @@ set(CMAKE_CONFIG_INSTALL_FILE ${PROJECT_BINARY_DIR}/config.toinstall.cmake)
 set(CMAKE_CONFIG_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR})
+
+set(INCLUDE_HEADERS
+  gtl/container/vector.h
+)
+aux_source_directory(${GTL_DIR}/container/test CONTAINER_TEST_SRCS)
+set(TEST_SRCS
+  ${CONTAINER_TEST_SRCS}
+)
 
 add_custom_target(
   LINK_HEADERS ALL
   COMMENT "link headers..."
 )
-
-INCLUDE(CMakeLists_Headers.txt)
 
 macro(makeLink src dest target)
   add_custom_command(
@@ -41,17 +49,30 @@ endmacro()
 
 add_custom_command(
   TARGET LINK_HEADERS PRE_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${INC_DIR}/${PROJECT_NAME}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${INC_DIR}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${BIN_DIR}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${LIB_DIR}
 )
 
 foreach(header_file ${INCLUDE_HEADERS})
   string(REPLACE "/" ";" arr ${header_file})
   list(GET arr -1 file_name)
-  makeLink(${PROJECT_SOURCE_DIR}/${header_file} ${INC_DIR}/${PROJECT_NAME}/${file_name} LINK_HEADERS)
+  makeLink(${PROJECT_SOURCE_DIR}/${header_file} ${INC_DIR}/${file_name} LINK_HEADERS)
 endforeach()
 
-add_subdirectory(gtl)
+####TEST
+
+find_package(GTest REQUIRED CONFIG HINTS third_party/googletest)
+
+message(STATUS ${INCLUDE_HEADERS})
+message(STATUS ${TEST_SRCS})
+
+include_directories(${INC_DIR})
+add_executable(${TEST_NAME} ${TEST_SRCS})
+
+target_link_libraries(${TEST_NAME} GTest::gtest_main)
+add_dependencies(${TEST_NAME} LINK_HEADERS)
+add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 
 ####CONFIG
 

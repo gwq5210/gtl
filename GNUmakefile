@@ -1,9 +1,9 @@
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-ALL_TARGETS := all base check install package clean
+ALL_TARGETS := all base check test install package clean
 MAKE_FILE := Makefile
 
 DEFAULT_BUILD_DIR := build
-DEFAULT_PREFIX := /opt/sogou
+DEFAULT_PREFIX := /usr/local
 BUILD_DIR := $(shell if [ -f $(MAKE_FILE) ]; then echo "."; else echo $(DEFAULT_BUILD_DIR); fi)
 CMAKE3 := $(shell if which cmake3>/dev/null ; then echo cmake3; else echo cmake; fi;)
 CMAKE_OPTIONS :=
@@ -27,10 +27,10 @@ base:
 	cd $(BUILD_DIR) && $(CMAKE3) $(CMAKE_OPTIONS) $(ROOT_DIR)
 
 check: all
-	make -C test check
+	make -C $(BUILD_DIR) -f Makefile $@
 
-benchmarks: all
-	make -C benchmarks run
+test: all
+	make -C $(BUILD_DIR) -f Makefile $@
 
 install: base
 	make -C $(BUILD_DIR) -f Makefile $@
@@ -47,9 +47,9 @@ clean:
 ifeq (build, $(wildcard build))
 	-make -C build clean
 endif
-	-make -C test clean
 	rm -rf $(DEFAULT_BUILD_DIR)
 	rm -rf include
 	rm -rf lib
 	rm -rf bin
+	rm -rf *-config.cmake
 	rm -f SRCINFO SRCNUMVER SRCVERSION
