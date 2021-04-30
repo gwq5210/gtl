@@ -7,6 +7,16 @@
 
 using gtl::vector;
 
+struct Person {
+  Person(const Person& other): id_(other.id_) {
+    // printf("%s %d\n", __FUNCTION__, id_);
+  }
+  Person(int id = 0): id_(id) {
+    // printf("%s %d\n", __FUNCTION__, id_);
+  }
+  int id_;
+};
+
 template <class Iterator>
 void print(Iterator first, Iterator end) {
   auto it = first;
@@ -163,7 +173,34 @@ TEST(vector_test, modifiers_iterators_test) {
   vec.resize(n, n);
   EXPECT_EQ(n, vec.size());
   EXPECT_EQ(n, vec.back());
+
+  n = 16;
+  vector<int> new_vec(vec.begin(), vec.begin() + n);
+
   vec.clear();
   EXPECT_EQ(0, vec.size());
   EXPECT_EQ(true, vec.empty());
+
+  new_vec.insert(new_vec.begin(), new_vec.begin(), new_vec.end());
+  for (int i = 0; i < new_vec.size() / 2; i++) {
+    EXPECT_EQ(new_vec[i], new_vec[i + new_vec.size() / 2]);
+  }
+  auto vec_copy = new_vec;
+  new_vec.insert(new_vec.begin() + new_vec.size() / 2, new_vec.begin(), new_vec.end());
+  for (int i = 0; i < vec_copy.size(); i++) {
+    EXPECT_EQ(vec_copy[i], new_vec[vec_copy.size() / 2 + i]);
+  }
+
+  vector<Person> persons;
+  persons.reserve(n);
+  for (int i = 0; i < n; i++) {
+    persons.emplace_back(i);
+  }
+  printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
+  persons.insert(persons.begin(), persons.begin(), persons.end());
+  for (int i = 0; i < persons.size() / 2; i++) {
+    EXPECT_EQ(persons[i].id_, i);
+    EXPECT_EQ(persons[i].id_, persons[i + persons.size() / 2].id_);
+  }
+  printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
 }

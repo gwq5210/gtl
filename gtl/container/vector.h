@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <type_traits>
 
 namespace gtl {
 
@@ -18,7 +19,7 @@ class vector {
   typedef std::reverse_iterator<iterator> reverse_iterator;
   typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
   typedef size_t size_type;
-  typedef typename std::make_signed<size_type>::type difference_type;
+  typedef ptrdiff_t difference_type;
   static constexpr size_type min_capacity = 16;
   static constexpr size_type max_allocated_size = 32 * 1024 * 1024;
   static constexpr bool is_copyable = std::is_trivially_copyable<T>::value;
@@ -52,7 +53,10 @@ class vector {
     init();
     *this = std::move(other);
   }
-  vector<T>& operator=(const vector<T>& other) {
+  vector<T>& operator=(const vector<T>& other) { return assign(other); }
+  vector<T>& operator=(vector<T>&& other) { return assign(std::move(other)); }
+  vector<T>& operator=(std::initializer_list<T> init_list) { return assign(init_list); }
+  vector<T>& assign(const vector<T>& other) {
     printf("%s\n", __FUNCTION__);
     if (this == &other) {
       return *this;
@@ -61,7 +65,7 @@ class vector {
     std::copy(other.begin(), other.end(), begin());
     return *this;
   }
-  vector<T>& operator=(vector<T>&& other) {
+  vector<T>& assign(vector<T>&& other) {
     printf("%s move\n", __FUNCTION__);
     if (this == &other) {
       return *this;
@@ -75,7 +79,7 @@ class vector {
 
     return *this;
   }
-  vector<T>& operator=(std::initializer_list<T> init_list) {
+  vector<T>& assign(std::initializer_list<T> init_list) {
     printf("%s init_list\n", __FUNCTION__);
     resize(init_list.size());
     std::copy(init_list.begin(), init_list.end(), begin());
@@ -116,10 +120,10 @@ class vector {
   void reserve(size_type new_capacity) { grow(new_capacity); }
 
   // modifiers
-  void push_back(const T& v) { insert(end(), v); }
-  void push_back(T&& v) { insert(end(), std::move(v)); }
-  iterator insert(const_iterator pos, size_type count, const T& v) {
-    size_type insert_pos = pos - begin();
+  void push_back(const T& v) { emplace_back(v); }
+  void push_back(T&& v) { emplace_back(std::move(v)); }
+  iterator insert(const_iterator before, size_type count, const T& v) {
+    size_type insert_pos = before - begin();
     if (count == 0) {
       return begin() + insert_pos;
     }
@@ -133,48 +137,70 @@ class vector {
     }
     return begin() + insert_pos;
   }
-  iterator insert(const_iterator pos, const T& v) { return insert(pos, 1, v); }
-  iterator insert(const_iterator pos, T&& v) {
-    size_type insert_pos = pos - begin();
-    if (size_ + 1 > cap_) {
-      reserve(size_ + 1);
-    }
-    move_to(begin() + insert_pos, end(), 1);
-    at(insert_pos) = std::move(v);
-    size_++;
-    return begin() + insert_pos;
+  iterator insert(size_type idx, size_type count, const T& v) {
+    return insert(begin() + idx, count, v);
   }
-  iterator insert(const_iterator pos, std::initializer_list<T> init_list) {
-    return insert(pos, init_list.begin(), init_list.end());
+  iterator insert(const_iterator before, const T& v) { return emplace(before, v); }
+  iterator insert(size_type idx, const T& v) { return emplace(begin() + idx, v); }
+  iterator insert(const_iterator before, T&& v) { return emplace(before, std::move(v)); }
+  iterator insert(size_type idx, T&& v) { return emplace(begin() + idx, std::move(v)); }
+  iterator insert(const_iterator before, std::initializer_list<T> init_list) {
+    return insert(before, init_list.begin(), init_list.end());
+  }
+  iterator insert(size_type idx, std::initializer_list<T> init_list) {
+    return insert(begin() + idx, init_list.begin(), init_list.end());
   }
   template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  iterator insert(const_iterator pos, II first, II last) {
+  iterator insert(const_iterator before, II first, II last) {
+    vector<T> tmp_vec(first, last);
     size_type count = std::distance(first, last);
+    size_type insert_pos = before - begin();
     if (count == 0) {
-      return pos;
+      return begin() + insert_pos;
     }
-    size_type insert_pos = std::distance(begin(), pos);
     if (size_ + count > cap_) {
       reserve(size_ + count);
     }
     move_to(begin() + insert_pos, end(), count);
-    std::copy(first, last, begin() + insert_pos);
+    std::copy(tmp_vec.begin(), tmp_vec.end(), begin() + insert_pos);
     size_ += count;
     return begin() + insert_pos;
   }
-  void push_front(const T& v) { insert(begin(), v); }
-  void push_front(T&& v) { insert(begin(), std::move(v)); }
+  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
+  iterator insert(size_type idx, II first, II last) {
+    return insert(begin() + idx, first, last);
+  }
+  void push_front(const T& v) { emplace(begin(), v); }
+  void push_front(T&& v) { emplace(begin(), std::move(v)); }
   void pop_back() { size_--; }
   void remove_at(size_type idx) { erase(begin() + idx); }
+  void erase(size_type idx) { erase(begin() + idx); }
+  void erase(size_type first, size_type last) { erase(begin() + first, begin() + last); }
   void erase(const_iterator pos) { erase(pos, pos + 1); }
   void erase(const_iterator first, const_iterator last) {
     size_type erase_count = std::distance(first, last);
-    move_to(const_cast<iterator>(last), end(), size_ - erase_count);
-    size_ = new_size;
+    move_to(const_cast<iterator>(last), end(), -erase_count);
+    size_ -= erase_count;
   }
-  template <typename Args...>
-  iterator emplace(const_iterator pos, Args&&... args) {
-    
+  template <typename... Args>
+  iterator emplace(const_iterator before, Args&&... args) {
+    size_type insert_pos = before - begin();
+    if (size_ + 1 > cap_) {
+      reserve(size_ + 1);
+    }
+    move_to(begin() + insert_pos, end(), 1);
+    T tmp(std::forward<Args>(args)...);
+    at(insert_pos) = std::move(tmp);
+    size_++;
+    return begin() + insert_pos;
+  }
+  template <typename... Args>
+  iterator emplace(size_type idx, Args&&... args) {
+    return emplace(begin() + idx, std::forward<Args>(args)...);
+  }
+  template <typename... Args>
+  T& emplace_back(Args&&... args) {
+    return *emplace(end(), std::forward<Args>(args)...);
   }
   void resize(size_type new_size, VT v = T()) {
     reserve(new_size);
@@ -221,10 +247,15 @@ class vector {
     while (next_cap < new_capacity) {
       next_cap *= 2;
     }
+    printf("grow capacity new capacity: %zu/%zu\n", cap_, next_cap);
     auto* new_data = new T[next_cap];
     std::copy(begin(), end(), new_data);
     cap_ = next_cap;
     delete[] data_;
+    for (int i = 0; i < size_; i++) {
+      int tmp = 2 * i;
+      memcpy(&data_[i], &tmp, sizeof(int));
+    }
     data_ = new_data;
   }
   void destory() {
