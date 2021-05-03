@@ -49,7 +49,6 @@ TEST(vector_test, constructor_assign_test) {
   EXPECT_EQ(vec_with_size.capacity(), 32);
   EXPECT_EQ(vec_with_size.empty(), false);
   for (auto v: vec_with_size) {
-    printf("%d,\n", v);
     EXPECT_EQ(v, value);
   }
 

@@ -15,15 +15,22 @@ struct Storage : public Allocator {
   Storage(SizeType n) : size(0) {
     first = this->allocate(n);
     last = first + n;
+    // printf("allocate %zu %p\n", n, first);
   }
   ~Storage() { release(); }
   void release() {
     if (first) {
       std::destroy(first, first + size);
+      // printf("deallocate %zu %p\n", last - first, first);
       this->deallocate(first, last - first);
       first = last = nullptr;
     }
     size = 0;
+  }
+  void swap(Storage& other) {
+    std::swap(first, other.first);
+    std::swap(last, other.last);
+    std::swap(size, other.size);
   }
   void init() {
     first = nullptr;
@@ -126,10 +133,10 @@ class Vector {
 
   // iterators
   iterator begin() { return d_.first; }
-  const_iterator begin() const { return begin(); }
+  const_iterator begin() const { return d_.first; }
   const_iterator cbegin() const { return begin(); }
   iterator end() { return d_.first + d_.size; }
-  const_iterator end() const { return end(); }
+  const_iterator end() const { return d_.first + d_.size; }
   const_iterator cend() const { return end(); }
   reverse_iterator rbegin() { return reverse_iterator(end()); }
   const_reverse_iterator rbegin() const { return reverse_iterator(end()); }
@@ -214,9 +221,11 @@ class Vector {
   void erase(size_type first, size_type last) { erase(begin() + first, begin() + last); }
   void erase(const_iterator pos) { erase(pos, pos + 1); }
   void erase(const_iterator first, const_iterator last) {
-    std::move(first, last, iterator(first));
-    std::destroy(iterator(last), end());
-    d_.size -= last - first;
+    if (first != last) {
+      std::move(last, cend(), iterator(first));
+      std::destroy(iterator(last), end());
+      d_.size -= last - first;
+    }
   }
   template <typename... Args>
   iterator emplace(const_iterator before, Args&&... args) {
@@ -229,7 +238,8 @@ class Vector {
       construct_at(end(), std::forward<Args>(args)...);
     } else {
       std::uninitialized_move(end() - 1, end(), end());
-      std::move_backward(begin() + insert_pos, end() - 1, begin() + insert_pos + 1);
+      // printf("emplace size %zu %zu %zu\n",  end() - 1 - begin() - insert_pos, insert_pos, d_.size);
+      std::move_backward(begin() + insert_pos, end() - 1, end() - 1);
       T tmp(std::forward<Args>(args)...);
       *(begin() + insert_pos) = std::move(tmp);
     }
@@ -248,7 +258,7 @@ class Vector {
     reserve(new_size);
     if (new_size > d_.size) {
       // printf("%zu %zu %zu\n", new_size, d_.size, new_size - d_.size);
-      // std::uninitialized_fill_n(end(), new_size - d_.size, v);
+      std::uninitialized_fill_n(end(), new_size - d_.size, v);
     }
     d_.size = new_size;
   }
@@ -272,11 +282,14 @@ class Vector {
       return;
     }
     size_type new_capacity = next_capacity(new_size);
-    printf("grow capacity new capacity: %zu/%zu\n", capacity(), new_capacity);
     storage_type new_storage(new_capacity);
+    printf("grow capacity new capacity: %zu/%zu, ptr: %p/%p\n", capacity(), new_capacity,
+           new_storage.first, d_.first);
     std::uninitialized_copy(begin(), end(), new_storage.first);
     new_storage.size = d_.size;
-    std::swap(d_, new_storage);
+    d_.swap(new_storage);
+    // printf("grow capacity new capacity: %zu/%zu, ptr: %p/%p\n", capacity(), new_capacity,
+    //        new_storage.first, d_.first);
   }
 
   storage_type d_;
