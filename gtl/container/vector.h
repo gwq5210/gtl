@@ -6,8 +6,41 @@
 
 namespace gtl {
 
+template <typename T, typename SizeType, typename Allocator = std::allocator<T>>
+struct Storage : public Allocator {
+  T* first;
+  T* last;
+  SizeType size;
+  Storage() : first(nullptr), last(nullptr), size(0) {}
+  Storage(SizeType n) : size(0) {
+    first = this->allocate(n);
+    last = first + n;
+  }
+  ~Storage() { release(); }
+  void release() {
+    if (first) {
+      std::destroy(first, first + size);
+      this->deallocate(first, last - first);
+      first = last = nullptr;
+    }
+    size = 0;
+  }
+  void init() {
+    first = nullptr;
+    last = nullptr;
+    size = 0;
+  }
+  Allocator get_allocator() const { return *this; }
+};
+
+template <typename T, typename... Args>
+T* construct_at(T* p, Args&&... args) {
+  new (p) T(std::forward<Args>(args)...);
+  return p;
+}
+
 template <typename T>
-class vector {
+class Vector {
  public:
   typedef T value_type;
   typedef T& reference;
@@ -20,43 +53,36 @@ class vector {
   typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
   typedef size_t size_type;
   typedef ptrdiff_t difference_type;
+  typedef std::allocator<T> allocator_type;
+  typedef Storage<T, size_type, allocator_type> storage_type;
   static constexpr size_type min_capacity = 16;
   static constexpr size_type max_allocated_size = 32 * 1024 * 1024;
   static constexpr bool is_copyable = std::is_trivially_copyable<T>::value;
-  static constexpr bool is_pass_by_value = is_copyable && sizeof(T) <= 16;
+  static constexpr bool is_pass_by_value = is_copyable && sizeof(T) <= sizeof(void*);
   typedef typename std::conditional<is_pass_by_value, T, const T&>::type VT;
 
   // constructor
-  vector() { init(); }
-  explicit vector(size_type size, VT v = T()) {
+  Vector() = default;
+  explicit Vector(size_type size, VT v = T()) {
     printf("%s\n", __FUNCTION__);
-    init();
     resize(size, v);
   }
   template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  vector(II first, II last) {
+  Vector(II first, II last) {
     printf("%s range\n", __FUNCTION__);
-    init();
     resize(std::distance(first, last));
     std::copy(first, last, begin());
   }
-  vector(std::initializer_list<T> init_list) {
+  Vector(std::initializer_list<T> init_list) {
     printf("%s init_list %zu\n", __FUNCTION__, init_list.size());
-    init();
     *this = init_list;
   }
-  vector(const vector<T>& other) {
-    init();
-    *this = other;
-  }
-  vector(vector<T>&& other) {
-    init();
-    *this = std::move(other);
-  }
-  vector<T>& operator=(const vector<T>& other) { return assign(other); }
-  vector<T>& operator=(vector<T>&& other) { return assign(std::move(other)); }
-  vector<T>& operator=(std::initializer_list<T> init_list) { return assign(init_list); }
-  vector<T>& assign(const vector<T>& other) {
+  Vector(const Vector& other) { *this = other; }
+  Vector(Vector&& other) { *this = std::move(other); }
+  Vector& operator=(const Vector& other) { return assign(other); }
+  Vector& operator=(Vector&& other) { return assign(std::move(other)); }
+  Vector& operator=(std::initializer_list<T> init_list) { return assign(init_list); }
+  Vector& assign(const Vector& other) {
     printf("%s\n", __FUNCTION__);
     if (this == &other) {
       return *this;
@@ -65,27 +91,26 @@ class vector {
     std::copy(other.begin(), other.end(), begin());
     return *this;
   }
-  vector<T>& assign(vector<T>&& other) {
+  Vector& assign(Vector&& other) {
     printf("%s move\n", __FUNCTION__);
     if (this == &other) {
       return *this;
     }
 
-    destory();
-    size_ = other.size_;
-    cap_ = other.cap_;
-    data_ = other.data_;
-    other.init();
+    d_.release();
+    d_ = other.d_;
+    other.d_.init();
 
     return *this;
   }
-  vector<T>& assign(std::initializer_list<T> init_list) {
+  Vector& assign(std::initializer_list<T> init_list) {
     printf("%s init_list\n", __FUNCTION__);
     resize(init_list.size());
     std::copy(init_list.begin(), init_list.end(), begin());
     return *this;
   }
-  ~vector() { destory(); }
+
+  allocator_type get_allocator() const { return d_.get_allocator(); }
 
   // element access
   T& at(size_type i) { return *(begin() + i); }
@@ -96,16 +121,16 @@ class vector {
   const T& back() const { return *(end() - 1); }
   T& operator[](size_type i) { return *(begin() + i); }
   const T& operator[](size_type i) const { return *(begin() + i); }
-  T* data() { return data_; }
-  const T* data() const { return data_; }
+  T* data() { return d_.first; }
+  const T* data() const { return data(); }
 
   // iterators
-  iterator begin() { return data_; }
-  const_iterator begin() const { return data_; }
-  const_iterator cbegin() const { return data_; }
-  iterator end() { return data_ + size_; }
-  const_iterator end() const { return data_ + size_; }
-  const_iterator cend() const { return data_ + size_; }
+  iterator begin() { return d_.first; }
+  const_iterator begin() const { return begin(); }
+  const_iterator cbegin() const { return begin(); }
+  iterator end() { return d_.first + d_.size; }
+  const_iterator end() const { return end(); }
+  const_iterator cend() const { return end(); }
   reverse_iterator rbegin() { return reverse_iterator(end()); }
   const_reverse_iterator rbegin() const { return reverse_iterator(end()); }
   const_reverse_iterator crbegin() const { return reverse_iterator(end()); }
@@ -114,9 +139,9 @@ class vector {
   const_reverse_iterator crend() const { return reverse_iterator(begin()); }
 
   // capacity
-  size_type capacity() const { return cap_; }
-  size_type size() const { return size_; }
-  bool empty() const { return size_ == 0; }
+  size_type capacity() const { return size_type(d_.last - d_.first); }
+  size_type size() const { return d_.size; }
+  bool empty() const { return size() == 0; }
   void reserve(size_type new_capacity) { grow(new_capacity); }
 
   // modifiers
@@ -124,17 +149,23 @@ class vector {
   void push_back(T&& v) { emplace_back(std::move(v)); }
   iterator insert(const_iterator before, size_type count, const T& v) {
     size_type insert_pos = before - begin();
+    size_type n = end() - before;
     if (count == 0) {
       return begin() + insert_pos;
     }
-    if (size_ + count > cap_) {
-      reserve(size_ + count);
+    if (d_.size + count > capacity()) {
+      reserve(d_.size + count);
     }
-    move_to(begin() + insert_pos, end(), count);
-    size_ += count;
-    for (int i = 0; i < count; i++) {
-      at(insert_pos + i) = v;
+    if (n <= count) {
+      uninitialized_move(end() - count, end(), end());
+      move_backward(begin() + insert_pos, begin() + n - count, begin() + n - count);
+      fill_n(begin() + insert_pos, count, v);
+    } else {
+      uninitialized_move(end() - n, end(), end() + count - n);
+      fill_n(begin() + insert_pos, n, v);
+      uninitialized_fill_n(end(), count - n, v);
     }
+    d_.size += count;
     return begin() + insert_pos;
   }
   iterator insert(size_type idx, size_type count, const T& v) {
@@ -152,46 +183,57 @@ class vector {
   }
   template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
   iterator insert(const_iterator before, II first, II last) {
-    vector<T> tmp_vec(first, last);
     size_type count = std::distance(first, last);
     size_type insert_pos = before - begin();
+    size_type n = end() - before;
     if (count == 0) {
       return begin() + insert_pos;
     }
-    if (size_ + count > cap_) {
-      reserve(size_ + count);
+    if (d_.size + count > capacity()) {
+      reserve(d_.size + count);
     }
-    move_to(begin() + insert_pos, end(), count);
-    std::copy(tmp_vec.begin(), tmp_vec.end(), begin() + insert_pos);
-    size_ += count;
+    if (count <= n) {
+      std::uninitialized_move(end() - count, end(), end());
+      std::move_backward(begin() + insert_pos, begin() + n - count, begin() + n - count);
+      std::copy(first, last, begin() + insert_pos);
+    } else {
+      std::uninitialized_move(end() - n, end(), end() + count - n);
+      std::copy(first, first + n, begin() + insert_pos);
+      std::uninitialized_copy(first + n, last, end());
+    }
+    d_.size += count;
     return begin() + insert_pos;
   }
   template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
   iterator insert(size_type idx, II first, II last) {
     return insert(begin() + idx, first, last);
   }
-  void push_front(const T& v) { emplace(begin(), v); }
-  void push_front(T&& v) { emplace(begin(), std::move(v)); }
-  void pop_back() { size_--; }
+  void pop_back() { erase(end() - 1); }
   void remove_at(size_type idx) { erase(begin() + idx); }
   void erase(size_type idx) { erase(begin() + idx); }
   void erase(size_type first, size_type last) { erase(begin() + first, begin() + last); }
   void erase(const_iterator pos) { erase(pos, pos + 1); }
   void erase(const_iterator first, const_iterator last) {
-    size_type erase_count = std::distance(first, last);
-    move_to(const_cast<iterator>(last), end(), -erase_count);
-    size_ -= erase_count;
+    std::move(first, last, iterator(first));
+    std::destroy(iterator(last), end());
+    d_.size -= last - first;
   }
   template <typename... Args>
   iterator emplace(const_iterator before, Args&&... args) {
     size_type insert_pos = before - begin();
-    if (size_ + 1 > cap_) {
-      reserve(size_ + 1);
+    bool at_end = before == end();
+    if (d_.size + 1 > capacity()) {
+      reserve(d_.size + 1);
     }
-    move_to(begin() + insert_pos, end(), 1);
-    T tmp(std::forward<Args>(args)...);
-    at(insert_pos) = std::move(tmp);
-    size_++;
+    if (at_end) {
+      construct_at(end(), std::forward<Args>(args)...);
+    } else {
+      std::uninitialized_move(end() - 1, end(), end());
+      std::move_backward(begin() + insert_pos, end() - 1, begin() + insert_pos + 1);
+      T tmp(std::forward<Args>(args)...);
+      *(begin() + insert_pos) = std::move(tmp);
+    }
+    d_.size++;
     return begin() + insert_pos;
   }
   template <typename... Args>
@@ -204,77 +246,40 @@ class vector {
   }
   void resize(size_type new_size, VT v = T()) {
     reserve(new_size);
-    if (new_size > size_) {
-      assign_range(end(), end() + new_size - size_, v);
+    if (new_size > d_.size) {
+      // printf("%zu %zu %zu\n", new_size, d_.size, new_size - d_.size);
+      // std::uninitialized_fill_n(end(), new_size - d_.size, v);
     }
-    size_ = new_size;
+    d_.size = new_size;
   }
-  void clear() { size_ = 0; }
-  void swap(vector<T>& other) {
+  void clear() { erase(begin(), end()); }
+  void swap(Vector& other) {
     if (this != &other) {
-      std::swap(data_, other.data_);
-      std::swap(size_, other.size_);
-      std::swap(cap_, other.cap_);
+      std::swap(d_, other.d_);
     }
   }
 
  private:
-  template <typename Iterator>
-  void move_to(Iterator first, Iterator last, int k) {
-    if (k == 0) {
-      return;
-    } else if (k > 0) {
-      return move_to(reverse_iterator(last), reverse_iterator(first), -k);
-    }
-    k = -k;
-    auto begin = first;
-    auto end = last;
-    while (begin != end) {
-      *(begin - k) = std::move(*begin);
-      begin++;
-    }
-  }
-  void assign_range(iterator first, iterator last, VT v) {
-    while (first != last) {
-      *first++ = v;
-    }
-  }
-  void grow(size_type new_capacity) {
-    if (cap_ >= new_capacity) {
-      return;
-    }
-    size_type next_cap = std::max(cap_, min_capacity);
-    while (next_cap < new_capacity) {
+  size_type next_capacity(size_type new_size) {
+    size_type next_cap = std::max(capacity(), min_capacity);
+    while (next_cap < new_size) {
       next_cap *= 2;
     }
-    printf("grow capacity new capacity: %zu/%zu\n", cap_, next_cap);
-    auto* new_data = new T[next_cap];
-    std::copy(begin(), end(), new_data);
-    cap_ = next_cap;
-    delete[] data_;
-    for (int i = 0; i < size_; i++) {
-      int tmp = 2 * i;
-      memcpy(&data_[i], &tmp, sizeof(int));
-    }
-    data_ = new_data;
+    return next_cap;
   }
-  void destory() {
-    if (data_) {
-      delete[] data_;
-      data_ = nullptr;
+  void grow(size_type new_size) {
+    if (capacity() >= new_size) {
+      return;
     }
-    size_ = 0;
-    cap_ = 0;
-  }
-  void init() {
-    size_ = 0;
-    cap_ = 0;
-    data_ = nullptr;
+    size_type new_capacity = next_capacity(new_size);
+    printf("grow capacity new capacity: %zu/%zu\n", capacity(), new_capacity);
+    storage_type new_storage(new_capacity);
+    std::uninitialized_copy(begin(), end(), new_storage.first);
+    new_storage.size = d_.size;
+    std::swap(d_, new_storage);
   }
 
-  size_type cap_;
-  size_type size_;
-  T* data_;
+  storage_type d_;
 };
 
 }  // namespace gtl

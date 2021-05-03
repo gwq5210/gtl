@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.6)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=c++2a")
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type")
 endif()
@@ -62,7 +62,8 @@ endforeach()
 
 ####TEST
 
-find_package(GTest REQUIRED CONFIG HINTS third_party/googletest)
+#find_package(GTest REQUIRED CONFIG HINTS third_party/googletest)
+find_package(GTest REQUIRED)
 
 message(STATUS ${INCLUDE_HEADERS})
 message(STATUS ${TEST_SRCS})
@@ -70,7 +71,8 @@ message(STATUS ${TEST_SRCS})
 include_directories(${INC_DIR})
 add_executable(${TEST_NAME} ${TEST_SRCS})
 
-target_link_libraries(${TEST_NAME} GTest::gtest_main)
+#target_link_libraries(${TEST_NAME} GTest::gtest_main)
+target_link_libraries(${TEST_NAME} gtest gtest_main pthread)
 add_dependencies(${TEST_NAME} LINK_HEADERS)
 add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 
