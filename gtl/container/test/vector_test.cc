@@ -189,6 +189,10 @@ TEST(vector_test, modifiers_iterators_test) {
   n = 16;
   Vector<int> new_vec(vec.begin(), vec.begin() + n);
 
+  new_vec.insert(new_vec.begin() + n / 2, n, 100);
+  for (int i = 0; i < n; i++) {
+    EXPECT_EQ(new_vec[i + n / 2], 100);
+  }
   vec.clear();
   EXPECT_EQ(0, vec.size());
   EXPECT_EQ(true, vec.empty());

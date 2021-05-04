@@ -18,7 +18,7 @@ struct Storage : public Allocator {
   }
   ~Storage() { release(); }
   SizeType capacity() const { return SizeType(end - begin); }
-  bool full(SizeType n) const { return n > capacity(); }
+  bool full(SizeType n) const { return size + n > capacity(); }
   SizeType next_capacity(SizeType new_size) {
     SizeType next_cap = 1;
     while (next_cap < new_size) {
@@ -187,9 +187,9 @@ class Vector {
       return begin() + insert_pos;
     }
     if (!d_.full(count)) {
-      if (n <= count) {
+      if (count <= n) {
         std::uninitialized_move(end() - count, end(), end());
-        std::move_backward(begin() + insert_pos, begin() + n - count, begin() + n - count);
+        std::move_backward(begin() + insert_pos, begin() + insert_pos + n - count, end());
         std::fill_n(begin() + insert_pos, count, v);
       } else {
         std::uninitialized_move(end() - n, end(), end() + count - n);
@@ -276,19 +276,28 @@ class Vector {
   iterator emplace(const_iterator before, Args&&... args) {
     size_type insert_pos = before - begin();
     bool at_end = before == end();
-    if (d_.size + 1 > capacity()) {
-      reserve(d_.size + 1);
-    }
-    if (at_end) {
-      construct_at(end(), std::forward<Args>(args)...);
+    if (!d_.full(1)) {
+      if (at_end) {
+        construct_at(end(), std::forward<Args>(args)...);
+      } else {
+        std::uninitialized_move(end() - 1, end(), end());
+        std::move_backward(begin() + insert_pos, end() - 1, end() - 1);
+        T tmp(std::forward<Args>(args)...);
+        *(begin() + insert_pos) = std::move(tmp);
+      }
+      d_.size++;
     } else {
-      std::uninitialized_move(end() - 1, end(), end());
-      // printf("emplace size %zu %zu %zu\n",  end() - 1 - begin() - insert_pos, insert_pos, d_.size);
-      std::move_backward(begin() + insert_pos, end() - 1, end() - 1);
+      Storage new_storage;
+      new_storage.allocate_move(d_.size + 1, begin(), begin() + insert_pos);
       T tmp(std::forward<Args>(args)...);
-      *(begin() + insert_pos) = std::move(tmp);
+      *(new_storage.begin + new_storage.size) = std::move(tmp);
+      new_storage.size++;
+      if (!at_end) {
+        std::uninitialized_move(begin() + insert_pos, end(), new_storage.begin + new_storage.size);
+        new_storage.size += end() - (begin() + insert_pos);
+      }
+      d_.swap(new_storage);
     }
-    d_.size++;
     return begin() + insert_pos;
   }
   template <typename... Args>
