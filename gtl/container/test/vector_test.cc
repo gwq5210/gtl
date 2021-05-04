@@ -3,7 +3,7 @@
 
 #include "gtest/gtest.h"
 
-#include "vector.h"
+#include "gtl_vector.h"
 
 using gtl::Vector;
 
@@ -193,12 +193,12 @@ TEST(vector_test, modifiers_iterators_test) {
   EXPECT_EQ(0, vec.size());
   EXPECT_EQ(true, vec.empty());
 
-  new_vec.insert(new_vec.begin(), new_vec.begin(), new_vec.end());
+  new_vec.insert_safe(new_vec.begin(), new_vec.begin(), new_vec.end());
   for (size_t i = 0; i < new_vec.size() / 2; i++) {
     EXPECT_EQ(new_vec[i], new_vec[i + new_vec.size() / 2]);
   }
   auto vec_copy = new_vec;
-  new_vec.insert(new_vec.begin() + new_vec.size() / 2, new_vec.begin(), new_vec.end());
+  new_vec.insert_safe(new_vec.begin() + new_vec.size() / 2, new_vec.begin(), new_vec.end());
   for (size_t i = 0; i < vec_copy.size(); i++) {
     EXPECT_EQ(vec_copy[i], new_vec[vec_copy.size() / 2 + i]);
   }
@@ -209,7 +209,7 @@ TEST(vector_test, modifiers_iterators_test) {
     persons.emplace_back(i);
   }
   printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
-  persons.insert(persons.begin(), persons.begin(), persons.end());
+  persons.insert_safe(persons.begin(), persons.begin(), persons.end());
   for (size_t i = 0; i < persons.size() / 2; i++) {
     EXPECT_EQ(persons[i].id_, i);
     EXPECT_EQ(persons[i].id_, persons[i + persons.size() / 2].id_);
