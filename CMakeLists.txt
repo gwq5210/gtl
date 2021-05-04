@@ -28,6 +28,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
 
 set(INCLUDE_HEADERS
   gtl/algorithm/gtl_memory.h
+  gtl/container/gtl_list.h
   gtl/container/gtl_vector.h
 )
 aux_source_directory(${GTL_DIR}/container/test CONTAINER_TEST_SRCS)

@@ -1,17 +1,20 @@
 #include <cstdio>
+#include <list>
 #include <vector>
 
 #include "gtest/gtest.h"
 
 #include "gtl_vector.h"
+#include "gtl_list.h"
 
 using gtl::Vector;
+using gtl::List;
 
 struct Person {
   Person(const Person& other): id_(other.id_) {
     // printf("%s %d\n", __FUNCTION__, id_);
   }
-  Person(int id = 0): id_(id) {
+  Person(int id): id_(id) {
     // printf("%s %d\n", __FUNCTION__, id_);
   }
   int id_;
@@ -193,6 +196,9 @@ TEST(vector_test, modifiers_iterators_test) {
   for (int i = 0; i < n; i++) {
     EXPECT_EQ(new_vec[i + n / 2], 100);
   }
+  EXPECT_EQ(2 * n, new_vec.size());
+  new_vec.erase(new_vec.begin() + n / 2, new_vec.end() - n / 2);
+  EXPECT_EQ(n, new_vec.size());
   vec.clear();
   EXPECT_EQ(0, vec.size());
   EXPECT_EQ(true, vec.empty());
@@ -219,4 +225,5 @@ TEST(vector_test, modifiers_iterators_test) {
     EXPECT_EQ(persons[i].id_, persons[i + persons.size() / 2].id_);
   }
   printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
+  List<Person> list;
 }

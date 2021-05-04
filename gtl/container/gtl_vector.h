@@ -40,7 +40,7 @@ struct Storage : public Allocator {
       size = count;
     }
   }
-  template<typename II>
+  template <typename II>
   void allocate_copy(SizeType n, II first, II last) {
     if (n) {
       allocate(n);
@@ -48,7 +48,7 @@ struct Storage : public Allocator {
       size = std::distance(first, last);
     }
   }
-  template<typename II>
+  template <typename II>
   void allocate_move(SizeType n, II first, II last) {
     if (n) {
       allocate(n);
@@ -96,7 +96,7 @@ class Vector {
   typedef size_t size_type;
   typedef ptrdiff_t difference_type;
   typedef std::allocator<T> allocator_type;
-  typedef Storage<T, size_type, allocator_type> Storage;
+  typedef gtl::Storage<T, size_type, allocator_type> Storage;
 
   // constructor
   Vector() = default;
@@ -109,38 +109,45 @@ class Vector {
     printf("%s range\n", __FUNCTION__);
     d_.allocate_copy(std::distance(first, last), first, last);
   }
-  Vector(std::initializer_list<T> init_list) {
-    printf("%s init_list %zu\n", __FUNCTION__, init_list.size());
-    d_.allocate_copy(init_list.size(), init_list.begin(), init_list.end());
+  Vector(std::initializer_list<T> il) {
+    printf("%s il %zu\n", __FUNCTION__, il.size());
+    d_.allocate_copy(il.size(), il.begin(), il.end());
   }
-  Vector(const Vector& other) { assign(other); }
-  Vector(Vector&& other) { assign(std::move(other)); }
-  Vector& operator=(const Vector& other) { return assign(other); }
-  Vector& operator=(Vector&& other) { return assign(std::move(other)); }
-  Vector& operator=(std::initializer_list<T> init_list) { return assign(init_list); }
-  Vector& assign(const Vector& other) {
+  Vector(const Vector& other) { d_.allocate_copy(other.size(), other.begin(), other.end()); }
+  Vector(Vector&& other) { d_.swap(other.d_); }
+  Vector& operator=(const Vector& other) {
+    assign(other);
+    return *this;
+  }
+  Vector& operator=(Vector&& other) {
+    assign(std::move(other));
+    return *this;
+  }
+  Vector& operator=(std::initializer_list<T> il) {
+    assign(il);
+    return *this;
+  }
+  void assign(const Vector& other) {
     printf("%s\n", __FUNCTION__);
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      assign_range(other.size(), other.begin(), other.end());
     }
-    assign_range(other.begin(), other.end());
-    return *this;
   }
-  Vector& assign(Vector&& other) {
+  void assign(Vector&& other) {
     printf("%s move\n", __FUNCTION__);
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      d_.release();
+      d_.swap(other.d_);
     }
-
-    d_.release();
-    d_.swap(other.d_);
-
-    return *this;
   }
-  Vector& assign(std::initializer_list<T> init_list) {
-    printf("%s init_list\n", __FUNCTION__);
-    assign_range(init_list.begin(), init_list.end());
-    return *this;
+  void assign(std::initializer_list<T> il) {
+    printf("%s il\n", __FUNCTION__);
+    assign_range(il.size(), il.begin(), il.end());
+  }
+  template <typename II>
+  void assign(II first, II last) {
+    printf("%s range\n", __FUNCTION__);
+    assign_range(std::distance(first, last), first, last);
   }
 
   allocator_type get_allocator() const { return d_.get_allocator(); }
@@ -215,11 +222,11 @@ class Vector {
   iterator insert(size_type idx, const T& v) { return emplace(begin() + idx, v); }
   iterator insert(const_iterator before, T&& v) { return emplace(before, std::move(v)); }
   iterator insert(size_type idx, T&& v) { return emplace(begin() + idx, std::move(v)); }
-  iterator insert(const_iterator before, std::initializer_list<T> init_list) {
-    return insert(before, init_list.begin(), init_list.end());
+  iterator insert(const_iterator before, std::initializer_list<T> il) {
+    return insert(before, il.begin(), il.end());
   }
-  iterator insert(size_type idx, std::initializer_list<T> init_list) {
-    return insert(begin() + idx, init_list.begin(), init_list.end());
+  iterator insert(size_type idx, std::initializer_list<T> il) {
+    return insert(begin() + idx, il.begin(), il.end());
   }
   template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
   iterator insert(const_iterator before, II first, II last) {
@@ -361,8 +368,10 @@ class Vector {
 
  private:
   template <typename II>
-  void assign_range(II first, II last) {
-    size_type count = std::distance(first, last);
+  void assign_range(size_type count, II first, II last) {
+    if (count == 0) {
+      return;
+    }
     if (count < d_.size) {
       erase(begin() + count, end());
     }
