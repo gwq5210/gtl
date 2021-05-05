@@ -96,7 +96,7 @@ class List {
   typedef ptrdiff_t difference_type;
   typedef std::allocator<Node> allocator_type;
 
-  static Node* to_node(ListNode* list_node) { return (Node *)list_node; }
+  static Node* to_node(ListNode* list_node) { return (Node*)list_node; }
   static T& node_value(ListNode* list_node) { return to_node(list_node)->val; }
 
   struct CIterator : public ListIterator {
@@ -164,7 +164,7 @@ class List {
   typedef std::reverse_iterator<iterator> reverse_iterator;
   typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-  List(): dummy_head_(nullptr), size_(0) { init(); }
+  List() : dummy_head_(nullptr), size_(0) { init(); }
   explicit List(size_type count) {
     init();
     insert(begin(), count, T());
@@ -206,16 +206,12 @@ class List {
     return *this;
   }
 
-  void assign(size_type count, const T& v) {
-    insert(begin(), count, v);
-  }
+  void assign(size_type count, const T& v) { insert(begin(), count, v); }
   template <typename II>
   void assign(II first, II last) {
     assign_range(std::distance(first, last), first, last);
   }
-  void assign(std::initializer_list<T> il) {
-    assign_range(il.size(), il.begin(), il.end());
-  }
+  void assign(std::initializer_list<T> il) { assign_range(il.size(), il.begin(), il.end()); }
   void assign(const List& other) {
     if (this != &other) {
       assign_range(other.size(), other.begin(), other.end());
@@ -319,7 +315,7 @@ class List {
     if (count > size_) {
       insert(end(), count - size_, v);
     } else if (count < size_) {
-      auto *it = end();
+      auto* it = end();
       for (int i = 0; i < size_ - count; i++) {
         erase(--it);
       }
@@ -328,27 +324,86 @@ class List {
   void clear() { erase(begin(), end()); }
 
   // operations
-  void merge(List&& other) { merge(std::move(other), std::less()); }
+  void merge(List& other) { merge(other, std::less<>()); }
+  void merge(List&& other) { merge(other, std::less<>()); }
   template <typename Compare>
   void merge(List&& other, Compare comp) {
+    merge(other, comp);
+  }
+  template <typename Compare>
+  void merge(List& other, Compare comp) {
     if (this != &other) {
       auto left = begin();
       auto right = other.begin();
       while (left != end() && right != other.end()) {
         if (comp(*right, *left)) {
-          printf("%d %d\n", *right, *left);
           auto next = right;
-          transfer(left, right, ++next, other);
+          transfer(left, other, right, ++next);
           right = next;
         } else {
           ++left;
         }
       }
       if (right != other.end()) {
-        printf("test\n");
-        transfer(left, right, other.end(), other);
+        transfer(left, other, right, other.end());
       }
     }
+  }
+  void splice(const_iterator before, List& other) {
+    transfer(before, other, other.begin(), other.end());
+  }
+  void splice(const_iterator before, List& other, const_iterator it) {
+    if (before != it) {
+      auto next = it;
+      transfer(before, other, it, ++next);
+    }
+  }
+  void splice(const_iterator before, List& other, const_iterator first, const_iterator last) {
+    transfer(before, other, first, last);
+  }
+  void splice(const_iterator before, List&& other) { splice(before, other); }
+  void splice(const_iterator before, List&& other, const_iterator it) { splice(before, other, it); }
+  void splice(const_iterator before, List&& other, const_iterator first, const_iterator last) {
+    splice(before, other, first, last);
+  }
+  void reverse() {
+    if (size_ <= 1) {
+      return;
+    }
+    auto it = begin();
+    it++;
+    while (it != end()) {
+      auto next = it;
+      transfer(begin(), *this, it, ++next);
+      it = next;
+    }
+  }
+  void sort() { sort(std::less<>()); }
+  template <typename Compare>
+  void sort(Compare comp) {
+    if (size_ <= 1) {
+      return;
+    }
+    List left;
+    List right;
+    auto it = begin();
+    it++;
+    while (it != end()) {
+      if (comp(*it, front())) {
+        auto next = it;
+        left.transfer(left.end(), *this, it, ++next);
+        it = next;
+      } else {
+        it++;
+      }
+    }
+    it = begin();
+    right.transfer(right.begin(), *this, ++it, end());
+    left.sort(comp);
+    right.sort(comp);
+    left.splice(left.end(), *this);
+    left.splice(left.end(), right);
+    *this = std::move(left);
   }
 
  private:
@@ -383,8 +438,11 @@ class List {
       insert(end(), count, v);
     }
   }
-  void transfer(const_iterator before, const_iterator first, const_iterator last, List& other) {
-    if (first != last) {
+  void transfer(const_iterator before, List&& other, const_iterator first, const_iterator last) {
+    transfer(before, other, first, last);
+  }
+  void transfer(const_iterator before, List& other, const_iterator first, const_iterator last) {
+    if (first != last && before != last) {
       size_type count = std::distance(first, last);
       auto* tail = last.node->prev;
       remove_range(first.node, last.node);

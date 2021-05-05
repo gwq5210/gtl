@@ -43,4 +43,14 @@ TEST(list_test, operations_test) {
     printf("%d,", v);
   }
   printf("\n");
+  list.reverse();
+  for (auto v: list) {
+    printf("%d,", v);
+  }
+  printf("\n");
+  list.sort();
+  for (auto v: list) {
+    printf("%d,", v);
+  }
+  printf("\n");
 }
