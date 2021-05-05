@@ -96,7 +96,7 @@ class List {
   typedef ptrdiff_t difference_type;
   typedef std::allocator<Node> allocator_type;
 
-  static Node* to_node(ListNode* list_node) { return (Node*)list_node; }
+  static Node* to_node(ListNode* list_node) { return static_cast<Node*>(list_node); }
   static T& node_value(ListNode* list_node) { return to_node(list_node)->val; }
 
   struct CIterator : public ListIterator {
@@ -308,7 +308,7 @@ class List {
     }
     return iterator(last.node);
   }
-  void pop_back() { erase(const_iterator(dummy_head_.prev)); }
+  void pop_back() { erase(const_iterator(dummy_head_->prev)); }
   void pop_front() { erase(begin()); }
   void resize(size_type count) { resize(count, T()); }
   void resize(size_type count, const T& v) {
