@@ -238,12 +238,12 @@ class List {
   iterator end() { return iterator(dummy_head_); };
   const_iterator end() const { return const_iterator(dummy_head_); };
   const_iterator cend() const { return end(); };
-  iterator rbegin() { return reverse_iterator(end()); }
-  iterator rbegin() const { return const_reverse_iterator(end()); }
-  iterator crbegin() const { return rbegin(); }
-  iterator rend() { return reverse_iterator(begin()); }
-  iterator rend() const { return const_reverse_iterator(begin()); }
-  iterator crend() const { return rend(); }
+  reverse_iterator rbegin() { return reverse_iterator(end()); }
+  const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+  const_reverse_iterator crbegin() const { return rbegin(); }
+  reverse_iterator rend() { return reverse_iterator(begin()); }
+  const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
+  const_reverse_iterator crend() const { return rend(); }
 
   // capacity
   bool empty() const { return size_ == 0; }
@@ -255,9 +255,9 @@ class List {
     while (count--) {
       before = emplace(before, v);
     }
-    return before;
+    return iterator(before.node);
   }
-  template <typename II>
+  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
   iterator insert(const_iterator before, II first, II last) {
     while (first != last) {
       emplace(before, *first++);

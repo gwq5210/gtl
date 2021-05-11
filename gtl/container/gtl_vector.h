@@ -16,6 +16,8 @@ struct Storage : public Allocator {
     allocate(n);
     printf("allocate %zu %zu %p\n", n, capacity(), begin);
   }
+  Storage(const Storage& other) = delete;
+  Storage& operator=(const Storage& other) = delete;
   ~Storage() { release(); }
   SizeType capacity() const { return SizeType(end - begin); }
   bool full(SizeType n) const { return size + n > capacity(); }
@@ -33,6 +35,13 @@ struct Storage : public Allocator {
     begin = Allocator::allocate(n);
     end = begin + n;
   }
+  void allocate_fill_default(SizeType n, SizeType count) {
+    if (n) {
+      allocate(n);
+      std::uninitialized_value_construct_n(begin, count);
+      size = count;
+    }
+  }
   void allocate_fill(SizeType n, SizeType count, const T& v) {
     if (n) {
       allocate(n);
@@ -40,7 +49,7 @@ struct Storage : public Allocator {
       size = count;
     }
   }
-  template <typename II>
+  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
   void allocate_copy(SizeType n, II first, II last) {
     if (n) {
       allocate(n);
@@ -48,7 +57,7 @@ struct Storage : public Allocator {
       size = std::distance(first, last);
     }
   }
-  template <typename II>
+  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
   void allocate_move(SizeType n, II first, II last) {
     if (n) {
       allocate(n);
@@ -100,7 +109,11 @@ class Vector {
 
   // constructor
   Vector() = default;
-  explicit Vector(size_type size, const T& v = T()) {
+  explicit Vector(size_type size) {
+    printf("%s\n", __FUNCTION__);
+    d_.allocate_fill_default(size, size);
+  }
+  Vector(size_type size, const T& v) {
     printf("%s\n", __FUNCTION__);
     d_.allocate_fill(size, size, v);
   }
