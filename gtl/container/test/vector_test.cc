@@ -1,20 +1,29 @@
+/**
+ * @file vector_test.cc
+ * @author gwq5210 (gwq5210@qq.com)
+ * @brief vector单元测试
+ * @date 2021-05-15
+ * 
+ * @copyright Copyright (c) 2021. All rights reserved.
+ */
+
 #include <cstdio>
 #include <list>
 #include <vector>
 
 #include "gtest/gtest.h"
 
-#include "gtl_vector.h"
 #include "gtl_list.h"
+#include "gtl_vector.h"
 
-using gtl::Vector;
 using gtl::List;
+using gtl::Vector;
 
 struct Person {
-  Person(const Person& other): id_(other.id_) {
+  Person(const Person& other) : id_(other.id_) {
     // printf("%s %d\n", __FUNCTION__, id_);
   }
-  Person(int id): id_(id) {
+  Person(int id) : id_(id) {
     // printf("%s %d\n", __FUNCTION__, id_);
   }
   int id_;
@@ -29,13 +38,13 @@ void print(Iterator first, Iterator end) {
       printf(",");
     }
     printf("%d", *it);
-    it++;
+    ++it;
   }
   printf("]\n");
 }
 
-template<class T>
-void print(const Vector<T> &vec) {
+template <class T>
+void print(const Vector<T>& vec) {
   printf("(size = %zu, capacity = %zu)", vec.size(), vec.capacity());
   print(vec.begin(), vec.end());
 }
@@ -52,17 +61,17 @@ TEST(vector_test, constructor_assign_iterator_test) {
     EXPECT_EQ(vec_with_size.size(), vec_size);
     EXPECT_EQ(vec_with_size.capacity(), 32);
     EXPECT_EQ(vec_with_size.empty(), false);
-    for (auto v: vec_with_size) {
+    for (auto v : vec_with_size) {
       EXPECT_EQ(v, value);
     }
-    for (int i = 0; i < vec_size; i++) {
+    for (int i = 0; i < vec_size; ++i) {
       EXPECT_EQ(vec_with_size[i], value);
       EXPECT_EQ(vec_with_size.at(i), value);
     }
-    for (auto it = vec_with_size.begin(); it != vec_with_size.end(); it++) {
+    for (auto it = vec_with_size.begin(); it != vec_with_size.end(); ++it) {
       EXPECT_EQ(*it, value);
     }
-    for (auto it = vec_with_size.rbegin(); it != vec_with_size.rend(); it++) {
+    for (auto it = vec_with_size.rbegin(); it != vec_with_size.rend(); ++it) {
       EXPECT_EQ(*it, value);
     }
     EXPECT_EQ(*vec_with_size.begin(), value);
@@ -76,17 +85,17 @@ TEST(vector_test, constructor_assign_iterator_test) {
     EXPECT_EQ(vec_with_size.size(), vec_size);
     EXPECT_EQ(vec_with_size.capacity(), 32);
     EXPECT_EQ(vec_with_size.empty(), false);
-    for (auto v: vec_with_size) {
+    for (auto v : vec_with_size) {
       EXPECT_EQ(v, value);
     }
-    for (int i = 0; i < vec_size; i++) {
+    for (int i = 0; i < vec_size; ++i) {
       EXPECT_EQ(vec_with_size[i], value);
       EXPECT_EQ(vec_with_size.at(i), value);
     }
-    for (auto it = vec_with_size.begin(); it != vec_with_size.end(); it++) {
+    for (auto it = vec_with_size.begin(); it != vec_with_size.end(); ++it) {
       EXPECT_EQ(*it, value);
     }
-    for (auto it = vec_with_size.rbegin(); it != vec_with_size.rend(); it++) {
+    for (auto it = vec_with_size.rbegin(); it != vec_with_size.rend(); ++it) {
       EXPECT_EQ(*it, value);
     }
     EXPECT_EQ(*vec_with_size.begin(), value);
@@ -99,16 +108,16 @@ TEST(vector_test, constructor_assign_iterator_test) {
   EXPECT_EQ(vec_init_list.size(), vec_size);
   EXPECT_EQ(vec_init_list.capacity(), 32);
   EXPECT_EQ(vec_init_list.empty(), false);
-  for (int i = 0; i < vec_size; i++) {
+  for (int i = 0; i < vec_size; ++i) {
     EXPECT_EQ(vec_init_list[i], i);
     EXPECT_EQ(vec_init_list.at(i), i);
   }
   value = 0;
-  for (auto it = vec_init_list.begin(); it != vec_init_list.end(); it++, value++) {
+  for (auto it = vec_init_list.begin(); it != vec_init_list.end(); ++it, ++value) {
     EXPECT_EQ(*it, value);
   }
   value = 16;
-  for (auto it = vec_init_list.rbegin(); it != vec_init_list.rend(); it++, value--) {
+  for (auto it = vec_init_list.rbegin(); it != vec_init_list.rend(); ++it, --value) {
     EXPECT_EQ(*it, value);
   }
   EXPECT_EQ(*vec_init_list.begin(), 0);
@@ -120,16 +129,16 @@ TEST(vector_test, constructor_assign_iterator_test) {
     EXPECT_EQ(vec_assign_init_list.size(), vec_size);
     EXPECT_EQ(vec_assign_init_list.capacity(), 32);
     EXPECT_EQ(vec_assign_init_list.empty(), false);
-    for (int i = 0; i < vec_size; i++) {
+    for (int i = 0; i < vec_size; ++i) {
       EXPECT_EQ(vec_assign_init_list[i], i);
       EXPECT_EQ(vec_assign_init_list.at(i), i);
     }
     value = 0;
-    for (auto it = vec_assign_init_list.begin(); it != vec_assign_init_list.end(); it++, value++) {
+    for (auto it = vec_assign_init_list.begin(); it != vec_assign_init_list.end(); ++it, ++value) {
       EXPECT_EQ(*it, value);
     }
     value = 16;
-    for (auto it = vec_assign_init_list.rbegin(); it != vec_assign_init_list.rend(); it++, value--) {
+    for (auto it = vec_assign_init_list.rbegin(); it != vec_assign_init_list.rend(); ++it, --value) {
       EXPECT_EQ(*it, value);
     }
     EXPECT_EQ(*vec_assign_init_list.begin(), 0);
@@ -143,16 +152,16 @@ TEST(vector_test, constructor_assign_iterator_test) {
     EXPECT_EQ(vec_assign_init_list.size(), vec_size);
     EXPECT_EQ(vec_assign_init_list.capacity(), 32);
     EXPECT_EQ(vec_assign_init_list.empty(), false);
-    for (int i = 0; i < vec_size; i++) {
+    for (int i = 0; i < vec_size; ++i) {
       EXPECT_EQ(vec_assign_init_list[i], i);
       EXPECT_EQ(vec_assign_init_list.at(i), i);
     }
     value = 0;
-    for (auto it = vec_assign_init_list.begin(); it != vec_assign_init_list.end(); it++, value++) {
+    for (auto it = vec_assign_init_list.begin(); it != vec_assign_init_list.end(); ++it, ++value) {
       EXPECT_EQ(*it, value);
     }
     value = 16;
-    for (auto it = vec_assign_init_list.rbegin(); it != vec_assign_init_list.rend(); it++, value--) {
+    for (auto it = vec_assign_init_list.rbegin(); it != vec_assign_init_list.rend(); ++it, --value) {
       EXPECT_EQ(*it, value);
     }
     EXPECT_EQ(*vec_assign_init_list.begin(), 0);
@@ -164,7 +173,7 @@ TEST(vector_test, constructor_assign_iterator_test) {
   EXPECT_EQ(vec_range.size(), vec_size);
   EXPECT_EQ(vec_range.capacity(), 32);
   EXPECT_EQ(vec_range.empty(), false);
-  for (int i = 0; i < vec_size; i++) {
+  for (int i = 0; i < vec_size; ++i) {
     EXPECT_EQ(vec_range[i], i);
   }
 
@@ -172,7 +181,7 @@ TEST(vector_test, constructor_assign_iterator_test) {
   EXPECT_EQ(vec_copy.size(), vec_size);
   EXPECT_EQ(vec_copy.capacity(), 32);
   EXPECT_EQ(vec_copy.empty(), false);
-  for (int i = 0; i < vec_size; i++) {
+  for (int i = 0; i < vec_size; ++i) {
     EXPECT_EQ(vec_copy[i], i);
   }
 
@@ -181,7 +190,7 @@ TEST(vector_test, constructor_assign_iterator_test) {
     EXPECT_EQ(vec_assign.size(), vec_size);
     EXPECT_EQ(vec_assign.capacity(), 32);
     EXPECT_EQ(vec_assign.empty(), false);
-    for (int i = 0; i < vec_size; i++) {
+    for (int i = 0; i < vec_size; ++i) {
       EXPECT_EQ(vec_assign[i], i);
     }
   }
@@ -192,7 +201,7 @@ TEST(vector_test, constructor_assign_iterator_test) {
     EXPECT_EQ(vec_assign.size(), vec_size);
     EXPECT_EQ(vec_assign.capacity(), 32);
     EXPECT_EQ(vec_assign.empty(), false);
-    for (int i = 0; i < vec_size; i++) {
+    for (int i = 0; i < vec_size; ++i) {
       EXPECT_EQ(vec_assign[i], i);
     }
   }
@@ -201,7 +210,7 @@ TEST(vector_test, constructor_assign_iterator_test) {
   EXPECT_EQ(vec_move.size(), vec_size);
   EXPECT_EQ(vec_move.capacity(), 32);
   EXPECT_EQ(vec_move.empty(), false);
-  for (int i = 0; i < vec_size; i++) {
+  for (int i = 0; i < vec_size; ++i) {
     EXPECT_EQ(vec_move[i], i);
   }
   EXPECT_EQ(vec_init_list.size(), 0);
@@ -213,7 +222,7 @@ TEST(vector_test, constructor_assign_iterator_test) {
   EXPECT_EQ(vec_move2.size(), vec_size);
   EXPECT_EQ(vec_move2.capacity(), 32);
   EXPECT_EQ(vec_move2.empty(), false);
-  for (int i = 0; i < vec_size; i++) {
+  for (int i = 0; i < vec_size; ++i) {
     EXPECT_EQ(vec_move2[i], i);
   }
   EXPECT_EQ(vec_move.size(), 0);
@@ -240,25 +249,25 @@ TEST(vector_test, modifiers_iterators_test) {
   EXPECT_EQ(vec.capacity(), 64);
   vec.reserve(65);
   EXPECT_EQ(vec.capacity(), 128);
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     vec.push_back(i);
     EXPECT_EQ(vec.back(), i);
   }
   int i = 0;
-  for (auto it = vec.begin(); it != vec.end(); it++, i++) {
+  for (auto it = vec.begin(); it != vec.end(); ++it, ++i) {
     EXPECT_EQ(*it, i);
   }
   i = n - 1;
-  for (auto it = vec.rbegin(); it != vec.rend(); it++, i--) {
+  for (auto it = vec.rbegin(); it != vec.rend(); ++it, --i) {
     EXPECT_EQ(*it, i);
   }
   EXPECT_EQ(vec.size(), n);
   EXPECT_EQ(vec.empty(), false);
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     vec.emplace(vec.begin(), i);
     EXPECT_EQ(vec.front(), i);
   }
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     vec.insert(vec.begin() + i / 2, i);
     EXPECT_EQ(vec[i / 2], i);
   }
@@ -277,7 +286,7 @@ TEST(vector_test, modifiers_iterators_test) {
   Vector<int> new_vec(vec.begin(), vec.begin() + n);
 
   new_vec.insert(new_vec.begin() + n / 2, n, 100);
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     EXPECT_EQ(new_vec[i + n / 2], 100);
   }
   EXPECT_EQ(2 * n, new_vec.size());
@@ -288,23 +297,23 @@ TEST(vector_test, modifiers_iterators_test) {
   EXPECT_EQ(true, vec.empty());
 
   new_vec.insert_safe(new_vec.begin(), new_vec.begin(), new_vec.end());
-  for (size_t i = 0; i < new_vec.size() / 2; i++) {
+  for (size_t i = 0; i < new_vec.size() / 2; ++i) {
     EXPECT_EQ(new_vec[i], new_vec[i + new_vec.size() / 2]);
   }
   auto vec_copy = new_vec;
   new_vec.insert_safe(new_vec.begin() + new_vec.size() / 2, new_vec.begin(), new_vec.end());
-  for (size_t i = 0; i < vec_copy.size(); i++) {
+  for (size_t i = 0; i < vec_copy.size(); ++i) {
     EXPECT_EQ(vec_copy[i], new_vec[vec_copy.size() / 2 + i]);
   }
 
   Vector<Person> persons;
   persons.reserve(n);
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     persons.emplace_back(i);
   }
   printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
   persons.insert_safe(persons.begin(), persons.begin(), persons.end());
-  for (size_t i = 0; i < persons.size() / 2; i++) {
+  for (size_t i = 0; i < persons.size() / 2; ++i) {
     EXPECT_EQ(persons[i].id_, i);
     EXPECT_EQ(persons[i].id_, persons[i + persons.size() / 2].id_);
   }

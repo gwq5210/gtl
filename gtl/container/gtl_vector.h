@@ -1,3 +1,12 @@
+/**
+ * @file gtl_vector.h
+ * @author gwq5210 (gwq5210@qq.com)
+ * @brief vector的实现
+ * @date 2021-05-15
+ * 
+ * @copyright Copyright (c) 2021. All rights reserved.
+ */
+
 #pragma once
 
 #include "gtl_memory.h"
@@ -228,19 +237,13 @@ class Vector {
     }
     return begin() + insert_pos;
   }
-  iterator insert(size_type idx, size_type count, const T& v) {
-    return insert(begin() + idx, count, v);
-  }
+  iterator insert(size_type idx, size_type count, const T& v) { return insert(begin() + idx, count, v); }
   iterator insert(const_iterator before, const T& v) { return emplace(before, v); }
   iterator insert(size_type idx, const T& v) { return emplace(begin() + idx, v); }
   iterator insert(const_iterator before, T&& v) { return emplace(before, std::move(v)); }
   iterator insert(size_type idx, T&& v) { return emplace(begin() + idx, std::move(v)); }
-  iterator insert(const_iterator before, std::initializer_list<T> il) {
-    return insert(before, il.begin(), il.end());
-  }
-  iterator insert(size_type idx, std::initializer_list<T> il) {
-    return insert(begin() + idx, il.begin(), il.end());
-  }
+  iterator insert(const_iterator before, std::initializer_list<T> il) { return insert(before, il.begin(), il.end()); }
+  iterator insert(size_type idx, std::initializer_list<T> il) { return insert(begin() + idx, il.begin(), il.end()); }
   template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
   iterator insert(const_iterator before, II first, II last) {
     size_type count = std::distance(first, last);
@@ -305,13 +308,13 @@ class Vector {
         T tmp(std::forward<Args>(args)...);
         *(begin() + insert_pos) = std::move(tmp);
       }
-      d_.size++;
+      ++d_.size;
     } else {
       Storage new_storage;
       new_storage.allocate_move(d_.size + 1, begin(), begin() + insert_pos);
       T tmp(std::forward<Args>(args)...);
       *(new_storage.begin + new_storage.size) = std::move(tmp);
-      new_storage.size++;
+      ++new_storage.size;
       if (!at_end) {
         std::uninitialized_move(begin() + insert_pos, end(), new_storage.begin + new_storage.size);
         new_storage.size += end() - (begin() + insert_pos);
@@ -396,12 +399,45 @@ class Vector {
     }
     Storage new_storage;
     new_storage.allocate_move(new_capacity, begin(), end());
-    printf("grow capacity new capacity: %zu/%zu, ptr: %p/%p\n", capacity(), new_storage.capacity(),
-           new_storage.begin, d_.begin);
+    printf("grow capacity new capacity: %zu/%zu, ptr: %p/%p\n", capacity(), new_storage.capacity(), new_storage.begin,
+           d_.begin);
     d_.swap(new_storage);
   }
 
   Storage d_;
 };
+
+template <typename T>
+using vector = Vector<T>;
+
+template <typename T>
+bool operator==(const Vector<T>& lhs, const Vector<T>& rhs) {
+  return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+template <typename T>
+bool operator!=(const Vector<T>& lhs, const Vector<T>& rhs) {
+  return !(lhs != rhs);
+}
+
+template <typename T>
+bool operator<(const Vector<T>& lhs, const Vector<T>& rhs) {
+  return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+}
+
+template <typename T>
+bool operator>(const Vector<T>& lhs, const Vector<T>& rhs) {
+  return rhs < lhs;
+}
+
+template <typename T>
+bool operator<=(const Vector<T>& lhs, const Vector<T>& rhs) {
+  return !(lhs > rhs);
+}
+
+template <typename T>
+bool operator>=(const Vector<T>& lhs, const Vector<T>& rhs) {
+  return !(lhs < rhs);
+}
 
 }  // namespace gtl

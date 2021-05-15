@@ -1,3 +1,12 @@
+/**
+ * @file gtl_list.h
+ * @author gwq5210 (gwq5210@qq.com)
+ * @brief 双向链表的实现
+ * @date 2021-05-15
+ *
+ * @copyright Copyright (c) 2021. All rights reserved.
+ */
+
 #pragma once
 
 #include "gtl_memory.h"
@@ -26,7 +35,7 @@ struct ListIterator {
     return *this;
   }
   Self operator++(int) {
-    auto* ret = node;
+    ListNode* ret = node;
     node = node->next;
     return Self(ret);
   }
@@ -35,7 +44,7 @@ struct ListIterator {
     return *this;
   }
   Self operator--(int) {
-    auto* ret = node;
+    ListNode* ret = node;
     node = node->prev;
     return Self(ret);
   }
@@ -44,14 +53,15 @@ struct ListIterator {
 };
 
 inline ListNode* remove_node(ListNode* curr) {
+  ListNode* next = curr->next;
   curr->prev->next = curr->next;
   curr->next->prev = curr->prev;
   curr->prev = nullptr;
   curr->next = nullptr;
-  return curr;
+  return next;
 }
 
-inline ListNode* insert_node(ListNode* before, ListNode* node) {
+inline ListNode* insert_node_before(ListNode* before, ListNode* node) {
   node->next = before;
   node->prev = before->prev;
   before->prev->next = node;
@@ -59,16 +69,31 @@ inline ListNode* insert_node(ListNode* before, ListNode* node) {
   return node;
 }
 
+/**
+ * @brief 移除[first, last]之间的节点
+ *
+ * @param first 移除的起始节点，包含该节点
+ * @param last 移除的结束节点，包含该节点
+ * @return ListNode* 返回移除区间的后一个节点，即last->next节点
+ */
 inline ListNode* remove_range(ListNode* first, ListNode* last) {
-  last = last->prev;
+  ListNode* next = last->next;
   first->prev->next = last->next;
   last->next->prev = first->prev;
   first->prev = nullptr;
   last->next = nullptr;
-  return first;
+  return next;
 }
 
-inline ListNode* insert_range(ListNode* before, ListNode* first, ListNode* last) {
+/**
+ * @brief 将[first, last]之间的节点插入到before节点前
+ *
+ * @param before 需要插入的位置，在该节点之前插入
+ * @param first 插入区间的起始节点，包含该节点
+ * @param last 插入区间的结束节点，包含该节点
+ * @return ListNode* 返回插入的第一个节点，即first节点
+ */
+inline ListNode* insert_range_before(ListNode* before, ListNode* first, ListNode* last) {
   last->next = before;
   first->prev = before->prev;
   before->prev->next = first;
@@ -106,7 +131,7 @@ class List {
     typedef List::value_type value_type;
     typedef ListIterator BaseType;
     typedef CIterator Self;
-    explicit CIterator(ListNode* node) : BaseType(node) {}
+    explicit CIterator(const ListNode* node) : BaseType(const_cast<ListNode*>(node)) {}
     reference operator*() const { return to_node(node)->val; }
     pointer operator->() const { return &(to_node(node)->val); }
     Self& operator++() {
@@ -218,7 +243,7 @@ class List {
     }
   }
   void assign(List&& other) {
-    erase(begin(), end());
+    clear();
     std::swap(dummy_head_, other.dummy_head_);
     std::swap(size_, other.size_);
   }
@@ -264,14 +289,12 @@ class List {
     }
     return iterator(before.node);
   }
-  iterator insert(const_iterator before, std::initializer_list<T> il) {
-    return insert(before, il.begin(), il.end());
-  }
-  iterator insert(const_iterator before, T&& v) { return emplace(before, v); }
+  iterator insert(const_iterator before, std::initializer_list<T> il) { return insert(before, il.begin(), il.end()); }
+  iterator insert(const_iterator before, T&& v) { return emplace(before, std::move(v)); }
   template <typename... Args>
   iterator emplace(const_iterator before, Args&&... args) {
-    size_++;
-    return iterator(insert_node(before.node, construct_node(std::forward<Args>(args)...)));
+    ++size_;
+    return iterator(insert_node_before(before.node, construct_node(std::forward<Args>(args)...)));
   }
   template <typename... Args>
   iterator emplace_back(Args&&... args) {
@@ -282,25 +305,19 @@ class List {
     return emplace(begin(), std::forward<Args>(args)...);
   }
   iterator push_back(const T& v) { return emplace_back(v); }
-  iterator push_back(T&& v) { return emplace_back(v); }
+  iterator push_back(T&& v) { return emplace_back(std::move(v)); }
   iterator push_front(const T& v) { return emplace_front(v); }
-  iterator push_front(T&& v) { return emplace_front(v); }
+  iterator push_front(T&& v) { return emplace_front(std::move(v)); }
   iterator erase(const_iterator pos) {
-    auto* curr = pos.node;
-    if (pos != end()) {
-      auto* next = curr->next;
-      remove_node(curr);
-      destroy_node(curr);
-      curr = next;
-      size_--;
-    }
-    return iterator(curr);
+    auto it = pos;
+    return erase(pos, ++it);
   }
   iterator erase(const_iterator first, const_iterator last) {
     if (first != last) {
-      auto* node = remove_range(first.node, last.node);
+      ListNode* node = first.node;
+      remove_range(first.node, last.node->prev);
       while (node) {
-        auto* next = node->next;
+        ListNode* next = node->next;
         destroy_node(node);
         node = next;
         size_--;
@@ -315,9 +332,10 @@ class List {
     if (count > size_) {
       insert(end(), count - size_, v);
     } else if (count < size_) {
-      auto* it = end();
-      for (int i = 0; i < size_ - count; i++) {
-        erase(--it);
+      auto it = end();
+      printf("size %zu %zu\n", size_ - count, size_);
+      for (size_type i = size_ - count; i > 0; --i) {
+        it = erase(--it);
       }
     }
   }
@@ -337,21 +355,18 @@ class List {
       auto right = other.begin();
       while (left != end() && right != other.end()) {
         if (comp(*right, *left)) {
-          auto next = right;
-          transfer(left, other, right, ++next);
-          right = next;
+          splice(left, other, right);
+          right = other.begin();
         } else {
           ++left;
         }
       }
       if (right != other.end()) {
-        transfer(left, other, right, other.end());
+        splice(left, other);
       }
     }
   }
-  void splice(const_iterator before, List& other) {
-    transfer(before, other, other.begin(), other.end());
-  }
+  void splice(const_iterator before, List& other) { transfer(before, other, other.begin(), other.end()); }
   void splice(const_iterator before, List& other, const_iterator it) {
     if (before != it) {
       auto next = it;
@@ -371,7 +386,7 @@ class List {
       return;
     }
     auto it = begin();
-    it++;
+    ++it;
     while (it != end()) {
       auto next = it;
       transfer(begin(), *this, it, ++next);
@@ -387,14 +402,14 @@ class List {
     List left;
     List right;
     auto it = begin();
-    it++;
+    ++it;
     while (it != end()) {
       if (comp(*it, front())) {
         auto next = it;
         left.transfer(left.end(), *this, it, ++next);
         it = next;
       } else {
-        it++;
+        ++it;
       }
     }
     it = begin();
@@ -416,11 +431,8 @@ class List {
       auto it = std::copy(first, last, begin());
       erase(it, end());
     } else {
-      auto it = begin();
-      for (int i = 0; i < size_; i++) {
-        *it++ = *first++;
-      }
-      insert(end(), first, last);
+      std::copy_n(first, size_, begin());
+      insert(end(), std::next(first, size_), last);
     }
   }
   void assign_n(size_type count, const T& v) {
@@ -431,11 +443,8 @@ class List {
       auto it = std::fill_n(begin(), count, v);
       erase(it, end());
     } else {
-      auto it = begin();
-      for (int i = 0; i < size_; i++) {
-        *it++ = v;
-      }
-      insert(end(), count, v);
+      auto it = std::fill_n(begin(), size_, v);
+      insert(it, count, v);
     }
   }
   void transfer(const_iterator before, List&& other, const_iterator first, const_iterator last) {
@@ -443,13 +452,15 @@ class List {
   }
   void transfer(const_iterator before, List& other, const_iterator first, const_iterator last) {
     if (first != last && before != last) {
-      size_type count = std::distance(first, last);
-      auto* tail = last.node->prev;
-      remove_range(first.node, last.node);
-      insert_range(before.node, first.node, tail);
-      if (this != &other) {
-        other.size_ -= count;
-        size_ += count;
+      ListNode* node = first.node;
+      while (node != last.node) {
+        ListNode* next = remove_node(node);
+        insert_node_before(before.node, node);
+        if (this != &other) {
+          --other.size_;
+          ++size_;
+        }
+        node = next;
       }
     }
   }
@@ -465,20 +476,52 @@ class List {
   }
 
   void init() {
-    dummy_head_ = allocator_.allocate(1);
+    dummy_head_ = new ListNode();
     dummy_head_->next = dummy_head_;
     dummy_head_->prev = dummy_head_;
     size_ = 0;
   }
   void destroy_list() {
-    erase(begin(), end());
-    allocator_.deallocate(dummy_head_, 1);
+    clear();
+    delete dummy_head_;
     dummy_head_ = nullptr;
-    size_ = 0;
   }
-  Node* dummy_head_;
+  ListNode* dummy_head_;
   size_type size_;
   allocator_type allocator_;
 };
+
+template <typename T>
+using list = List<T>;
+
+template <typename T>
+bool operator==(const List<T>& lhs, const List<T>& rhs) {
+  return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+template <typename T>
+bool operator!=(const List<T>& lhs, const List<T>& rhs) {
+  return !(lhs != rhs);
+}
+
+template <typename T>
+bool operator<(const List<T>& lhs, const List<T>& rhs) {
+  return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+}
+
+template <typename T>
+bool operator>(const List<T>& lhs, const List<T>& rhs) {
+  return rhs < lhs;
+}
+
+template <typename T>
+bool operator<=(const List<T>& lhs, const List<T>& rhs) {
+  return !(lhs > rhs);
+}
+
+template <typename T>
+bool operator>=(const List<T>& lhs, const List<T>& rhs) {
+  return !(lhs < rhs);
+}
 
 }  // namespace gtl
