@@ -20,13 +20,17 @@ using gtl::List;
 using gtl::Vector;
 
 struct Person {
-  Person(const Person& other) : id_(other.id_) {
-    // printf("%s %d\n", __FUNCTION__, id_);
+  Person(const Person& other) : id(other.id) {
+    // printf("%s %d\n", __FUNCTION__, id);
   }
-  Person(int id) : id_(id) {
-    // printf("%s %d\n", __FUNCTION__, id_);
+  Person(int i) : id(i) {
+    // printf("%s %d\n", __FUNCTION__, id);
   }
-  int id_;
+  ~Person() {
+    // printf("%d\n", id);
+    id = 0;
+  }
+  int id;
 };
 
 template <class Iterator>
@@ -306,6 +310,24 @@ TEST(vector_test, modifiers_iterators_test) {
     EXPECT_EQ(vec_copy[i], new_vec[vec_copy.size() / 2 + i]);
   }
 
+  Vector<Person> erase_vec;
+  for (int i = 0; i < n; ++i) {
+    erase_vec.emplace_back(i);
+  }
+  printf("erase one end\n");
+  erase_vec.erase(erase_vec.begin() + 2);
+  EXPECT_EQ(erase_vec.size(), n - 1);
+  for (size_t i = 0; i < erase_vec.size(); ++i) {
+    EXPECT_EQ(erase_vec[i].id, i >= 2 ? i + 1 : i);
+  }
+  printf("erase one end\n");
+  erase_vec.erase(erase_vec.begin() + 2, erase_vec.begin() + 12);
+  EXPECT_EQ(erase_vec.size(), n - 11);
+  for (size_t i = 0; i < erase_vec.size(); ++i) {
+    EXPECT_EQ(erase_vec[i].id, i >= 2 ? i + 11 : i);
+  }
+  printf("erase range end\n");
+
   Vector<Person> persons;
   persons.reserve(n);
   for (int i = 0; i < n; ++i) {
@@ -314,8 +336,8 @@ TEST(vector_test, modifiers_iterators_test) {
   printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
   persons.insert_safe(persons.begin(), persons.begin(), persons.end());
   for (size_t i = 0; i < persons.size() / 2; ++i) {
-    EXPECT_EQ(persons[i].id_, i);
-    EXPECT_EQ(persons[i].id_, persons[i + persons.size() / 2].id_);
+    EXPECT_EQ(persons[i].id, i);
+    EXPECT_EQ(persons[i].id, persons[i + persons.size() / 2].id);
   }
   printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
 }

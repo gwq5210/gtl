@@ -448,7 +448,7 @@ class SList {
   SListNode* dummy_head_;
   size_type size_;
   allocator_type allocator_;
-};
+};  // class SList
 
 template <typename T>
 using forward_list = SList<T>;

@@ -9,95 +9,14 @@
 
 #pragma once
 
-#include "gtl_memory.h"
-
 #include <algorithm>
 #include <iterator>
 #include <type_traits>
 
-namespace gtl {
+#include "gtl_memory.h"
+#include "gtl_storage.h"
 
-template <typename T, typename SizeType = ptrdiff_t, typename Allocator = std::allocator<T>>
-struct Storage : public Allocator {
-  static constexpr SizeType min_capacity = 16;
-  Storage() : begin(nullptr), end(nullptr), size(0) {}
-  Storage(SizeType n) : size(0) {
-    allocate(n);
-    printf("allocate %zu %zu %p\n", n, capacity(), begin);
-  }
-  Storage(const Storage& other) = delete;
-  Storage& operator=(const Storage& other) = delete;
-  ~Storage() { release(); }
-  SizeType capacity() const { return SizeType(end - begin); }
-  bool full(SizeType n) const { return size + n > capacity(); }
-  SizeType next_capacity(SizeType new_size) {
-    SizeType next_cap = 1;
-    while (next_cap < new_size) {
-      next_cap <<= 1;
-    }
-    next_cap = std::max(next_cap, min_capacity);
-    printf("next_cap %zu %zu\n", new_size, next_cap);
-    return next_cap;
-  }
-  void allocate(SizeType n) {
-    n = next_capacity(n);
-    begin = Allocator::allocate(n);
-    end = begin + n;
-  }
-  void allocate_fill_default(SizeType n, SizeType count) {
-    if (n) {
-      allocate(n);
-      std::uninitialized_value_construct_n(begin, count);
-      size = count;
-    }
-  }
-  void allocate_fill(SizeType n, SizeType count, const T& v) {
-    if (n) {
-      allocate(n);
-      std::uninitialized_fill_n(begin, count, v);
-      size = count;
-    }
-  }
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  void allocate_copy(SizeType n, II first, II last) {
-    if (n) {
-      allocate(n);
-      std::uninitialized_copy(first, last, begin);
-      size = std::distance(first, last);
-    }
-  }
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  void allocate_move(SizeType n, II first, II last) {
-    if (n) {
-      allocate(n);
-      std::uninitialized_move(first, last, begin);
-      size = std::distance(first, last);
-    }
-  }
-  void release() {
-    if (begin) {
-      std::destroy(begin, begin + size);
-      // printf("deallocate %zu %p\n", end - begin, begin);
-      Allocator::deallocate(begin, end - begin);
-      begin = end = nullptr;
-    }
-    size = 0;
-  }
-  void swap(Storage& other) {
-    std::swap(begin, other.begin);
-    std::swap(end, other.end);
-    std::swap(size, other.size);
-  }
-  void init() {
-    begin = nullptr;
-    end = nullptr;
-    size = 0;
-  }
-  Allocator get_allocator() const { return *this; }
-  T* begin;
-  T* end;
-  SizeType size;
-};
+namespace gtl {
 
 template <typename T>
 class Vector {
@@ -114,28 +33,30 @@ class Vector {
   typedef size_t size_type;
   typedef ptrdiff_t difference_type;
   typedef std::allocator<T> allocator_type;
-  typedef gtl::Storage<T, size_type, allocator_type> Storage;
+  typedef gtl::Storage<T, allocator_type> Storage;
 
   // constructor
   Vector() = default;
-  explicit Vector(size_type size) {
+  explicit Vector(size_type size) : d_(size) {
     printf("%s\n", __FUNCTION__);
-    d_.allocate_fill_default(size, size);
+    d_.unsafe_append_value_construct(size);
   }
-  Vector(size_type size, const T& v) {
+  Vector(size_type size, const T& v) : d_(size) {
     printf("%s\n", __FUNCTION__);
-    d_.allocate_fill(size, size, v);
+    d_.unsafe_append_fill(size, v);
   }
   template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
   Vector(II first, II last) {
     printf("%s range\n", __FUNCTION__);
-    d_.allocate_copy(std::distance(first, last), first, last);
+    size_type count = std::distance(first, last);
+    d_.allocate(count);
+    d_.unsafe_append_copy(first, last, count);
   }
-  Vector(std::initializer_list<T> il) {
+  Vector(std::initializer_list<T> il) : d_(il.size()){
     printf("%s il %zu\n", __FUNCTION__, il.size());
-    d_.allocate_copy(il.size(), il.begin(), il.end());
+    d_.unsafe_append_copy(il.begin(), il.end(), il.size());
   }
-  Vector(const Vector& other) { d_.allocate_copy(other.size(), other.begin(), other.end()); }
+  Vector(const Vector& other) : d_(other.size()) { d_.unsafe_append_copy(other.begin(), other.end(), other.size()); }
   Vector(Vector&& other) { d_.swap(other.d_); }
   Vector& operator=(const Vector& other) {
     assign(other);
@@ -183,8 +104,8 @@ class Vector {
   const T& back() const { return *(end() - 1); }
   T& operator[](size_type i) { return *(begin() + i); }
   const T& operator[](size_type i) const { return *(begin() + i); }
-  T* data() { return d_.begin; }
-  const T* data() const { return d_.begin; }
+  T* data() { return d_.begin(); }
+  const T* data() const { return d_.begin(); }
 
   // iterators
   iterator begin() { return data(); }
@@ -202,7 +123,7 @@ class Vector {
 
   // capacity
   size_type capacity() const { return d_.capacity(); }
-  size_type size() const { return d_.size; }
+  size_type size() const { return d_.size(); }
   bool empty() const { return size() == 0; }
   void reserve(size_type new_capacity) { grow(new_capacity); }
 
@@ -225,14 +146,12 @@ class Vector {
         std::fill_n(begin() + insert_pos, n, v);
         std::uninitialized_fill_n(end(), count - n, v);
       }
-      d_.size += count;
+      d_.size_ += count;
     } else {
-      Storage new_storage;
-      new_storage.allocate_move(d_.size + count, begin(), end() - n);
-      std::uninitialized_fill_n(new_storage.begin + new_storage.size, count, v);
-      new_storage.size += count;
-      std::uninitialized_move(end() - n, end(), new_storage.begin + new_storage.size);
-      new_storage.size += n;
+      Storage new_storage(size() + count);
+      new_storage.unsafe_append_move(begin(), end() - n);
+      new_storage.unsafe_append_fill(count, v);
+      new_storage.unsafe_append_move(end() - n, end());
       d_.swap(new_storage);
     }
     return begin() + insert_pos;
@@ -262,14 +181,12 @@ class Vector {
         std::copy(first, first + n, begin() + insert_pos);
         std::uninitialized_copy(first + n, last, end());
       }
-      d_.size += count;
+      d_.size_ += count;
     } else {
-      Storage new_storage;
-      new_storage.allocate_move(d_.size + count, begin(), end() - n);
-      std::uninitialized_copy(first, last, new_storage.begin + new_storage.size);
-      new_storage.size += count;
-      std::uninitialized_move(end() - n, end(), new_storage.begin + new_storage.size);
-      new_storage.size += n;
+      Storage new_storage(size() + count);
+      new_storage.unsafe_append_move(begin(), end() - n);
+      new_storage.unsafe_append_copy(first, last);
+      new_storage.unsafe_append_move(end() - n, end());
       d_.swap(new_storage);
     }
     return begin() + insert_pos;
@@ -284,17 +201,11 @@ class Vector {
     return insert(begin() + idx, first, last);
   }
   void pop_back() { erase(end() - 1); }
-  void remove_at(size_type idx) { erase(begin() + idx); }
-  void erase(size_type idx) { erase(begin() + idx); }
-  void erase(size_type first, size_type last) { erase(begin() + first, begin() + last); }
-  void erase(const_iterator pos) { erase(pos, pos + 1); }
-  void erase(const_iterator first, const_iterator last) {
-    if (first != last) {
-      std::move(last, cend(), iterator(first));
-      std::destroy(iterator(last), end());
-      d_.size -= last - first;
-    }
-  }
+  iterator remove_at(size_type idx) { return erase(begin() + idx); }
+  iterator erase(size_type idx) { return erase(begin() + idx); }
+  iterator erase(size_type first, size_type last) { return erase(begin() + first, begin() + last); }
+  iterator erase(const_iterator pos) { return erase(pos, pos + 1); }
+  iterator erase(const_iterator first, const_iterator last) { return d_.erase(first, last); }
   template <typename... Args>
   iterator emplace(const_iterator before, Args&&... args) {
     size_type insert_pos = before - begin();
@@ -308,16 +219,13 @@ class Vector {
         T tmp(std::forward<Args>(args)...);
         *(begin() + insert_pos) = std::move(tmp);
       }
-      ++d_.size;
+      ++d_.size_;
     } else {
-      Storage new_storage;
-      new_storage.allocate_move(d_.size + 1, begin(), begin() + insert_pos);
-      T tmp(std::forward<Args>(args)...);
-      *(new_storage.begin + new_storage.size) = std::move(tmp);
-      ++new_storage.size;
+      Storage new_storage(size() + 1);
+      new_storage.unsafe_append_move(begin(), begin() + insert_pos);
+      new_storage.unsafe_append(std::forward<Args>(args)...);
       if (!at_end) {
-        std::uninitialized_move(begin() + insert_pos, end(), new_storage.begin + new_storage.size);
-        new_storage.size += end() - (begin() + insert_pos);
+        new_storage.unsafe_append_move(begin() + insert_pos, end());
       }
       d_.swap(new_storage);
     }
@@ -344,7 +252,7 @@ class Vector {
     *iterator(pos) = std::move(tmp);
     return iterator(pos);
   }
-  template <typename II>
+  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
   iterator replace(const_iterator pos, II first, II last) {
     size_type n = cend() - pos;
     size_type count = std::distance(first, last);
@@ -358,20 +266,19 @@ class Vector {
     } else if (!d_.full(count - n)) {
       std::copy(first, first + n, iterator(pos));
       std::uninitialized_copy(first + n, last, end());
-      d_.size += count - n;
+      d_.size_ += count - n;
     } else {
-      Storage new_storage;
-      new_storage.allocate_move(d_.size + count - n, begin(), iterator(pos));
-      std::uninitialized_copy(first, last, d_.begin + d_.size);
-      new_storage.size += count;
+      Storage new_storage(size() + count - n);
+      new_storage.unsafe_append_move(begin(), iterator(pos));
+      new_storage.unsafe_append_copy(first, last, count);
       d_.swap(new_storage);
     }
     return end() - n;
   }
   void resize(size_type new_size, const T& v = T()) {
-    if (new_size > d_.size) {
-      insert(end(), new_size - d_.size, v);
-    } else if (new_size < d_.size) {
+    if (new_size > size()) {
+      insert(end(), new_size - size(), v);
+    } else if (new_size < size()) {
       erase(begin() + new_size, end());
     }
   }
@@ -388,7 +295,7 @@ class Vector {
     if (count == 0) {
       return;
     }
-    if (count < d_.size) {
+    if (count < size()) {
       erase(begin() + count, end());
     }
     replace(begin(), first, last);
@@ -397,15 +304,15 @@ class Vector {
     if (capacity() >= new_capacity) {
       return;
     }
-    Storage new_storage;
-    new_storage.allocate_move(new_capacity, begin(), end());
-    printf("grow capacity new capacity: %zu/%zu, ptr: %p/%p\n", capacity(), new_storage.capacity(), new_storage.begin,
-           d_.begin);
+    Storage new_storage(new_capacity);
+    new_storage.unsafe_append_move(begin(), end());
+    printf("grow capacity new capacity: %zu/%zu, ptr: %p/%p\n", capacity(), new_storage.capacity(), new_storage.begin(),
+           d_.begin());
     d_.swap(new_storage);
   }
 
   Storage d_;
-};
+};  // class Vector
 
 template <typename T>
 using vector = Vector<T>;

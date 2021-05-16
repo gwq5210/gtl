@@ -489,7 +489,7 @@ class List {
   ListNode* dummy_head_;
   size_type size_;
   allocator_type allocator_;
-};
+};  // class List
 
 template <typename T>
 using list = List<T>;
