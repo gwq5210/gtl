@@ -21,19 +21,19 @@ namespace gtl {
 template <typename T>
 class Vector {
  public:
-  typedef T value_type;
-  typedef T& reference;
-  typedef const T& const_reference;
-  typedef T* pointer;
-  typedef const T* const_pointer;
-  typedef T* iterator;
-  typedef const T* const_iterator;
-  typedef std::reverse_iterator<iterator> reverse_iterator;
-  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
-  typedef std::allocator<T> allocator_type;
-  typedef gtl::Storage<T, allocator_type> Storage;
+  using StorageType = Storage<T>;
+  using value_type = StorageType::value_type;
+  using reference = StorageType::reference;
+  using const_reference = StorageType::const_reference;
+  using pointer = StorageType::pointer;
+  using const_pointer = StorageType::const_pointer;
+  using iterator = StorageType::iterator;
+  using const_iterator = StorageType::const_iterator;
+  using reverse_iterator = StorageType::reverse_iterator;
+  using const_reverse_iterator = StorageType::const_reverse_iterator;
+  using size_type = StorageType::size_type;
+  using difference_type = StorageType::difference_type;
+  using allocator_type = StorageType::allocator_type;
 
   // constructor
   Vector() = default;
@@ -96,16 +96,16 @@ class Vector {
   allocator_type get_allocator() const { return d_.get_allocator(); }
 
   // Element access
-  T& at(size_type i) { return *(begin() + i); }
-  const T& at(size_type i) const { return *(begin() + i); }
-  T& front() { return *begin(); }
-  const T& front() const { return *begin(); }
-  T& back() { return *(end() - 1); }
-  const T& back() const { return *(end() - 1); }
-  T& operator[](size_type i) { return *(begin() + i); }
-  const T& operator[](size_type i) const { return *(begin() + i); }
-  T* data() { return d_.begin(); }
-  const T* data() const { return d_.begin(); }
+  reference at(size_type i) { return d_.at(i); }
+  const_reference at(size_type i) const { return d_.at(i); }
+  reference front() { return d_.front(); }
+  const_reference front() const { return d_.front(); }
+  reference back() { return d_.back(); }
+  const_reference back() const { return d_.back(); }
+  reference operator[](size_type i) { return d_[i]; }
+  const_reference operator[](size_type i) const { return d_[i]; }
+  pointer data() { return d_.data(); }
+  const_pointer data() const { return d_.data(); }
 
   // Iterators
   iterator begin() { return data(); }
@@ -148,7 +148,7 @@ class Vector {
       }
       d_.size_ += count;
     } else {
-      Storage new_storage(size() + count);
+      StorageType new_storage(size() + count);
       new_storage.unsafe_append_move(begin(), end() - n);
       new_storage.unsafe_append_fill(count, v);
       new_storage.unsafe_append_move(end() - n, end());
@@ -183,7 +183,7 @@ class Vector {
       }
       d_.size_ += count;
     } else {
-      Storage new_storage(size() + count);
+      StorageType new_storage(size() + count);
       new_storage.unsafe_append_move(begin(), end() - n);
       new_storage.unsafe_append_copy(first, last);
       new_storage.unsafe_append_move(end() - n, end());
@@ -221,7 +221,7 @@ class Vector {
       }
       ++d_.size_;
     } else {
-      Storage new_storage(size() + 1);
+      StorageType new_storage(size() + 1);
       new_storage.unsafe_append_move(begin(), begin() + insert_pos);
       new_storage.unsafe_append(std::forward<Args>(args)...);
       if (!at_end) {
@@ -268,7 +268,7 @@ class Vector {
       std::uninitialized_copy(first + n, last, end());
       d_.size_ += count - n;
     } else {
-      Storage new_storage(size() + count - n);
+      StorageType new_storage(size() + count - n);
       new_storage.unsafe_append_move(begin(), iterator(pos));
       new_storage.unsafe_append_copy(first, last, count);
       d_.swap(new_storage);
@@ -304,14 +304,14 @@ class Vector {
     if (capacity() >= new_capacity) {
       return;
     }
-    Storage new_storage(new_capacity);
+    StorageType new_storage(new_capacity);
     new_storage.unsafe_append_move(begin(), end());
     printf("grow capacity new capacity: %zu/%zu, ptr: %p/%p\n", capacity(), new_storage.capacity(), new_storage.begin(),
            d_.begin());
     d_.swap(new_storage);
   }
 
-  Storage d_;
+  StorageType d_;
 };  // class Vector
 
 template <typename T>

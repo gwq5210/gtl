@@ -30,10 +30,23 @@ namespace gtl {
  */
 template <typename T, typename Allocator = std::allocator<T>>
 struct Storage : public Allocator {
-  using SizeType = size_t;
-  static constexpr SizeType min_capacity = 16;
+  typedef T value_type;
+  typedef T& reference;
+  typedef const T& const_reference;
+  typedef T* pointer;
+  typedef const T* const_pointer;
+  typedef T* iterator;
+  typedef const T* const_iterator;
+  typedef std::reverse_iterator<iterator> reverse_iterator;
+  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+  typedef size_t size_type;
+  typedef ptrdiff_t difference_type;
+  typedef Allocator allocator_type;
+
+  static constexpr size_type min_capacity = 16;
+
   Storage() : data_(nullptr), capacity_(0), size_(0) {}
-  Storage(SizeType n) : size_(0) {
+  Storage(size_type n) : size_(0) {
     allocate(n);
     // printf("allocate %zu %zu %p\n", n, capacity(), begin());
   }
@@ -53,19 +66,39 @@ struct Storage : public Allocator {
     other.init();
   }
 
-  T* begin() { return data_; }
-  T* begin() const { return data_; }
-  const T* cbegin() const { return begin(); }
-  T* end() { return data_ + size_; }
-  T* end() const { return data_ + size_; }
-  const T* cend() const { return end(); }
-  T* data() { return begin(); }
-  T* data() const { return begin(); }
-  SizeType size() const { return size_; }
-  SizeType capacity() const { return capacity_; }
-  bool full(SizeType n) const { return size_ + n > capacity_; }
-  SizeType next_capacity(SizeType new_size) {
-    SizeType next_cap = 1;
+  // Element access
+  reference at(size_type i) { return *(begin() + i); }
+  const_reference at(size_type i) const { return *(begin() + i); }
+  reference front() { return *begin(); }
+  const_reference front() const { return *begin(); }
+  reference back() { return *(end() - 1); }
+  const_reference back() const { return *(end() - 1); }
+  reference operator[](size_type i) { return *(begin() + i); }
+  const_reference operator[](size_type i) const { return *(begin() + i); }
+  pointer data() { return data_; }
+  const_pointer data() const { return data_; }
+
+  // Iterators
+  iterator begin() { return data(); }
+  const_iterator begin() const { return data(); }
+  const_iterator cbegin() const { return begin(); }
+  iterator end() { return begin() + size(); }
+  const_iterator end() const { return begin() + size(); }
+  const_iterator cend() const { return end(); }
+  reverse_iterator rbegin() { return reverse_iterator(end()); }
+  const_reverse_iterator rbegin() const { return reverse_iterator(end()); }
+  const_reverse_iterator crbegin() const { return reverse_iterator(end()); }
+  reverse_iterator rend() { return reverse_iterator(begin()); }
+  const_reverse_iterator rend() const { return reverse_iterator(begin()); }
+  const_reverse_iterator crend() const { return reverse_iterator(begin()); }
+
+  // Capacity
+  size_type size() const { return size_; }
+  size_type capacity() const { return capacity_; }
+  bool empty() const { return size_ == 0; }
+  bool full(size_type n) const { return size_ + n > capacity_; }
+  size_type next_capacity(size_type new_size) {
+    size_type next_cap = 1;
     while (next_cap < new_size) {
       next_cap <<= 1;
     }
@@ -73,26 +106,28 @@ struct Storage : public Allocator {
     // printf("next_cap %zu %zu\n", new_size, next_cap);
     return next_cap;
   }
-  void allocate(SizeType n) {
+  void allocate(size_type n) {
     n = next_capacity(n);
     data_ = Allocator::allocate(n);
     capacity_ = n;
   }
-  void unsafe_append_value_construct(SizeType count) {
+
+  // Modifiers
+  void unsafe_append_value_construct(size_type count) {
     std::uninitialized_value_construct_n(end(), count);
     size_ += count;
   }
-  void unsafe_append_fill(SizeType count, const T& v) {
+  void unsafe_append_fill(size_type count, const T& v) {
     std::uninitialized_fill_n(end(), count, v);
     size_ += count;
   }
   template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  void unsafe_append_copy(II first, II last, SizeType count = 0) {
+  void unsafe_append_copy(II first, II last, size_type count = 0) {
     std::uninitialized_copy(first, last, end());
     size_ += (count ? count : std::distance(first, last));
   }
   template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  void unsafe_append_move(II first, II last, SizeType count = 0) {
+  void unsafe_append_move(II first, II last, size_type count = 0) {
     std::uninitialized_move(first, last, end());
     size_ += (count ? count : std::distance(first, last));
   }
@@ -101,14 +136,14 @@ struct Storage : public Allocator {
     construct_at(end(), std::forward<Args>(args)...);
     ++size_;
   }
-  T* erase(const T* first, const T* last) {
+  iterator erase(const_iterator first, const_iterator last) {
     if (first != last) {
-      SizeType count = std::distance(first, last);
-      std::move(last, cend(), const_cast<T*>(first));
+      size_type count = std::distance(first, last);
+      std::move(last, cend(), iterator(first));
       std::destroy(end() - count, end());
       size_ -= count;
     }
-    return const_cast<T*>(last);
+    return iterator(last);
   }
   void release() {
     if (begin()) {
@@ -133,8 +168,8 @@ struct Storage : public Allocator {
   Allocator get_allocator() const { return *this; }
 
   T* data_;
-  SizeType capacity_;
-  SizeType size_;
+  size_type capacity_;
+  size_type size_;
 };  // class Storage
 
 }  // namespace gtl
