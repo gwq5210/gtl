@@ -211,13 +211,13 @@ class SList {
 
   allocator_type get_allocator() const { return allocator_; }
 
-  // element access
+  // Element access
   T& front() { return *begin(); }
   const T& front() const { return *begin(); }
   T& back() { return *before_end(); }
   const T& back() const { return *before_end(); }
 
-  // iterators
+  // Iterators
   iterator before_begin() { return iterator(dummy_head_); }
   const_iterator before_begin() const { return iterator(dummy_head_); }
   const_iterator cbefore_begin() const { return before_begin(); };
@@ -231,11 +231,11 @@ class SList {
   const_iterator end() const { return const_iterator(nullptr); };
   const_iterator cend() const { return end(); };
 
-  // capacity
+  // Capacity
   bool empty() const { return size_ == 0; }
   size_type size() const { return size_; }
 
-  // modifiers
+  // Modifiers
   iterator insert_after(const_iterator after, const T& v) { return emplace_after(after, v); }
   iterator insert_after(const_iterator after, size_type count, const T& v) {
     while (count--) {
@@ -293,7 +293,7 @@ class SList {
   }
   void clear() { erase_after(before_begin(), end()); }
 
-  // operations
+  // Operations
   void merge(SList& other) { merge(other, std::less<>()); }
   void merge(SList&& other) { merge(other, std::less<>()); }
   template <typename Compare>

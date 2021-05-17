@@ -32,7 +32,7 @@ class Array {
   typedef size_t size_type;
   typedef ptrdiff_t difference_type;
 
-  // element access
+  // Element access
   T& at(size_type i) { return *(begin() + i); }
   const T& at(size_type i) const { return *(begin() + i); }
   T& front() { return *begin(); }
@@ -44,7 +44,7 @@ class Array {
   T* data() { return data_; }
   const T* data() const { return data_; }
 
-  // iterators
+  // Iterators
   iterator begin() { return data(); }
   const_iterator begin() const { return data(); }
   const_iterator cbegin() const { return begin(); }
@@ -58,11 +58,11 @@ class Array {
   const_reverse_iterator rend() const { return reverse_iterator(begin()); }
   const_reverse_iterator crend() const { return reverse_iterator(begin()); }
 
-  // capacity
+  // Capacity
   size_type size() const { return size_; }
   bool empty() const { return size_ == 0; }
 
-  // operations
+  // Operations
   void fill(const T& v) { std::fill_n(begin(), size_, v); }
   void swap(Array& other) {
     if (this != &other) {

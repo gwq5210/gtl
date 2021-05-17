@@ -95,7 +95,7 @@ class Vector {
 
   allocator_type get_allocator() const { return d_.get_allocator(); }
 
-  // element access
+  // Element access
   T& at(size_type i) { return *(begin() + i); }
   const T& at(size_type i) const { return *(begin() + i); }
   T& front() { return *begin(); }
@@ -107,7 +107,7 @@ class Vector {
   T* data() { return d_.begin(); }
   const T* data() const { return d_.begin(); }
 
-  // iterators
+  // Iterators
   iterator begin() { return data(); }
   const_iterator begin() const { return data(); }
   const_iterator cbegin() const { return begin(); }
@@ -121,13 +121,13 @@ class Vector {
   const_reverse_iterator rend() const { return reverse_iterator(begin()); }
   const_reverse_iterator crend() const { return reverse_iterator(begin()); }
 
-  // capacity
+  // Capacity
   size_type capacity() const { return d_.capacity(); }
   size_type size() const { return d_.size(); }
   bool empty() const { return size() == 0; }
   void reserve(size_type new_capacity) { grow(new_capacity); }
 
-  // modifiers
+  // Modifiers
   void push_back(const T& v) { emplace_back(v); }
   void push_back(T&& v) { emplace_back(std::move(v)); }
   iterator insert(const_iterator before, size_type count, const T& v) {

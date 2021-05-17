@@ -188,6 +188,11 @@ TEST(vector_test, constructor_assign_iterator_test) {
   for (int i = 0; i < vec_size; ++i) {
     EXPECT_EQ(vec_copy[i], i);
   }
+  EXPECT_EQ(vec_copy, vec_init_list);
+  EXPECT_EQ(vec_copy < vec_init_list, false);
+  EXPECT_EQ(vec_copy > vec_init_list, false);
+  EXPECT_EQ(vec_copy <= vec_init_list, true);
+  EXPECT_EQ(vec_copy >= vec_init_list, true);
 
   {
     Vector<int> vec_assign = vec_init_list;

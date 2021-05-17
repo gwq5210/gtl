@@ -31,6 +31,7 @@ set(INCLUDE_HEADERS
   gtl/container/gtl_array.h
   gtl/container/gtl_deque.h
   gtl/container/gtl_list.h
+  gtl/container/gtl_priority_queue.h
   gtl/container/gtl_queue.h
   gtl/container/gtl_slist.h
   gtl/container/gtl_stack.h
@@ -73,14 +74,11 @@ endforeach()
 #find_package(GTest REQUIRED CONFIG HINTS third_party/googletest)
 find_package(GTest REQUIRED)
 
-message(STATUS ${INCLUDE_HEADERS})
-message(STATUS ${TEST_SRCS})
-
 include_directories(${INC_DIR})
 add_executable(${TEST_NAME} ${TEST_SRCS})
 
-#target_link_libraries(${TEST_NAME} GTest::gtest_main)
-target_link_libraries(${TEST_NAME} gtest gtest_main pthread)
+target_link_libraries(${TEST_NAME} GTest::gtest_main)
+# target_link_libraries(${TEST_NAME} gtest gtest_main pthread)
 add_dependencies(${TEST_NAME} LINK_HEADERS)
 add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 

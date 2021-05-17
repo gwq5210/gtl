@@ -21,8 +21,14 @@ using gtl::Vector;
 TEST(slist_test, constructor_assign_iterator_test) {
   {
     SList<int> l;
+    SList<int> l_copy(l);
     EXPECT_EQ(l.empty(), true);
     EXPECT_EQ(l.size(), 0);
+    EXPECT_EQ(l, l_copy);
+    EXPECT_EQ(l < l_copy, false);
+    EXPECT_EQ(l > l_copy, false);
+    EXPECT_EQ(l <= l_copy, true);
+    EXPECT_EQ(l >= l_copy, true);
   }
 
   int n = 102400;

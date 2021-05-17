@@ -250,13 +250,13 @@ class List {
 
   allocator_type get_allocator() const { return allocator_; }
 
-  // element access
+  // Element access
   T& front() { return *begin(); }
   const T& front() const { return *begin(); }
   T& back() { return node_value(dummy_head_->prev); }
   const T& back() const { return node_value(dummy_head_->prev); }
 
-  // iterators
+  // Iterators
   iterator begin() { return iterator(dummy_head_->next); };
   const_iterator begin() const { return const_iterator(dummy_head_->next); };
   const_iterator cbegin() const { return begin(); };
@@ -270,11 +270,11 @@ class List {
   const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
   const_reverse_iterator crend() const { return rend(); }
 
-  // capacity
+  // Capacity
   bool empty() const { return size_ == 0; }
   size_type size() const { return size_; }
 
-  // modifiers
+  // Modifiers
   iterator insert(const_iterator before, const T& v) { return emplace(before, v); }
   iterator insert(const_iterator before, size_type count, const T& v) {
     while (count--) {
@@ -341,7 +341,7 @@ class List {
   }
   void clear() { erase(begin(), end()); }
 
-  // operations
+  // Operations
   void merge(List& other) { merge(other, std::less<>()); }
   void merge(List&& other) { merge(other, std::less<>()); }
   template <typename Compare>

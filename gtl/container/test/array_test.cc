@@ -58,7 +58,11 @@ TEST(array_test, constructor_operations_test) {
     Array<int, n> arr_copy(arr);
     EXPECT_EQ(arr_copy.size(), arr.size());
     EXPECT_EQ(arr_copy.empty(), arr.empty());
-    EXPECT_EQ(arr_copy == arr, true);
+    EXPECT_EQ(arr, arr_copy);
+    EXPECT_EQ(arr < arr_copy, false);
+    EXPECT_EQ(arr > arr_copy, false);
+    EXPECT_EQ(arr <= arr_copy, true);
+    EXPECT_EQ(arr >= arr_copy, true);
     for (auto v : arr_copy) {
       EXPECT_EQ(v, value);
     }
