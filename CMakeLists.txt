@@ -71,13 +71,14 @@ endforeach()
 
 ####TEST
 
-#find_package(GTest REQUIRED CONFIG HINTS third_party/googletest)
-find_package(GTest REQUIRED)
+# find_package(GTest REQUIRED CONFIG HINTS third_party/googletest)
+# find_package(GTest REQUIRED)
+add_subdirectory(third_party/googletest)
 
 include_directories(${INC_DIR})
 add_executable(${TEST_NAME} ${TEST_SRCS})
 
-target_link_libraries(${TEST_NAME} GTest::Main)
+target_link_libraries(${TEST_NAME} GTest::gtest_main)
 # target_link_libraries(${TEST_NAME} gtest gtest_main pthread)
 add_dependencies(${TEST_NAME} LINK_HEADERS)
 add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})

@@ -91,6 +91,9 @@ struct Storage : public Allocator {
   reverse_iterator rend() { return reverse_iterator(begin()); }
   const_reverse_iterator rend() const { return reverse_iterator(begin()); }
   const_reverse_iterator crend() const { return reverse_iterator(begin()); }
+  iterator finish() { return begin() + capacity(); }
+  const_iterator finish() const { return begin() + capacity(); }
+  const_iterator cfinish() const { return finish(); }
 
   // Capacity
   size_type size() const { return size_; }

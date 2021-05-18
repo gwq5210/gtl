@@ -1,9 +1,9 @@
 /**
- * @file vector_test.cc
+ * @file deque_test.cc
  * @author gwq5210 (gwq5210@qq.com)
- * @brief vector单元测试
- * @date 2021-05-15
- *
+ * @brief deque的单元测试
+ * @date 2021-05-18
+ * 
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
@@ -29,47 +29,19 @@ using gtl::List;
 using gtl::SList;
 using gtl::Vector;
 
-#define PRINT_TYPE_SIZE(Type) printf(#Type " size: %zu\n", sizeof Type);
-
-struct Person {
-  Person(const Person& other) : id(other.id) {
-    // printf("%s %d\n", __FUNCTION__, id);
+TEST(deque_test, constructor_assign_iterator_test) {
+  int n = 511;
+  Deque<int> dq;
+  for (int i = 0; i < n; i++) {
+    dq.emplace(dq.begin(), i);
   }
-  Person(int i) : id(i) {
-    // printf("%s %d\n", __FUNCTION__, id);
-  }
-  ~Person() {
-    // printf("%d\n", id);
-    id = 0;
-  }
-  int id;
-};
+  printf("test1\n");
+  EXPECT_EQ(dq.size(), n);
+  printf("test2\n");
+  EXPECT_EQ(dq.empty(), false);
+  printf("test3\n");
 
-template <class Iterator>
-void print(Iterator first, Iterator end) {
-  auto it = first;
-  printf("[");
-  while (it != end) {
-    if (it != first) {
-      printf(",");
-    }
-    printf("%d", *it);
-    ++it;
-  }
-  printf("]\n");
-}
-
-template <class T>
-void print(const Vector<T>& vec) {
-  printf("(size = %zu, capacity = %zu)", vec.size(), vec.capacity());
-  print(vec.begin(), vec.end());
-}
-
-TEST(vector_test, constructor_assign_iterator_test) {
-  Vector<int> empty_vec;
-  EXPECT_EQ(empty_vec.size(), 0);
-  EXPECT_EQ(empty_vec.empty(), true);
-
+  /*
   int vec_size = 30;
   int value = 0;
   {
@@ -249,137 +221,5 @@ TEST(vector_test, constructor_assign_iterator_test) {
   EXPECT_EQ(vec_move.size(), 0);
   EXPECT_EQ(vec_move.capacity(), 0);
   EXPECT_EQ(vec_move.empty(), true);
-}
-
-TEST(vector_test, modifiers_iterators_test) {
-  int n = 10240;
-  std::vector<int> std_vec(3);
-  printf("std_vec capacity %zu\n", std_vec.capacity());
-  std_vec.resize(10);
-  printf("std_vec capacity %zu\n", std_vec.capacity());
-  std_vec.push_back(10);
-  printf("std_vec capacity %zu\n", std_vec.capacity());
-  std_vec.resize(25);
-  printf("std_vec capacity %zu\n", std_vec.capacity());
-  std_vec.resize(60);
-  printf("std_vec capacity %zu\n", std_vec.capacity());
-  std_vec.push_back(10);
-  printf("std_vec capacity %zu\n", std_vec.capacity());
-  Vector<int> vec;
-  vec.reserve(33);
-  EXPECT_EQ(vec.capacity(), 64);
-  vec.reserve(65);
-  EXPECT_EQ(vec.capacity(), 128);
-  for (int i = 0; i < n; ++i) {
-    vec.push_back(i);
-    EXPECT_EQ(vec.back(), i);
-  }
-  int i = 0;
-  for (auto it = vec.begin(); it != vec.end(); ++it, ++i) {
-    EXPECT_EQ(*it, i);
-  }
-  i = n - 1;
-  for (auto it = vec.rbegin(); it != vec.rend(); ++it, --i) {
-    EXPECT_EQ(*it, i);
-  }
-  EXPECT_EQ(vec.size(), n);
-  EXPECT_EQ(vec.empty(), false);
-  for (int i = 0; i < n; ++i) {
-    vec.emplace(vec.begin(), i);
-    EXPECT_EQ(vec.front(), i);
-  }
-  for (int i = 0; i < n; ++i) {
-    vec.insert(vec.begin() + i / 2, i);
-    EXPECT_EQ(vec[i / 2], i);
-  }
-  int x = vec[n + 1];
-  vec.erase(vec.begin() + n);
-  EXPECT_EQ(x, vec[n]);
-  vec.erase(vec.begin(), vec.begin() + n);
-  EXPECT_EQ(x, vec.front());
-  vec.resize(n - 1, n);
-  EXPECT_EQ(n - 1, vec.size());
-  vec.resize(n, n);
-  EXPECT_EQ(n, vec.size());
-  EXPECT_EQ(n, vec.back());
-
-  n = 16;
-  Vector<int> new_vec(vec.begin(), vec.begin() + n);
-
-  new_vec.insert(new_vec.begin() + n / 2, n, 100);
-  for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(new_vec[i + n / 2], 100);
-  }
-  EXPECT_EQ(2 * n, new_vec.size());
-  new_vec.erase(new_vec.begin() + n / 2, new_vec.end() - n / 2);
-  EXPECT_EQ(n, new_vec.size());
-  vec.clear();
-  EXPECT_EQ(0, vec.size());
-  EXPECT_EQ(true, vec.empty());
-
-  new_vec.insert_safe(new_vec.begin(), new_vec.begin(), new_vec.end());
-  for (size_t i = 0; i < new_vec.size() / 2; ++i) {
-    EXPECT_EQ(new_vec[i], new_vec[i + new_vec.size() / 2]);
-  }
-  auto vec_copy = new_vec;
-  new_vec.insert_safe(new_vec.begin() + new_vec.size() / 2, new_vec.begin(), new_vec.end());
-  for (size_t i = 0; i < vec_copy.size(); ++i) {
-    EXPECT_EQ(vec_copy[i], new_vec[vec_copy.size() / 2 + i]);
-  }
-
-  Vector<Person> erase_vec;
-  for (int i = 0; i < n; ++i) {
-    erase_vec.emplace_back(i);
-  }
-  printf("erase one end\n");
-  erase_vec.erase(erase_vec.begin() + 2);
-  EXPECT_EQ(erase_vec.size(), n - 1);
-  for (size_t i = 0; i < erase_vec.size(); ++i) {
-    EXPECT_EQ(erase_vec[i].id, i >= 2 ? i + 1 : i);
-  }
-  printf("erase one end\n");
-  erase_vec.erase(erase_vec.begin() + 2, erase_vec.begin() + 12);
-  EXPECT_EQ(erase_vec.size(), n - 11);
-  for (size_t i = 0; i < erase_vec.size(); ++i) {
-    EXPECT_EQ(erase_vec[i].id, i >= 2 ? i + 11 : i);
-  }
-  printf("erase range end\n");
-
-  Vector<Person> persons;
-  persons.reserve(n);
-  for (int i = 0; i < n; ++i) {
-    persons.emplace_back(i);
-  }
-  printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
-  persons.insert_safe(persons.begin(), persons.begin(), persons.end());
-  for (size_t i = 0; i < persons.size() / 2; ++i) {
-    EXPECT_EQ(persons[i].id, i);
-    EXPECT_EQ(persons[i].id, persons[i + persons.size() / 2].id);
-  }
-  printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
-
-  PRINT_TYPE_SIZE((std::array<int, 0>::iterator));
-  PRINT_TYPE_SIZE((Array<int, 0>::iterator));
-  PRINT_TYPE_SIZE((std::array<int, 16>::iterator));
-  PRINT_TYPE_SIZE((Array<int, 16>::iterator));
-  PRINT_TYPE_SIZE((std::deque<int>::iterator));
-  PRINT_TYPE_SIZE((Deque<int>::iterator));
-  PRINT_TYPE_SIZE((std::list<int>::iterator));
-  PRINT_TYPE_SIZE((List<int>::iterator));
-  PRINT_TYPE_SIZE((std::forward_list<int>::iterator));
-  PRINT_TYPE_SIZE((SList<int>::iterator));
-  PRINT_TYPE_SIZE((std::vector<int>::iterator));
-  PRINT_TYPE_SIZE((Vector<int>::iterator));
-  PRINT_TYPE_SIZE((std::array<int, 0>));
-  PRINT_TYPE_SIZE((Array<int, 0>));
-  PRINT_TYPE_SIZE((std::array<int, 16>));
-  PRINT_TYPE_SIZE((Array<int, 16>));
-  PRINT_TYPE_SIZE((std::deque<int>));
-  PRINT_TYPE_SIZE((Deque<int>));
-  PRINT_TYPE_SIZE((std::list<int>));
-  PRINT_TYPE_SIZE((List<int>));
-  PRINT_TYPE_SIZE((std::forward_list<int>));
-  PRINT_TYPE_SIZE((SList<int>));
-  PRINT_TYPE_SIZE((std::vector<int>));
-  PRINT_TYPE_SIZE((Vector<int>));
+  */
 }
