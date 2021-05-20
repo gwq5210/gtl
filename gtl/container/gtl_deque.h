@@ -234,7 +234,7 @@ class Deque {
   const_reverse_iterator crend() const { return reverse_iterator(begin()); }
 
   // Capacity
-  size_type size() const { return end() - begin(); }
+  size_type size() const { return d_.empty() ? 0 : end() - begin(); }
   bool empty() const { return size() == 0; }
 
   // Modifiers
@@ -248,7 +248,7 @@ class Deque {
       begin_.set(d_.front()->begin(), d_.begin());
       end_.set(d_.front()->begin(), d_.begin());
     }
-    if (end_.curr() != end_.block()->finish() - 1) {
+    if (end_.block()->size() + 1 >= end_.block()->capacity()) {
       d_.unsafe_append(new StorageType(block_capacity_));
     }
     end_.block()->unsafe_append(std::forward<Args>(args)...);
@@ -256,6 +256,16 @@ class Deque {
     return end_;
   }
   void erase(const_iterator first, const_iterator last) {}
+
+  void reverse_at_front(size_type count) {
+    
+  }
+  void reverse_at_back(size_type count) {
+
+  }
+  void reallocate_storage_ptr() {
+
+  }
 
  private:
   iterator begin_;
