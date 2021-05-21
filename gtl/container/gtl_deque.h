@@ -3,7 +3,7 @@
  * @author gwq5210 (gwq5210@qq.com)
  * @brief deque的实现
  * @date 2021-05-16
- * 
+ *
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
@@ -53,9 +53,9 @@ class Deque {
     typename StorageType::const_iterator curr() const { return curr_; }
     typename StoragePtrType::const_reference block() const { return *block_; }
     typename StoragePtrType::const_iterator block_iterator() const { return block_; }
-    void set(typename StorageType::iterator curr, typename StoragePtrType::iterator block) {
-      curr_ = curr;
-      block_ = block;
+    void set(typename StoragePtrType::iterator block_iterator, size_type offset = 0) {
+      block_ = block_iterator;
+      curr_ = block()->begin() + offset;
     }
     reference operator*() { return *curr_; }
     pointer operator->() { return curr_; }
@@ -188,19 +188,30 @@ class Deque {
   using reverse_iterator = std::reverse_iterator<iterator>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  Deque() = default;
+  Deque() { init(); };
   Deque(size_type count) : Deque(count, T()) {}
   Deque(size_type count, const T& v) { insert(end(), count, v); }
   template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  Deque(II first, II last) { emplace(end(), first, last); }
+  Deque(II first, II last) {
+    emplace(end(), first, last);
+  }
   Deque(std::initializer_list<T> il) { emplace(end(), il.begin(), il.end()); }
   Deque(const Deque& other) { emplace(end(), other.begin(), other.end()); }
   Deque(Deque&& other) = default;
   ~Deque() { erase(begin(), end()); }
 
-  Deque& operator=(const Deque& other) { assign(other); return *this; }
-  Deque& operator=(Deque&& other) { assign(std::move(other)); return *this; }
-  Deque& operator=(std::initializer_list<T> il) { assign(il); return *this; }
+  Deque& operator=(const Deque& other) {
+    assign(other);
+    return *this;
+  }
+  Deque& operator=(Deque&& other) {
+    assign(std::move(other));
+    return *this;
+  }
+  Deque& operator=(std::initializer_list<T> il) {
+    assign(il);
+    return *this;
+  }
 
   void assign(size_type count, const T& v) {}
   template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
@@ -234,7 +245,7 @@ class Deque {
   const_reverse_iterator crend() const { return reverse_iterator(begin()); }
 
   // Capacity
-  size_type size() const { return end() - begin(); }
+  size_type size() const { return d_.empty() ? 0 : end() - begin(); }
   bool empty() const { return size() == 0; }
 
   // Modifiers
@@ -242,20 +253,85 @@ class Deque {
   iterator insert(const_iterator before, size_type count, const T& v) { return emplace(before, v); }
   template <typename... Args>
   iterator emplace(const_iterator before, Args&&... args) {
-    if (!d_.capacity()) {
-      d_.allocate(16);
-      d_.unsafe_append(new StorageType(block_capacity_));
-      begin_.set(d_.front()->begin(), d_.begin());
-      end_.set(d_.front()->begin(), d_.begin());
-    }
-    if (end_.curr() != end_.block()->finish() - 1) {
-      d_.unsafe_append(new StorageType(block_capacity_));
-    }
+    printf("reserve end1\n");
+    reserve_at_back(1);
+    printf("reserve end\n");
     end_.block()->unsafe_append(std::forward<Args>(args)...);
     ++end_;
     return end_;
   }
   void erase(const_iterator first, const_iterator last) {}
+  void reserve_at_front(size_type count) {
+    size_type n = front_capacity();
+    if (count > n) {
+      count -= n;
+      reallocate_storage_ptr(count / block_capacity_ + count % block_capacity_, true);
+    }
+    auto it = begin_.block_iterator();
+    while (it != d_.begin()) {
+      *--it = allocate_storage();
+    }
+  }
+  void reserve_at_back(size_type count) {
+    size_type n = back_capacity();
+    if (count >= n) {
+      count -= n;
+      reallocate_storage_ptr(count / block_capacity_ + 1, false);
+    }
+    auto it = end_.block_iterator();
+    while (++it != d_.end()) {
+      *it = allocate_storage();
+    }
+  }
+  void reallocate_storage_ptr(size_type count, bool add_at_front) {
+    StoragePtrType new_storage_ptr(d_.size() + count);
+    if (add_at_front) {
+      new_storage_ptr.unsafe_append_fill(count, nullptr);
+      new_storage_ptr.unsafe_append_move(d_.begin(), d_.end());
+    } else {
+      new_storage_ptr.unsafe_append_move(d_.begin(), d_.end());
+      new_storage_ptr.unsafe_append_fill(count, nullptr);
+    }
+    begin_.set(new_storage_ptr.begin() + (begin_.block_iterator() - d_.begin()) + (add_at_front ? count : 0), begin_.curr() - begin_.block()->begin());
+    end_.set(new_storage_ptr.begin() + (end_.block_iterator() - d_.begin()) + (add_at_front ? count : 0), end_.curr() - end_.block()->begin());
+    d_.swap(new_storage_ptr);
+  }
+  size_type back_capacity() const {
+    if (!d_.empty()) {
+      return end_.block()->end() - end_.curr() + (d_.finish() - end_.block_iterator()) * block_capacity_;
+    } else {
+      return 0;
+    }
+  }
+  size_type front_capacity() const {
+    if (!d_.empty()) {
+      return begin_.curr() - begin_.block()->begin() -  + (begin_.block_iterator() - d_.begin()) * block_capacity_;
+    } else {
+      return 0;
+    }
+  }
+
+  void init() {
+    size_type n = 1;
+    d_.allocate(n);
+    d_.unsafe_append_fill(n / 2 + 1, nullptr);
+    StorageType* storage = allocate_storage();
+    d_[n / 2] = storage;
+    begin_.set(d_.begin() + n / 2);
+    end_.set(d_.begin() + n / 2);
+  }
+  StorageType* allocate_storage() {
+    return new StorageType(block_capacity_);
+  }
+  void deallocate_storage(StorageType*& storage) {
+    delete storage;
+    storage = nullptr;
+  }
+  void destroy_stroage_ptr() {
+    for (auto& storage: d_) {
+      deallocate_storage(storage);
+    }
+  }
 
  private:
   iterator begin_;

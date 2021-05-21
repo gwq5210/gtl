@@ -30,16 +30,17 @@ using gtl::SList;
 using gtl::Vector;
 
 TEST(deque_test, constructor_assign_iterator_test) {
-  int n = 511;
+  int n = 1025;
   Deque<int> dq;
+  printf("test1\n");
   for (int i = 0; i < n; i++) {
     dq.emplace(dq.begin(), i);
   }
-  printf("test1\n");
-  EXPECT_EQ(dq.size(), n);
   printf("test2\n");
-  EXPECT_EQ(dq.empty(), false);
+  EXPECT_EQ(dq.size(), n);
   printf("test3\n");
+  EXPECT_EQ(dq.empty(), false);
+  printf("test4\n");
 
   /*
   int vec_size = 30;

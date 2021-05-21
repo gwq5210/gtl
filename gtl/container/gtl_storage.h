@@ -29,7 +29,8 @@ namespace gtl {
  * @tparam Allocator 内存分配器，默认为std::allocator<T>
  */
 template <typename T, typename Allocator = std::allocator<T>>
-struct Storage : public Allocator {
+class Storage : public Allocator {
+ public:
   typedef T value_type;
   typedef T& reference;
   typedef const T& const_reference;
@@ -43,7 +44,7 @@ struct Storage : public Allocator {
   typedef ptrdiff_t difference_type;
   typedef Allocator allocator_type;
 
-  static constexpr size_type min_capacity = 16;
+  static constexpr size_type min_capacity_ = 16;
 
   Storage() : data_(nullptr), capacity_(0), size_(0) {}
   Storage(size_type n) : size_(0) {
@@ -105,7 +106,7 @@ struct Storage : public Allocator {
     while (next_cap < new_size) {
       next_cap <<= 1;
     }
-    next_cap = std::max(next_cap, min_capacity);
+    next_cap = std::max(next_cap, min_capacity_);
     // printf("next_cap %zu %zu\n", new_size, next_cap);
     return next_cap;
   }
