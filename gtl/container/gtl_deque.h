@@ -333,6 +333,16 @@ class Deque {
     }
   }
 
+  void reverse_at_front(size_type count) {
+    
+  }
+  void reverse_at_back(size_type count) {
+
+  }
+  void reallocate_storage_ptr() {
+
+  }
+
  private:
   iterator begin_;
   iterator end_;

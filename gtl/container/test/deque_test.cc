@@ -32,7 +32,9 @@ using gtl::Vector;
 TEST(deque_test, constructor_assign_iterator_test) {
   int n = 1025;
   Deque<int> dq;
-  printf("test1\n");
+  std::deque<int> a;
+  EXPECT_EQ(dq.size(), 0);
+  EXPECT_EQ(dq.empty(), true);
   for (int i = 0; i < n; i++) {
     dq.emplace(dq.begin(), i);
   }

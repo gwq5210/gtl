@@ -137,7 +137,7 @@ class Storage : public Allocator {
   }
   template <typename... Args>
   void unsafe_append(Args&&... args) {
-    construct_at(end(), std::forward<Args>(args)...);
+    gtl::construct_at(end(), std::forward<Args>(args)...);
     ++size_;
   }
   iterator erase(const_iterator first, const_iterator last) {

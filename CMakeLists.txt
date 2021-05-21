@@ -39,8 +39,10 @@ set(INCLUDE_HEADERS
   gtl/container/gtl_vector.h
 )
 aux_source_directory(${GTL_DIR}/container/test CONTAINER_TEST_SRCS)
+aux_source_directory(${GTL_DIR}/algorithm/test ALGORITHM_TEST_SRCS)
 set(TEST_SRCS
   ${CONTAINER_TEST_SRCS}
+  ${ALGORITHM_TEST_SRCS}
 )
 
 add_custom_target(
