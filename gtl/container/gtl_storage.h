@@ -13,8 +13,8 @@
 
 namespace gtl {
 
-template <typename T, typename Allocator = std::allocator<T>>
-class UStorage : public Allocator {
+template <typename T, size_t fixed_capacity = 0>
+class UStorage : public std::allocator<T> {
  public:
   typedef T value_type;
   typedef T& reference;
@@ -25,7 +25,76 @@ class UStorage : public Allocator {
   typedef const T* const_iterator;
   typedef size_t size_type;
   typedef ptrdiff_t difference_type;
-  typedef Allocator allocator_type;
+  typedef std::allocator<T> allocator_type;
+
+  UStorage() : data_(nullptr) {}
+  explicit UStorage(size_type n) { allocate(); }
+  UStorage(const UStorage& other) = delete;
+  UStorage& operator=(const UStorage& other) = delete;
+  UStorage(UStorage&& other) {
+    data_ = other.data_;
+
+    other.init();
+  }
+  UStorage& operator=(UStorage&& other) { assign(std::move(other)); }
+  ~UStorage() { release(); }
+
+  void assign(UStorage&& other) {
+    release();
+
+    data_ = other.data_;
+
+    other.init();
+  }
+
+  // Element access
+  reference at(size_type i) { return *(begin() + i); }
+  const_reference at(size_type i) const { return *(begin() + i); }
+  reference front() { return *begin(); }
+  const_reference front() const { return *begin(); }
+  reference operator[](size_type i) { return *(begin() + i); }
+  const_reference operator[](size_type i) const { return *(begin() + i); }
+  pointer data() { return data_; }
+  const_pointer data() const { return data_; }
+
+  // Iterators
+  iterator begin() { return data(); }
+  const_iterator begin() const { return data(); }
+  const_iterator cbegin() const { return begin(); }
+  iterator finish() { return begin() + capacity(); }
+  const_iterator finish() const { return begin() + capacity(); }
+  const_iterator cfinish() const { return finish(); }
+
+  // Capacity
+  size_type capacity() const { return fixed_capacity; }
+  void allocate() { data_ = allocator_type::allocate(fixed_capacity); }
+  void release() {
+    if (begin()) {
+      // printf("deallocate %zu %p\n", capacity_, data_);
+      allocator_type::deallocate(begin(), capacity());
+      data_ = nullptr;
+    }
+  }
+  void swap(UStorage& other) { std::swap(data_, other.data_); }
+  void init() { data_ = nullptr; }
+  allocator_type get_allocator() const { return *this; }
+
+  T* data_;
+};  // class UStorage
+
+template <typename T>
+class UStorage<T, 0> : public std::allocator<T> {
+ public:
+  typedef T value_type;
+  typedef T& reference;
+  typedef const T& const_reference;
+  typedef T* pointer;
+  typedef const T* const_pointer;
+  typedef T* iterator;
+  typedef const T* const_iterator;
+  typedef size_t size_type;
+  typedef ptrdiff_t difference_type;
+  typedef std::allocator<T> allocator_type;
 
   static constexpr size_type min_capacity_ = 16;
 
@@ -85,12 +154,12 @@ class UStorage : public Allocator {
   }
   void allocate(size_type n) {
     capacity_ = next_capacity(n);
-    data_ = Allocator::allocate(capacity_);
+    data_ = allocator_type::allocate(capacity_);
   }
   void release() {
     if (begin()) {
       // printf("deallocate %zu %p\n", capacity_, data_);
-      Allocator::deallocate(begin(), capacity());
+      allocator_type::deallocate(begin(), capacity());
       data_ = nullptr;
     }
     capacity_ = 0;
@@ -103,7 +172,7 @@ class UStorage : public Allocator {
     data_ = nullptr;
     capacity_ = 0;
   }
-  Allocator get_allocator() const { return *this; }
+  allocator_type get_allocator() const { return *this; }
 
   T* data_;
   size_type capacity_;
@@ -120,8 +189,8 @@ class UStorage : public Allocator {
  * new_storage.unsafe_append_copy(new_capacity, old.begin(), old_storage.end(), old_storage.size());
  * new_storage.swap(old_storage); // or new_storage = std::move(old_storage);
  */
-template <typename T, typename Allocator = std::allocator<T>>
-class Storage : public UStorage<T, Allocator> {
+template <typename T, size_t fix_capacity = 0>
+class Storage : public UStorage<T, fix_capacity> {
  public:
   typedef T value_type;
   typedef T& reference;
@@ -134,8 +203,8 @@ class Storage : public UStorage<T, Allocator> {
   typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
   typedef size_t size_type;
   typedef ptrdiff_t difference_type;
-  typedef Allocator allocator_type;
-  typedef UStorage<T, Allocator> Base;
+  typedef UStorage<T, fix_capacity> Base;
+  typedef Base::allocator_type allocator_type;
 
   static constexpr size_type min_capacity_ = 16;
 

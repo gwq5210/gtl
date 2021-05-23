@@ -195,23 +195,23 @@ DequeIterator<DequeType> operator+(typename DequeIterator<DequeType>::difference
 template <typename T>
 class Deque {
  public:
-  using StorageType = UStorage<T>;
+  static constexpr std::ptrdiff_t block_capacity_ = 16;
+
+  using StorageType = UStorage<T, block_capacity_>;
   using StorageAllocator = std::allocator<StorageType>;
   using StoragePtrType = UStorage<StorageType>;
-  using value_type = typename StorageType::value_type;
-  using reference = typename StorageType::reference;
-  using const_reference = typename StorageType::const_reference;
-  using pointer = typename StorageType::pointer;
-  using const_pointer = typename StorageType::const_pointer;
-  using size_type = typename StorageType::size_type;
-  using difference_type = typename StorageType::difference_type;
+  using value_type = T;
+  using reference = T&;
+  using const_reference = const T&;
+  using pointer = T*;
+  using const_pointer = const T*;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
   using allocator_type = typename StorageType::allocator_type;
   using iterator = DequeIterator<Deque>;
   using const_iterator = ConstDequeIterator<Deque>;
   using reverse_iterator = std::reverse_iterator<iterator>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-
-  static constexpr difference_type block_capacity_ = 16;
 
   Deque() { init(); };
   Deque(size_type count) : Deque(count, T()) {}

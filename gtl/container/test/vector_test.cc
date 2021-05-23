@@ -382,4 +382,6 @@ TEST(vector_test, modifiers_iterators_test) {
   PRINT_TYPE_SIZE((SList<int>));
   PRINT_TYPE_SIZE((std::vector<int>));
   PRINT_TYPE_SIZE((Vector<int>));
+  PRINT_TYPE_SIZE((gtl::UStorage<int>));
+  PRINT_TYPE_SIZE((gtl::UStorage<int, 16>));
 }
