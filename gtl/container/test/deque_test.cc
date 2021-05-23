@@ -35,11 +35,19 @@ TEST(deque_test, constructor_assign_iterator_test) {
   std::deque<int> a;
   EXPECT_EQ(dq.size(), 0);
   EXPECT_EQ(dq.empty(), true);
-  for (int i = 0; i < n; i++) {
-    dq.emplace(dq.begin(), i);
+  for (int i = 0; i < n; ++i) {
+    dq.emplace_back(i);
+    EXPECT_EQ(dq.back(), i);
   }
+  for (int i = 0; i < n; ++i) {
+    dq.emplace_front(i);
+    EXPECT_EQ(dq.front(), i);
+  }
+  // for (int i = 0; i < n; i++) {
+  //   EXPECT_EQ(dq[i], i);
+  // }
   printf("test2\n");
-  EXPECT_EQ(dq.size(), n);
+  EXPECT_EQ(dq.size(), 2 * n);
   printf("test3\n");
   EXPECT_EQ(dq.empty(), false);
   printf("test4\n");

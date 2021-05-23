@@ -18,7 +18,11 @@ TEST(memory_test, memory_test) {
   int n = 1024;
   char *buffer = new char[sizeof(Vector<int>)];
   const Vector<int>* vec_ptr = reinterpret_cast<Vector<int>*>(buffer);
+  const Vector<int>& vec = *vec_ptr;
   gtl::construct_at(vec_ptr, n);
   EXPECT_EQ(vec_ptr->size(), n);
+  for (int v: vec) {
+    EXPECT_EQ(v, 0);
+  }
   delete[] buffer;
 }

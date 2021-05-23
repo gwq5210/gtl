@@ -71,7 +71,7 @@ class Array {
   }
 
   T data_[size_];
-}; // class Array
+};  // class Array
 
 template <typename T, size_t size_>
 using array = Array<T, size_>;

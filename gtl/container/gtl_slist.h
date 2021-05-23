@@ -22,26 +22,6 @@ struct SListNode {
   SListNode() : next(nullptr) {}
 };
 
-struct SListIterator {
-  typedef std::forward_iterator_tag iterator_category;
-  typedef SListIterator Self;
-  SListNode* node;
-  SListIterator() : node(nullptr) {}
-  SListIterator(SListNode* n) : node(n) {}
-
-  Self& operator++() {
-    node = node->next;
-    return *this;
-  }
-  Self operator++(int) {
-    SListNode* ret = node;
-    node = node->next;
-    return Self(ret);
-  }
-  bool operator==(const Self& other) const { return node == other.node; }
-  bool operator!=(const Self& other) const { return node != other.node; }
-};
-
 inline SListNode* remove_node(SListNode* prev, SListNode* curr) {
   prev->next = curr->next;
   curr->next = nullptr;
@@ -82,6 +62,70 @@ inline SListNode* insert_range_after(SListNode* after, SListNode* first, SListNo
   return first;
 }
 
+struct SListIteratorBase {
+  typedef std::forward_iterator_tag iterator_category;
+  typedef SListIteratorBase Self;
+  SListNode* node;
+  SListIteratorBase() : node(nullptr) {}
+  SListIteratorBase(SListNode* n) : node(n) {}
+
+  Self& operator++() {
+    node = node->next;
+    return *this;
+  }
+  Self operator++(int) {
+    SListNode* ret = node;
+    node = node->next;
+    return Self(ret);
+  }
+  bool operator==(const Self& other) const { return node == other.node; }
+  bool operator!=(const Self& other) const { return node != other.node; }
+};
+
+template <typename SListType>
+struct ConstSListIterator : public SListIteratorBase {
+  typedef SListType::const_reference reference;
+  typedef SListType::const_pointer pointer;
+  typedef SListType::difference_type difference_type;
+  typedef SListType::value_type value_type;
+  typedef SListIteratorBase Base;
+  typedef ConstSListIterator Self;
+  explicit ConstSListIterator(const SListNode* node) : Base(const_cast<SListNode*>(node)) {}
+  reference operator*() const { return SListType::node_value(node); }
+  pointer operator->() const { return std::pointer_traits<pointer>::pointer_to(**this); }
+  Self& operator++() {
+    Base::operator++();
+    return *this;
+  }
+  Self operator++(int) {
+    auto ret = *this;
+    Base::operator++();
+    return ret;
+  }
+};
+
+template <typename SListType>
+struct SListIterator : public ConstSListIterator<SListType> {
+  typedef SListType::reference reference;
+  typedef SListType::pointer pointer;
+  typedef SListType::difference_type difference_type;
+  typedef SListType::value_type value_type;
+  typedef ConstSListIterator<SListType> Base;
+  typedef SListIterator Self;
+  explicit SListIterator(SListNode* node) : Base(node) {}
+  reference operator*() const { return const_cast<reference>(Base::operator*()); }
+  pointer operator->() const { return const_cast<pointer>(Base::operator->()); }
+  Self& operator++() {
+    Base::operator++();
+    return *this;
+  }
+  Self operator++(int) {
+    auto ret = *this;
+    Base::operator++();
+    return ret;
+  }
+};
+
 template <typename T>
 class SList {
  public:
@@ -101,54 +145,11 @@ class SList {
   typedef size_t size_type;
   typedef ptrdiff_t difference_type;
   typedef std::allocator<Node> allocator_type;
+  typedef SListIterator<SList> iterator;
+  typedef ConstSListIterator<SList> const_iterator;
 
   static Node* to_node(SListNode* list_node) { return static_cast<Node*>(list_node); }
   static T& node_value(SListNode* list_node) { return to_node(list_node)->val; }
-
-  struct CIterator : public SListIterator {
-    typedef SList::const_reference reference;
-    typedef SList::const_pointer pointer;
-    typedef SList::difference_type difference_type;
-    typedef SList::value_type value_type;
-    typedef SListIterator BaseType;
-    typedef CIterator Self;
-    explicit CIterator(const SListNode* node) : BaseType(const_cast<SListNode*>(node)) {}
-    reference operator*() const { return to_node(node)->val; }
-    pointer operator->() const { return &(to_node(node)->val); }
-    Self& operator++() {
-      BaseType::operator++();
-      return *this;
-    }
-    Self operator++(int) {
-      auto ret = *this;
-      BaseType::operator++();
-      return ret;
-    }
-  };
-
-  struct Iterator : public CIterator {
-    typedef SList::reference reference;
-    typedef SList::pointer pointer;
-    typedef SList::difference_type difference_type;
-    typedef SList::value_type value_type;
-    typedef CIterator BaseType;
-    typedef Iterator Self;
-    explicit Iterator(SListNode* node) : BaseType(node) {}
-    reference operator*() const { return const_cast<reference>(BaseType::operator*()); }
-    pointer operator->() const { return const_cast<pointer>(BaseType::operator->()); }
-    Self& operator++() {
-      BaseType::operator++();
-      return *this;
-    }
-    Self operator++(int) {
-      auto ret = *this;
-      BaseType::operator++();
-      return ret;
-    }
-  };
-
-  typedef Iterator iterator;
-  typedef CIterator const_iterator;
 
   SList() : dummy_head_(nullptr), size_(0) { init(); }
   explicit SList(size_type count) {
@@ -159,8 +160,8 @@ class SList {
     init();
     insert_after(before_begin(), count, v);
   }
-  template <typename II>
-  SList(II first, II last) {
+  template <typename InputIt>
+  SList(InputIt first, InputIt last) {
     init();
     insert_after(before_begin(), first, last);
   }
@@ -193,8 +194,8 @@ class SList {
   }
 
   void assign(size_type count, const T& v) { insert_after(before_begin(), count, v); }
-  template <typename II>
-  void assign(II first, II last) {
+  template <typename InputIt>
+  void assign(InputIt first, InputIt last) {
     assign_range(std::distance(first, last), first, last);
   }
   void assign(std::initializer_list<T> il) { assign_range(il.size(), il.begin(), il.end()); }
@@ -243,8 +244,8 @@ class SList {
     }
     return iterator(after.node);
   }
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  iterator insert_after(const_iterator after, II first, II last) {
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  iterator insert_after(const_iterator after, InputIt first, InputIt last) {
     while (first != last) {
       after = emplace_after(after, *first++);
     }
@@ -380,8 +381,8 @@ class SList {
   }
 
  private:
-  template <typename II>
-  void assign_range(size_type count, II first, II last) {
+  template <typename InputIt>
+  void assign_range(size_type count, InputIt first, InputIt last) {
     if (count == 0) {
       return;
     }

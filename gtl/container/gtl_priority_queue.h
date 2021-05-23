@@ -25,15 +25,17 @@ class PriorityQueue {
   using const_reference = typename Container::const_reference;
 
   template <typename T_, typename Compare_, typename Container_>
-  friend bool operator==(const PriorityQueue<T_, Compare_, Container_>& lhs, const PriorityQueue<T_, Compare_, Container_>& rhs);
+  friend bool operator==(const PriorityQueue<T_, Compare_, Container_>& lhs,
+                         const PriorityQueue<T_, Compare_, Container_>& rhs);
   template <typename T_, typename Compare_, typename Container_>
-  friend bool operator<(const PriorityQueue<T_, Compare_, Container_>& lhs, const PriorityQueue<T_, Compare_, Container_>& rhs);
+  friend bool operator<(const PriorityQueue<T_, Compare_, Container_>& lhs,
+                        const PriorityQueue<T_, Compare_, Container_>& rhs);
 
   PriorityQueue() = default;
   explicit PriorityQueue(const Container& c) : c_(c) { std::make_heap(c_.begin(), c_.end(), compare_); }
   explicit PriorityQueue(Container&& c) : c_(std::move(c)) { std::make_heap(c_.begin(), c_.end(), compare_); }
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  PriorityQueue(II first, II last) : c_(first, last) {
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  PriorityQueue(InputIt first, InputIt last) : c_(first, last) {
     std::make_heap(c_.begin(), c_.end(), compare_);
   }
 
@@ -58,8 +60,8 @@ class PriorityQueue {
     c_.emplace_back(std::forward<Args>(args)...);
     std::push_heap(c_.begin(), c_.end(), compare_);
   }
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  void push(II first, II last) {
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  void push(InputIt first, InputIt last) {
     for (; first != last; ++first) {
       emplace(*first);
     }
@@ -79,32 +81,38 @@ template <typename T, typename Compare, typename Container>
 using priority_queue = PriorityQueue<T, Compare, Container>;
 
 template <typename T, typename Compare, typename Container>
-inline bool operator==(const PriorityQueue<T, Compare, Container>& lhs, const PriorityQueue<T, Compare, Container>& rhs) {
+inline bool operator==(const PriorityQueue<T, Compare, Container>& lhs,
+                       const PriorityQueue<T, Compare, Container>& rhs) {
   return lhs.c_ == rhs.c_;
 }
 
 template <typename T, typename Compare, typename Container>
-inline bool operator!=(const PriorityQueue<T, Compare, Container>& lhs, const PriorityQueue<T, Compare, Container>& rhs) {
+inline bool operator!=(const PriorityQueue<T, Compare, Container>& lhs,
+                       const PriorityQueue<T, Compare, Container>& rhs) {
   return !(lhs == rhs);
 }
 
 template <typename T, typename Compare, typename Container>
-inline bool operator<(const PriorityQueue<T, Compare, Container>& lhs, const PriorityQueue<T, Compare, Container>& rhs) {
+inline bool operator<(const PriorityQueue<T, Compare, Container>& lhs,
+                      const PriorityQueue<T, Compare, Container>& rhs) {
   return lhs.c_ < rhs.c_;
 }
 
 template <typename T, typename Compare, typename Container>
-inline bool operator>(const PriorityQueue<T, Compare, Container>& lhs, const PriorityQueue<T, Compare, Container>& rhs) {
+inline bool operator>(const PriorityQueue<T, Compare, Container>& lhs,
+                      const PriorityQueue<T, Compare, Container>& rhs) {
   return rhs < lhs;
 }
 
 template <typename T, typename Compare, typename Container>
-inline bool operator<=(const PriorityQueue<T, Compare, Container>& lhs, const PriorityQueue<T, Compare, Container>& rhs) {
+inline bool operator<=(const PriorityQueue<T, Compare, Container>& lhs,
+                       const PriorityQueue<T, Compare, Container>& rhs) {
   return !(lhs > rhs);
 }
 
 template <typename T, typename Compare, typename Container>
-inline bool operator>=(const PriorityQueue<T, Compare, Container>& lhs, const PriorityQueue<T, Compare, Container>& rhs) {
+inline bool operator>=(const PriorityQueue<T, Compare, Container>& lhs,
+                       const PriorityQueue<T, Compare, Container>& rhs) {
   return !(lhs < rhs);
 }
 

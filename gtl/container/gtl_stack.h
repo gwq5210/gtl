@@ -31,8 +31,8 @@ class Stack {
   Stack() = default;
   explicit Stack(const Container& c) : c_(c) {}
   explicit Stack(Container&& c) : c_(std::move(c)) {}
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  Stack(II first, II last) : c_(first, last) {}
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  Stack(InputIt first, InputIt last) : c_(first, last) {}
 
   // Element access
   reference top() { return c_.back(); }
@@ -49,8 +49,8 @@ class Stack {
   void emplace(Args&&... args) {
     c_.emplace_back(std::forward<Args>(args)...);
   }
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  void push(II first, II last) {
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  void push(InputIt first, InputIt last) {
     for (; first != last; ++first) {
       emplace(*first);
     }

@@ -3,7 +3,7 @@
  * @author gwq5210 (gwq5210@qq.com)
  * @brief vector的实现
  * @date 2021-05-15
- * 
+ *
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
@@ -45,19 +45,20 @@ class Vector {
     printf("%s\n", __FUNCTION__);
     d_.unsafe_append_fill(size, v);
   }
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  Vector(II first, II last) {
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  Vector(InputIt first, InputIt last) {
     printf("%s range\n", __FUNCTION__);
     size_type count = std::distance(first, last);
     d_.allocate(count);
     d_.unsafe_append_copy(first, last, count);
   }
-  Vector(std::initializer_list<T> il) : d_(il.size()){
+  Vector(std::initializer_list<T> il) : d_(il.size()) {
     printf("%s il %zu\n", __FUNCTION__, il.size());
     d_.unsafe_append_copy(il.begin(), il.end(), il.size());
   }
   Vector(const Vector& other) : d_(other.size()) { d_.unsafe_append_copy(other.begin(), other.end(), other.size()); }
   Vector(Vector&& other) { d_.swap(other.d_); }
+  ~Vector() { release(); }
   Vector& operator=(const Vector& other) {
     assign(other);
     return *this;
@@ -87,8 +88,8 @@ class Vector {
     printf("%s il\n", __FUNCTION__);
     assign_range(il.size(), il.begin(), il.end());
   }
-  template <typename II>
-  void assign(II first, II last) {
+  template <typename InputIt>
+  void assign(InputIt first, InputIt last) {
     printf("%s range\n", __FUNCTION__);
     assign_range(std::distance(first, last), first, last);
   }
@@ -138,15 +139,15 @@ class Vector {
   iterator insert(size_type idx, T&& v) { return emplace(begin() + idx, std::move(v)); }
   iterator insert(const_iterator before, std::initializer_list<T> il) { return insert(before, il.begin(), il.end()); }
   iterator insert(size_type idx, std::initializer_list<T> il) { return insert(begin() + idx, il.begin(), il.end()); }
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  iterator insert(const_iterator before, II first, II last);
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  iterator insert_safe(const_iterator before, II first, II last) {
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  iterator insert(const_iterator before, InputIt first, InputIt last);
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  iterator insert_safe(const_iterator before, InputIt first, InputIt last) {
     Vector tmp_vec(first, last);
     return insert(before, tmp_vec.begin(), tmp_vec.end());
   }
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  iterator insert(size_type idx, II first, II last) {
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  iterator insert(size_type idx, InputIt first, InputIt last) {
     return insert(begin() + idx, first, last);
   }
   void pop_back() { erase(end() - 1); }
@@ -154,7 +155,13 @@ class Vector {
   iterator erase(size_type idx) { return erase(begin() + idx); }
   iterator erase(size_type first, size_type last) { return erase(begin() + first, begin() + last); }
   iterator erase(const_iterator pos) { return erase(pos, pos + 1); }
-  iterator erase(const_iterator first, const_iterator last) { return d_.erase(first, last); }
+  iterator erase(const_iterator first, const_iterator last) {
+    if (first != last) {
+      gtl::destroy(std::move(last, cend(), iterator(first)), end());
+      d_.incr_size(-std::distance(first, last));
+    }
+    return iterator(first);
+  }
   template <typename... Args>
   iterator emplace(const_iterator before, Args&&... args);
   template <typename... Args>
@@ -178,8 +185,8 @@ class Vector {
     *iterator(pos) = std::move(tmp);
     return iterator(pos);
   }
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  iterator replace(const_iterator pos, II first, II last);
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  iterator replace(const_iterator pos, InputIt first, InputIt last);
   void resize(size_type new_size, const T& v = T()) {
     if (new_size > size()) {
       insert(end(), new_size - size(), v);
@@ -195,8 +202,8 @@ class Vector {
   }
 
  private:
-  template <typename II>
-  void assign_range(size_type count, II first, II last) {
+  template <typename InputIt>
+  void assign_range(size_type count, InputIt first, InputIt last) {
     if (count == 0) {
       return;
     }
@@ -215,6 +222,7 @@ class Vector {
            d_.begin());
     d_.swap(new_storage);
   }
+  void release() { clear(); }
 
   StorageType d_;
 };  // class Vector
@@ -228,15 +236,15 @@ typename Vector<T>::iterator Vector<T>::insert(const_iterator before, size_type 
   }
   if (!d_.full(count)) {
     if (count <= n) {
-      std::uninitialized_move(end() - count, end(), end());
+      gtl::uninitialized_move(end() - count, end(), end());
       std::move_backward(begin() + insert_pos, begin() + insert_pos + n - count, end());
       std::fill_n(begin() + insert_pos, count, v);
     } else {
-      std::uninitialized_move(end() - n, end(), end() + count - n);
+      gtl::uninitialized_move(end() - n, end(), end() + count - n);
       std::fill_n(begin() + insert_pos, n, v);
-      std::uninitialized_fill_n(end(), count - n, v);
+      gtl::uninitialized_fill_n(end(), count - n, v);
     }
-    d_.size_ += count;
+    d_.incr_size(count);
   } else {
     StorageType new_storage(size() + count);
     new_storage.unsafe_append_move(begin(), end() - n);
@@ -248,8 +256,8 @@ typename Vector<T>::iterator Vector<T>::insert(const_iterator before, size_type 
 }
 
 template <typename T>
-template <typename II, typename Category>
-typename Vector<T>::iterator Vector<T>::insert(const_iterator before, II first, II last) {
+template <typename InputIt, typename Category>
+typename Vector<T>::iterator Vector<T>::insert(const_iterator before, InputIt first, InputIt last) {
   size_type count = std::distance(first, last);
   size_type insert_pos = before - begin();
   size_type n = end() - before;
@@ -258,15 +266,15 @@ typename Vector<T>::iterator Vector<T>::insert(const_iterator before, II first, 
   }
   if (!d_.full(count)) {
     if (count <= n) {
-      std::uninitialized_move(end() - count, end(), end());
+      gtl::uninitialized_move(end() - count, end(), end());
       std::move_backward(begin() + insert_pos, begin() + n - count, begin() + n - count);
       std::copy(first, last, begin() + insert_pos);
     } else {
-      std::uninitialized_move(end() - n, end(), end() + count - n);
+      gtl::uninitialized_move(end() - n, end(), end() + count - n);
+      gtl::uninitialized_copy(first + n, last, end());
       std::copy(first, first + n, begin() + insert_pos);
-      std::uninitialized_copy(first + n, last, end());
     }
-    d_.size_ += count;
+    d_.incr_size(count);
   } else {
     StorageType new_storage(size() + count);
     new_storage.unsafe_append_move(begin(), end() - n);
@@ -286,12 +294,12 @@ typename Vector<T>::iterator Vector<T>::emplace(const_iterator before, Args&&...
     if (at_end) {
       construct_at(end(), std::forward<Args>(args)...);
     } else {
-      std::uninitialized_move(end() - 1, end(), end());
+      gtl::uninitialized_move(end() - 1, end(), end());
       std::move_backward(begin() + insert_pos, end() - 1, end() - 1);
       T tmp(std::forward<Args>(args)...);
       *(begin() + insert_pos) = std::move(tmp);
     }
-    ++d_.size_;
+    d_.incr_size(1);
   } else {
     StorageType new_storage(size() + 1);
     new_storage.unsafe_append_move(begin(), begin() + insert_pos);
@@ -305,8 +313,8 @@ typename Vector<T>::iterator Vector<T>::emplace(const_iterator before, Args&&...
 }
 
 template <typename T>
-template <typename II, typename Category>
-typename Vector<T>::iterator Vector<T>::replace(const_iterator pos, II first, II last) {
+template <typename InputIt, typename Category>
+typename Vector<T>::iterator Vector<T>::replace(const_iterator pos, InputIt first, InputIt last) {
   size_type n = cend() - pos;
   size_type count = std::distance(first, last);
   if (count == 0) {
@@ -318,8 +326,8 @@ typename Vector<T>::iterator Vector<T>::replace(const_iterator pos, II first, II
     std::copy(first, last, iterator(pos));
   } else if (!d_.full(count - n)) {
     std::copy(first, first + n, iterator(pos));
-    std::uninitialized_copy(first + n, last, end());
-    d_.size_ += count - n;
+    gtl::uninitialized_copy(first + n, last, end());
+    d_.incr_size(count - n);
   } else {
     StorageType new_storage(size() + count - n);
     new_storage.unsafe_append_move(begin(), iterator(pos));

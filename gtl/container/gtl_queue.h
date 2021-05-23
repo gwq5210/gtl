@@ -31,8 +31,8 @@ class Queue {
   Queue() = default;
   explicit Queue(const Container& c) : c_(c) {}
   explicit Queue(Container&& c) : c_(std::move(c)) {}
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  Queue(II first, II last) : c_(first, last) {}
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  Queue(InputIt first, InputIt last) : c_(first, last) {}
   ~Queue() = default;
 
   // Element access
@@ -52,8 +52,8 @@ class Queue {
   void emplace(Args&&... args) {
     c_.emplace_back(std::forward<Args>(args)...);
   }
-  template <typename II, typename Category = typename std::iterator_traits<II>::iterator_category>
-  void push(II first, II last) {
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  void push(InputIt first, InputIt last) {
     for (; first != last; ++first) {
       emplace(*first);
     }
