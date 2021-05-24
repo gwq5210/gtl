@@ -13,6 +13,12 @@
 
 namespace gtl {
 
+/**
+ * @brief 管理固定容量大小的类，仅有一个数据指针
+ *
+ * @tparam T 保存数据的类型
+ * @tparam fixed_capacity 区域的容量
+ */
 template <typename T, size_t fixed_capacity = 0>
 class UStorage : public std::allocator<T> {
  public:
@@ -82,6 +88,9 @@ class UStorage : public std::allocator<T> {
   T* data_;
 };  // class UStorage
 
+/**
+ * @brief 管理动态空间的类，包含数据指针和容量大小
+ */
 template <typename T>
 class UStorage<T, 0> : public std::allocator<T> {
  public:

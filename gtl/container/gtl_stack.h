@@ -62,7 +62,7 @@ class Stack {
   Container c_;
 };  // class Stack
 
-template <typename T, typename Container>
+template <typename T, typename Container = List<T>>
 using stack = Stack<T, Container>;
 
 template <typename T, typename Container>

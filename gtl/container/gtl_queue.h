@@ -10,7 +10,6 @@
 #pragma once
 
 #include "gtl_deque.h"
-#include "gtl_list.h"
 
 namespace gtl {
 

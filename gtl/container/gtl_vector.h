@@ -79,10 +79,8 @@ class Vector {
   }
   void assign(Vector&& other) {
     printf("%s move\n", __FUNCTION__);
-    if (this != &other) {
-      d_.release();
-      d_.swap(other.d_);
-    }
+    d_.release();
+    d_.swap(other.d_);
   }
   void assign(std::initializer_list<T> il) {
     printf("%s il\n", __FUNCTION__);
@@ -222,7 +220,10 @@ class Vector {
            d_.begin());
     d_.swap(new_storage);
   }
-  void release() { clear(); }
+  void release() {
+    clear();
+    d_.release();
+  }
 
   StorageType d_;
 };  // class Vector

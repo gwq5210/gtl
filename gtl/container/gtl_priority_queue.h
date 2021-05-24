@@ -77,7 +77,7 @@ class PriorityQueue {
   Compare compare_;
 };  // class PriorityQueue
 
-template <typename T, typename Compare, typename Container>
+template <typename T, typename Compare = std::less<T>, typename Container = Vector<T>>
 using priority_queue = PriorityQueue<T, Compare, Container>;
 
 template <typename T, typename Compare, typename Container>
