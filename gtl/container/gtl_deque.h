@@ -33,9 +33,7 @@ class ConstDequeIterator {
   ConstDequeIterator(BlockIterator block, size_type offset) : block_(block), offset_(offset) {}
   ConstDequeIterator(const ConstDequeIterator& other) = default;
   ConstDequeIterator& operator=(const ConstDequeIterator& other) = default;
-  ConstDequeIterator(ConstDequeIterator&& other) : block_(), offset_() {
-    other.swap(*this);
-  }
+  ConstDequeIterator(ConstDequeIterator&& other) : block_(), offset_() { other.swap(*this); }
   void init() {
     block_ = nullptr;
     offset_ = 0;
@@ -86,14 +84,14 @@ class ConstDequeIterator {
   }
   Self& operator+=(difference_type n) {
     if (n != 0) {
-      n += offset_;
       if (n >= 0) {
+        n += offset_;
         block_ += n / DequeType::block_capacity_;
         offset_ = n % DequeType::block_capacity_;
       } else {
-        n -= DequeType::block_capacity_ - 1;
+        n -= (DequeType::block_capacity_ - 1) - offset_;
         block_ += n / DequeType::block_capacity_;
-        offset_ = n % DequeType::block_capacity_ + DequeType::block_capacity_ - 1;
+        offset_ = (DequeType::block_capacity_ - 1) + n % DequeType::block_capacity_;
       }
     }
     return *this;
@@ -391,7 +389,7 @@ class Deque {
 
 template <typename T>
 typename Deque<T>::iterator Deque<T>::insert_n(const_iterator before, size_type count, const T& v) {
-  auto pos = before - begin();
+  size_type pos = before - begin();
   if (count > 0) {
     if (before == begin()) {
       reserve_at_front(count);
@@ -405,7 +403,7 @@ typename Deque<T>::iterator Deque<T>::insert_n(const_iterator before, size_type 
       gtl::uninitialized_fill_n(end(), count, v);
       end_ += count;
     } else {
-      auto right_count = end() - before;
+      size_type right_count = end() - before;
       if (pos <= right_count) {
         reserve_at_front(count);
         auto new_begin = begin_ - count;
@@ -454,7 +452,7 @@ typename Deque<T>::iterator Deque<T>::insert_range(const_iterator before, InputI
       gtl::uninitialized_copy(first, last, end());
       end_ += count;
     } else {
-      auto right_count = end() - before;
+      size_type right_count = end() - before;
       if (pos <= right_count) {
         reserve_at_front(count);
         auto new_begin = begin_ - count;
@@ -595,9 +593,9 @@ void Deque<T>::reserve_at_back(size_type count) {
 template <typename T>
 void Deque<T>::reallocate_block_storage(size_type count, bool add_at_front) {
   BlockStorage new_block_storage(d_.capacity() + count);
-  auto mid_offset = (new_block_storage.capacity() - (end_.block() - begin_.block() + 1) - count) / 2;
-  auto begin_block_offset = begin_.block() - d_.begin() + mid_offset;
-  auto end_block_offset = end_.block() - d_.begin() + mid_offset;
+  size_type mid_offset = (new_block_storage.capacity() - (end_.block() - begin_.block() + 1) - count) / 2;
+  size_type begin_block_offset = begin_.block() - d_.begin() + mid_offset;
+  size_type end_block_offset = end_.block() - d_.begin() + mid_offset;
   if (add_at_front) {
     begin_block_offset += count;
     end_block_offset += count;
