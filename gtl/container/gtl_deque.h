@@ -17,17 +17,17 @@ namespace gtl {
 template <typename DequeType>
 class ConstDequeIterator {
  public:
-  typedef std::random_access_iterator_tag iterator_category;
-  typedef DequeType::const_reference reference;
-  typedef DequeType::const_pointer pointer;
-  typedef DequeType::difference_type difference_type;
-  typedef DequeType::value_type value_type;
-  typedef DequeType::size_type size_type;
-  typedef DequeType::StoragePtrType::iterator BlockIterator;
-  typedef DequeType::StoragePtrType::const_iterator ConstBlockIterator;
-  typedef DequeType::StorageType::iterator ValueIterator;
-  typedef DequeType::StorageType::const_iterator ConstValueIterator;
-  typedef ConstDequeIterator Self;
+  using iterator_category = std::random_access_iterator_tag;
+  using reference = typename DequeType::const_reference;
+  using pointer = typename DequeType::const_pointer;
+  using difference_type = typename DequeType::difference_type;
+  using value_type = typename DequeType::value_type;
+  using size_type = typename DequeType::size_type;
+  using BlockIterator = typename DequeType::StoragePtrType::iterator;
+  using ConstBlockIterator = typename DequeType::StoragePtrType::const_iterator;
+  using ValueIterator = typename DequeType::StorageType::iterator;
+  using ConstValueIterator = typename DequeType::StorageType::const_iterator;
+  using Self = ConstDequeIterator;
 
   ConstDequeIterator() : block_(), curr_() {}
   ConstDequeIterator(BlockIterator block, ValueIterator curr) : block_(block), curr_(curr) {}
@@ -123,11 +123,11 @@ template <typename DequeType>
 class DequeIterator : public ConstDequeIterator<DequeType> {
  public:
   using Base = ConstDequeIterator<DequeType>;
-  using reference = DequeType::reference;
-  using pointer = DequeType::pointer;
-  using difference_type = Base::difference_type;
-  using BlockIterator = Base::BlockIterator;
-  using ValueIterator = Base::ValueIterator;
+  using reference = typename DequeType::reference;
+  using pointer = typename DequeType::pointer;
+  using difference_type = typename Base::difference_type;
+  using BlockIterator = typename Base::BlockIterator;
+  using ValueIterator = typename Base::ValueIterator;
   using Self = DequeIterator;
   DequeIterator() : Base() {}
   DequeIterator(BlockIterator block, ValueIterator curr) : Base(block, curr) {}
@@ -165,14 +165,14 @@ class DequeIterator : public ConstDequeIterator<DequeType> {
     ret += n;
     return ret;
   }
+  using Base::operator-;
+  // or
+  // difference_type operator-(const Base& other) const { return Base::operator-(other); }
   Self operator-(difference_type n) const {
     Self ret = *this;
     ret -= n;
     return ret;
   }
-  using Base::operator-;
-  // or
-  // difference_type operator-(const Base& other) const { return Base::operator-(other); }
   reference operator[](difference_type n) { return *(*this + n); }
 };
 
@@ -338,7 +338,7 @@ class Deque {
 
 template <typename T>
 template <typename... Args>
-Deque<T>::iterator Deque<T>::emplace(const_iterator before, Args&&... args) {
+typename Deque<T>::iterator Deque<T>::emplace(const_iterator before, Args&&... args) {
   if (before == begin()) {
     reserve_at_front(1);
     --begin_;
@@ -361,7 +361,7 @@ Deque<T>::iterator Deque<T>::emplace(const_iterator before, Args&&... args) {
 }
 
 template <typename T>
-Deque<T>::iterator Deque<T>::erase(const_iterator first, const_iterator last) {
+typename Deque<T>::iterator Deque<T>::erase(const_iterator first, const_iterator last) {
   if (first == last) {
     return iterator(last.block(), last.curr());
   }

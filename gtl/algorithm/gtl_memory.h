@@ -80,7 +80,7 @@ ForwardIt destroy_range_n(ForwardIt first, SizeType n, std::forward_iterator_tag
  */
 template <typename ForwardIt>
 void destroy(ForwardIt first, ForwardIt last) {
-  using iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   gtl::destroy_range(first, last, iterator_category());
 }
 
@@ -91,7 +91,7 @@ void destroy(ForwardIt first, ForwardIt last) {
  */
 template <typename ForwardIt, typename SizeType>
 ForwardIt destroy_n(ForwardIt first, SizeType n) {
-  using iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   return destroy_range_n(first, n, iterator_category());
 }
 
@@ -123,8 +123,8 @@ ForwardIt uninitialized_copy_range_n(InputIt first, SizeType count, ForwardIt d_
  */
 template <typename InputIt, typename ForwardIt>
 ForwardIt uninitialized_copy(InputIt first, InputIt last, ForwardIt d_first) {
-  using input_iterator_category = std::iterator_traits<InputIt>::iterator_category;
-  using forward_iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using input_iterator_category = typename std::iterator_traits<InputIt>::iterator_category;
+  using forward_iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   return gtl::uninitialized_copy_range(first, last, d_first, input_iterator_category(), forward_iterator_category());
 }
 
@@ -138,8 +138,8 @@ ForwardIt uninitialized_copy(InputIt first, InputIt last, ForwardIt d_first) {
  */
 template <typename InputIt, typename SizeType, typename ForwardIt>
 ForwardIt uninitialized_copy_n(InputIt first, SizeType count, ForwardIt d_first) {
-  using input_iterator_category = std::iterator_traits<InputIt>::iterator_category;
-  using forward_iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using input_iterator_category = typename std::iterator_traits<InputIt>::iterator_category;
+  using forward_iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   return gtl::uninitialized_copy_range_n(first, count, d_first, input_iterator_category(), forward_iterator_category());
 }
 
@@ -165,7 +165,7 @@ void uninitialized_fill_range_n(ForwardIt first, SizeType count, const T& v, std
  */
 template <typename ForwardIt, typename T>
 void uninitialized_fill(ForwardIt first, ForwardIt last, const T& v) {
-  using iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   gtl::uninitialized_fill_range(first, last, v, iterator_category());
 }
 
@@ -177,7 +177,7 @@ void uninitialized_fill(ForwardIt first, ForwardIt last, const T& v) {
  */
 template <typename ForwardIt, typename SizeType, typename T>
 void uninitialized_fill_n(ForwardIt first, SizeType count, const T& v) {
-  using iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   gtl::uninitialized_fill_range_n(first, count, v, iterator_category());
 }
 
@@ -209,8 +209,8 @@ ForwardIt uninitialized_move_range_n(InputIt first, SizeType count, ForwardIt d_
  */
 template <typename InputIt, typename ForwardIt>
 ForwardIt uninitialized_move(InputIt first, InputIt last, ForwardIt d_first) {
-  using input_iterator_category = std::iterator_traits<InputIt>::iterator_category;
-  using forward_iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using input_iterator_category = typename std::iterator_traits<InputIt>::iterator_category;
+  using forward_iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   return gtl::uninitialized_move_range(first, last, d_first, input_iterator_category(), forward_iterator_category());
 }
 
@@ -224,8 +224,8 @@ ForwardIt uninitialized_move(InputIt first, InputIt last, ForwardIt d_first) {
  */
 template <typename InputIt, typename SizeType, typename ForwardIt>
 ForwardIt uninitialized_move_n(InputIt first, SizeType count, ForwardIt d_first) {
-  using input_iterator_category = std::iterator_traits<InputIt>::iterator_category;
-  using forward_iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using input_iterator_category = typename std::iterator_traits<InputIt>::iterator_category;
+  using forward_iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   return gtl::uninitialized_move_range_n(first, count, d_first, input_iterator_category(), forward_iterator_category());
 }
 
@@ -251,7 +251,7 @@ void uninitialized_default_construct_range_n(ForwardIt first, SizeType count, st
  */
 template <typename ForwardIt>
 void uninitialized_default_construct(ForwardIt first, ForwardIt last) {
-  using iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   gtl::uninitialized_fill_range(first, last, iterator_category());
 }
 
@@ -263,7 +263,7 @@ void uninitialized_default_construct(ForwardIt first, ForwardIt last) {
  */
 template <typename ForwardIt, typename SizeType>
 void uninitialized_default_construct_n(ForwardIt first, SizeType count) {
-  using iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   gtl::uninitialized_default_construct_range_n(first, count, iterator_category());
 }
 
@@ -289,7 +289,7 @@ void uninitialized_value_construct_range_n(ForwardIt first, SizeType count, std:
  */
 template <typename ForwardIt>
 void uninitialized_value_construct(ForwardIt first, ForwardIt last) {
-  using iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   gtl::uninitialized_fill_range(first, last, iterator_category());
 }
 
@@ -301,7 +301,7 @@ void uninitialized_value_construct(ForwardIt first, ForwardIt last) {
  */
 template <typename ForwardIt, typename SizeType>
 void uninitialized_value_construct_n(ForwardIt first, SizeType count) {
-  using iterator_category = std::iterator_traits<ForwardIt>::iterator_category;
+  using iterator_category = typename std::iterator_traits<ForwardIt>::iterator_category;
   gtl::uninitialized_value_construct_range_n(first, count, iterator_category());
 }
 

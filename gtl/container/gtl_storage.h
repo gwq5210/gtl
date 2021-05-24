@@ -16,16 +16,16 @@ namespace gtl {
 template <typename T, size_t fixed_capacity = 0>
 class UStorage : public std::allocator<T> {
  public:
-  typedef T value_type;
-  typedef T& reference;
-  typedef const T& const_reference;
-  typedef T* pointer;
-  typedef const T* const_pointer;
-  typedef T* iterator;
-  typedef const T* const_iterator;
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
-  typedef std::allocator<T> allocator_type;
+  using value_type = T;
+  using reference = T&;
+  using const_reference = const T&;
+  using pointer = T*;
+  using const_pointer = const T*;
+  using iterator = T*;
+  using const_iterator = const T*;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using allocator_type = std::allocator<T>;
 
   UStorage() : data_(nullptr) {}
   explicit UStorage(size_type n) { allocate(); }
@@ -85,16 +85,16 @@ class UStorage : public std::allocator<T> {
 template <typename T>
 class UStorage<T, 0> : public std::allocator<T> {
  public:
-  typedef T value_type;
-  typedef T& reference;
-  typedef const T& const_reference;
-  typedef T* pointer;
-  typedef const T* const_pointer;
-  typedef T* iterator;
-  typedef const T* const_iterator;
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
-  typedef std::allocator<T> allocator_type;
+  using value_type = T;
+  using reference = T&;
+  using const_reference = const T&;
+  using pointer = T*;
+  using const_pointer = const T*;
+  using iterator = T*;
+  using const_iterator = const T*;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using allocator_type = std::allocator<T>;
 
   static constexpr size_type min_capacity_ = 16;
 
@@ -192,21 +192,19 @@ class UStorage<T, 0> : public std::allocator<T> {
 template <typename T, size_t fix_capacity = 0>
 class Storage : public UStorage<T, fix_capacity> {
  public:
-  typedef T value_type;
-  typedef T& reference;
-  typedef const T& const_reference;
-  typedef T* pointer;
-  typedef const T* const_pointer;
-  typedef T* iterator;
-  typedef const T* const_iterator;
-  typedef std::reverse_iterator<iterator> reverse_iterator;
-  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
-  typedef UStorage<T, fix_capacity> Base;
-  typedef Base::allocator_type allocator_type;
-
-  static constexpr size_type min_capacity_ = 16;
+  using Base = UStorage<T, fix_capacity>;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
+  using pointer = typename Base::pointer;
+  using const_pointer = typename Base::const_pointer;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+  using size_type = typename Base::size_type;
+  using difference_type = typename Base::difference_type;
+  using allocator_type = typename Base::allocator_type;
 
   Storage() : size_(0) {}
   explicit Storage(size_type n) : Base(n), size_(0) {}
@@ -219,8 +217,7 @@ class Storage : public UStorage<T, fix_capacity> {
   void assign(Storage&& other) {
     release();
 
-    Base::data_ = other.data_;
-    Base::capacity_ = other.capacity_;
+    Base::assign(std::move(other));
     size_ = other.size_;
 
     other.init();
@@ -270,8 +267,8 @@ class Storage : public UStorage<T, fix_capacity> {
     ++size_;
   }
   void release() {
-    Base::release();
     gtl::destroy(Base::begin(), end());
+    Base::release();
     size_ = 0;
   }
   void swap(Storage& other) {

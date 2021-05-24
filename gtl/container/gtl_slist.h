@@ -63,8 +63,8 @@ inline SListNode* insert_range_after(SListNode* after, SListNode* first, SListNo
 }
 
 struct SListIteratorBase {
-  typedef std::forward_iterator_tag iterator_category;
-  typedef SListIteratorBase Self;
+  using iterator_category = std::forward_iterator_tag;
+  using Self = SListIteratorBase;
   SListNode* node;
   SListIteratorBase() : node(nullptr) {}
   SListIteratorBase(SListNode* n) : node(n) {}
@@ -84,12 +84,12 @@ struct SListIteratorBase {
 
 template <typename SListType>
 struct ConstSListIterator : public SListIteratorBase {
-  typedef SListType::const_reference reference;
-  typedef SListType::const_pointer pointer;
-  typedef SListType::difference_type difference_type;
-  typedef SListType::value_type value_type;
-  typedef SListIteratorBase Base;
-  typedef ConstSListIterator Self;
+  using reference = typename SListType::const_reference;
+  using pointer = typename SListType::const_pointer;
+  using difference_type = typename SListType::difference_type;
+  using value_type = typename SListType::value_type;
+  using Base = SListIteratorBase;
+  using Self = ConstSListIterator;
   explicit ConstSListIterator(const SListNode* node) : Base(const_cast<SListNode*>(node)) {}
   reference operator*() const { return SListType::node_value(node); }
   pointer operator->() const { return std::pointer_traits<pointer>::pointer_to(**this); }
@@ -106,12 +106,12 @@ struct ConstSListIterator : public SListIteratorBase {
 
 template <typename SListType>
 struct SListIterator : public ConstSListIterator<SListType> {
-  typedef SListType::reference reference;
-  typedef SListType::pointer pointer;
-  typedef SListType::difference_type difference_type;
-  typedef SListType::value_type value_type;
-  typedef ConstSListIterator<SListType> Base;
-  typedef SListIterator Self;
+  using reference = typename SListType::reference;
+  using pointer = typename SListType::pointer;
+  using difference_type = typename SListType::difference_type;
+  using value_type = typename SListType::value_type;
+  using Base = ConstSListIterator<SListType>;
+  using Self = SListIterator;
   explicit SListIterator(SListNode* node) : Base(node) {}
   reference operator*() const { return const_cast<reference>(Base::operator*()); }
   pointer operator->() const { return const_cast<pointer>(Base::operator->()); }
@@ -137,16 +137,16 @@ class SList {
     }
   };
 
-  typedef T value_type;
-  typedef T& reference;
-  typedef const T& const_reference;
-  typedef T* pointer;
-  typedef const T* const_pointer;
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
-  typedef std::allocator<Node> allocator_type;
-  typedef SListIterator<SList> iterator;
-  typedef ConstSListIterator<SList> const_iterator;
+  using value_type = T;
+  using reference = T&;
+  using const_reference = const T&;
+  using pointer = T*;
+  using const_pointer = const T*;
+  using size_type = size_t;
+  using difference_type = ptrdiff_t;
+  using allocator_type = std::allocator<Node>;
+  using iterator = SListIterator<SList>;
+  using const_iterator = ConstSListIterator<SList>;
 
   static Node* to_node(SListNode* list_node) { return static_cast<Node*>(list_node); }
   static T& node_value(SListNode* list_node) { return to_node(list_node)->val; }

@@ -68,32 +68,32 @@ class Queue {
 template <typename T, typename Container = List<T>>
 using queue = Queue<T, Container>;
 
-template <typename T, typename Container = List<T>>
+template <typename T, typename Container>
 bool operator==(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return lhs.c_ == rhs.c_;
 }
 
-template <typename T, typename Container = List<T>>
+template <typename T, typename Container>
 bool operator!=(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return !(lhs == rhs);
 }
 
-template <typename T, typename Container = List<T>>
+template <typename T, typename Container>
 bool operator<(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return lhs.c_ < rhs.c_;
 }
 
-template <typename T, typename Container = List<T>>
+template <typename T, typename Container>
 bool operator>(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return rhs < lhs;
 }
 
-template <typename T, typename Container = List<T>>
+template <typename T, typename Container>
 bool operator<=(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return !(lhs > rhs);
 }
 
-template <typename T, typename Container = List<T>>
+template <typename T, typename Container>
 bool operator>=(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return !(lhs < rhs);
 }

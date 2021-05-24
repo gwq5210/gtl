@@ -73,8 +73,8 @@ inline ListNode* insert_range_before(ListNode* before, ListNode* first, ListNode
 }
 
 struct ListIteratorBase {
-  typedef std::bidirectional_iterator_tag iterator_category;
-  typedef ListIteratorBase Self;
+  using iterator_category = std::bidirectional_iterator_tag;
+  using Self = ListIteratorBase;
   ListNode* node;
   ListIteratorBase() : node(nullptr) {}
   ListIteratorBase(ListNode* n) : node(n) {}
@@ -103,12 +103,12 @@ struct ListIteratorBase {
 
 template <typename ListType>
 struct ConstListIterator : public ListIteratorBase {
-  typedef ListType::const_reference reference;
-  typedef ListType::const_pointer pointer;
-  typedef ListType::difference_type difference_type;
-  typedef ListType::value_type value_type;
-  typedef ListIteratorBase Base;
-  typedef ConstListIterator Self;
+  using reference = typename ListType::const_reference;
+  using pointer = typename ListType::const_pointer;
+  using difference_type = typename ListType::difference_type;
+  using value_type = typename ListType::value_type;
+  using Base = ListIteratorBase;
+  using Self = ConstListIterator;
   explicit ConstListIterator(const ListNode* node) : Base(const_cast<ListNode*>(node)) {}
   reference operator*() const { return ListType::node_value(node); }
   pointer operator->() const { return std::pointer_traits<pointer>::pointer_to(**this); }
@@ -134,12 +134,10 @@ struct ConstListIterator : public ListIteratorBase {
 
 template <typename ListType>
 struct ListIterator : public ConstListIterator<ListType> {
-  typedef ListType::reference reference;
-  typedef ListType::pointer pointer;
-  typedef ListType::difference_type difference_type;
-  typedef ListType::value_type value_type;
-  typedef ConstListIterator<ListType> Base;
-  typedef ListIterator Self;
+  using reference = typename ListType::reference;
+  using pointer = typename ListType::pointer;
+  using Base = ConstListIterator<ListType>;
+  using Self = ListIterator;
   explicit ListIterator(ListNode* node) : Base(node) {}
   reference operator*() const { return const_cast<reference>(Base::operator*()); }
   pointer operator->() const { return const_cast<pointer>(Base::operator->()); }
@@ -174,22 +172,22 @@ class List {
     }
   };
 
-  typedef T value_type;
-  typedef T& reference;
-  typedef const T& const_reference;
-  typedef T* pointer;
-  typedef const T* const_pointer;
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
-  typedef std::allocator<Node> allocator_type;
+  using value_type = T;
+  using reference = T&;
+  using const_reference = const T&;
+  using pointer = T*;
+  using const_pointer = const T*;
+  using size_type = size_t;
+  using difference_type = ptrdiff_t;
+  using allocator_type = std::allocator<Node>;
 
   static Node* to_node(ListNode* list_node) { return static_cast<Node*>(list_node); }
   static T& node_value(ListNode* list_node) { return to_node(list_node)->val; }
 
-  typedef ListIterator<List> iterator;
-  typedef ConstListIterator<List> const_iterator;
-  typedef std::reverse_iterator<iterator> reverse_iterator;
-  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+  using iterator = ListIterator<List>;
+  using const_iterator = ConstListIterator<List>;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
   List() : dummy_head_(nullptr), size_(0) { init(); }
   explicit List(size_type count) {

@@ -350,6 +350,7 @@ TEST(vector_test, modifiers_iterators_test) {
   for (int i = 0; i < n; ++i) {
     persons.emplace_back(i);
   }
+  EXPECT_EQ(persons.size(), n);
   printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
   persons.insert_safe(persons.begin(), persons.begin(), persons.end());
   for (size_t i = 0; i < persons.size() / 2; ++i) {
