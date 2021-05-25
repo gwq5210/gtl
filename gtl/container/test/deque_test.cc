@@ -22,6 +22,7 @@
 #include "gtl_slist.h"
 #include "gtl_stack.h"
 #include "gtl_vector.h"
+#include "test.h"
 
 using gtl::Array;
 using gtl::Deque;
@@ -200,4 +201,86 @@ TEST(deque_test, constructor_assign_iterator_test) {
   }
   EXPECT_EQ(dq_move.size(), 0);
   EXPECT_EQ(dq_move.empty(), true);
+}
+
+
+TEST(deque_test, modifiers_iterators_test) {
+  int n = 10;
+  Deque<int> dq;
+  for (int i = 0; i < n; ++i) {
+    dq.push_back(i);
+    EXPECT_EQ(dq.back(), i);
+  }
+  int i = 0;
+  for (auto it = dq.begin(); it != dq.end(); ++it, ++i) {
+    EXPECT_EQ(*it, i);
+  }
+  i = n - 1;
+  for (auto it = dq.rbegin(); it != dq.rend(); ++it, --i) {
+    EXPECT_EQ(*it, i);
+  }
+  EXPECT_EQ(dq.size(), n);
+  EXPECT_EQ(dq.empty(), false);
+  for (int i = 0; i < n; ++i) {
+    dq.emplace(dq.begin(), i);
+    EXPECT_EQ(dq.front(), i);
+  }
+  for (int i = 0; i < n; ++i) {
+    dq.emplace(dq.end(), i);
+    EXPECT_EQ(dq.back(), i);
+  }
+  print_range("dq", dq.begin(), dq.end());
+  for (int i = 0; i < n; ++i) {
+    dq.insert(dq.begin() + i / 2, i);
+    EXPECT_EQ(dq[i / 2], i);
+    print_range("dq", dq.begin(), dq.end());
+  }
+  int x = dq[n + 1];
+  dq.erase(dq.begin() + n);
+  EXPECT_EQ(x, dq[n]);
+  dq.erase(dq.begin(), dq.begin() + n);
+  EXPECT_EQ(x, dq.front());
+  dq.resize(n - 1, n);
+  EXPECT_EQ(n - 1, dq.size());
+  dq.resize(n, n);
+  EXPECT_EQ(n, dq.size());
+  EXPECT_EQ(n, dq.back());
+
+  n = 16;
+  Deque<int> new_dq(dq.begin(), dq.begin() + n);
+
+  new_dq.insert(new_dq.begin() + n / 2, n, 100);
+  for (int i = 0; i < n; ++i) {
+    EXPECT_EQ(new_dq[i + n / 2], 100);
+  }
+  EXPECT_EQ(2 * n, new_dq.size());
+  new_dq.erase(new_dq.begin() + n / 2, new_dq.end() - n / 2);
+  EXPECT_EQ(n, new_dq.size());
+  dq.clear();
+  EXPECT_EQ(0, dq.size());
+  EXPECT_EQ(true, dq.empty());
+
+  Deque<Person> erase_dq;
+  for (int i = 0; i < n; ++i) {
+    erase_dq.emplace_back(i);
+  }
+  printf("erase one end\n");
+  erase_dq.erase(erase_dq.begin() + 2);
+  EXPECT_EQ(erase_dq.size(), n - 1);
+  for (size_t i = 0; i < erase_dq.size(); ++i) {
+    EXPECT_EQ(erase_dq[i].id, i >= 2 ? i + 1 : i);
+  }
+  printf("erase one end\n");
+  erase_dq.erase(erase_dq.begin() + 2, erase_dq.begin() + 12);
+  EXPECT_EQ(erase_dq.size(), n - 11);
+  for (size_t i = 0; i < erase_dq.size(); ++i) {
+    EXPECT_EQ(erase_dq[i].id, i >= 2 ? i + 11 : i);
+  }
+  printf("erase range end\n");
+
+  Deque<Person> persons;
+  for (int i = 0; i < n; ++i) {
+    persons.emplace_back(i);
+  }
+  EXPECT_EQ(persons.size(), n);
 }

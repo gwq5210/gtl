@@ -507,8 +507,8 @@ typename Deque<T>::iterator Deque<T>::emplace(const_iterator before, Args&&... a
     auto it = begin() - 1;
     gtl::construct_at(it.curr(), std::move(front()));
     std::move(begin() + 1, begin() + pos + 1, begin());
-    at(pos) = std::move(tmp);
     --begin_;
+    at(pos) = std::move(tmp);
   } else {
     reserve_at_back(1);
     T tmp(std::forward<Args>(args)...);
@@ -517,7 +517,7 @@ typename Deque<T>::iterator Deque<T>::emplace(const_iterator before, Args&&... a
     at(pos) = std::move(tmp);
     ++end_;
   }
-  return end_;
+  return begin_ + pos;
 }
 
 template <typename T>

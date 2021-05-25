@@ -15,6 +15,8 @@
 #include <iterator>
 #include <type_traits>
 
+#include "gtl_common.h"
+
 namespace gtl {
 
 struct ListNode {
@@ -393,9 +395,62 @@ class List {
       it = next;
     }
   }
+  void merge_sort() { merge_sort(std::less<>()); }
+  template <typename Compare>
+  void merge_sort(Compare comp) {
+    if (size_ <= 1) {
+      return;
+    }
+    List right;
+    right.splice(right.begin(), *this, std::next(begin(), size_ / 2), end());
+    merge_sort(comp);
+    right.merge_sort(comp);
+    merge(right);
+  }
   void sort() { sort(std::less<>()); }
   template <typename Compare>
   void sort(Compare comp) {
+    if (size_ <= 1) {
+      return;
+    }
+    List left;
+    List right;
+    for (int i = 1; i < size_; i *= 2) {
+      printf("i = %d\n", i);
+      int c = 2 * i;
+      auto it = begin();
+      auto last = end();
+      int n = size_ - size_ % c;
+      for (int j = 0; j < n; j += c) {
+        last = std::next(it, i);
+        left.splice(left.begin(), *this, it, last);
+        // print_range("left", left.begin(), left.end());
+        it = last;
+        last = std::next(last, i);
+        right.splice(right.begin(), *this, it, last);
+        // print_range("right", right.begin(), right.end());
+        left.merge(right);
+        splice(last, left);
+        it = last;
+        // print_range("this", begin(), end());
+      }
+      n = size_ % c;
+      if (n > i) {
+        // printf("process_end\n");
+        last = std::next(it, i);
+        left.splice(left.begin(), *this, it, last);
+        // print_range("left", left.begin(), left.end());
+        right.splice(right.begin(), *this, last, end());
+        // print_range("right", right.begin(), right.end());
+        left.merge(right);
+        splice(end(), left);
+        // print_range("this", begin(), end());
+      }
+    }
+  }
+  void qsort() { qsort(std::less<>()); }
+  template <typename Compare>
+  void qsort(Compare comp) {
     if (size_ <= 1) {
       return;
     }
@@ -414,8 +469,8 @@ class List {
     }
     it = begin();
     right.transfer(right.begin(), *this, ++it, end());
-    left.sort(comp);
-    right.sort(comp);
+    left.qsort(comp);
+    right.qsort(comp);
     left.splice(left.end(), *this);
     left.splice(left.end(), right);
     *this = std::move(left);

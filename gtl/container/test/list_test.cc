@@ -203,7 +203,7 @@ TEST(list_test, modifiers_iterators_test) {
 }
 
 TEST(list_test, operations_test) {
-  int n = 10240;
+  int n = 102400;
   List<int> l1;
   List<int> l2;
   for (int i = 0; i < n; ++i) {
@@ -231,6 +231,12 @@ TEST(list_test, operations_test) {
     EXPECT_EQ(*rit, i);
   }
   l1.sort();
+  it = l1.begin();
+  for (int i = 0; i < 2 * n; ++i, ++it) {
+    EXPECT_EQ(*it, i);
+  }
+  l1.reverse();
+  l1.merge_sort();
   it = l1.begin();
   for (int i = 0; i < 2 * n; ++i, ++it) {
     EXPECT_EQ(*it, i);

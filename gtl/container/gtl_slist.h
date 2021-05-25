@@ -15,6 +15,8 @@
 #include <iterator>
 #include <type_traits>
 
+#include "gtl_common.h"
+
 namespace gtl {
 
 struct SListNode {
@@ -311,6 +313,7 @@ class SList {
         if (comp(*right, *left)) {
           splice_after(prev, other, other.before_begin());
           right = other.begin();
+          ++prev;
         } else {
           prev = left;
           ++left;
@@ -351,9 +354,49 @@ class SList {
       splice_after(before_begin(), *this, it);
     }
   }
+  void merge_sort() { merge_sort(std::less<>()); }
+  template <typename Compare>
+  void merge_sort(Compare comp) {
+    if (size_ <= 1) {
+      return;
+    }
+    SList right;
+    right.splice_after(right.before_begin(), *this, std::next(before_begin(), size_ / 2), end());
+    merge_sort(comp);
+    right.merge_sort(comp);
+    merge(right, comp);
+  }
   void sort() { sort(std::less<>()); }
   template <typename Compare>
   void sort(Compare comp) {
+    if (size_ <= 1) {
+      return;
+    }
+    SList left;
+    SList right;
+    for (int i = 1; i < size_; i *= 2) {
+      int c = 2 * i;
+      auto it = before_begin();
+      int n = size_ - size_ % c;
+      for (int j = 0; j < n; j += c) {
+        left.splice_after(left.before_begin(), *this, it, std::next(it, i + 1));
+        right.splice_after(right.before_begin(), *this, it, std::next(it, i + 1));
+        left.merge(right);
+        splice_after(it, left);
+        it = std::next(it, i);
+      }
+      n = size_ % c;
+      if (n > i) {
+        left.splice_after(left.before_begin(), *this, it, std::next(it, i + 1));
+        right.splice_after(right.before_begin(), *this, it, end());
+        left.merge(right);
+        splice_after(it, left);
+      }
+    }
+  }
+  void qsort() { qsort(std::less<>()); }
+  template <typename Compare>
+  void qsort(Compare comp) {
     if (size_ <= 1) {
       return;
     }
@@ -373,8 +416,8 @@ class SList {
       }
     }
     right.splice_after(right.before_begin(), *this, begin(), end());
-    left.sort(comp);
-    right.sort(comp);
+    left.qsort(comp);
+    right.qsort(comp);
     left.splice_after(left.before_end(), *this);
     left.splice_after(left.before_end(), right);
     *this = std::move(left);

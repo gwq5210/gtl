@@ -169,7 +169,7 @@ TEST(slist_test, modifiers_iterators_test) {
 }
 
 TEST(slist_test, operations_test) {
-  int n = 1024;
+  int n = 102400;
   SList<int> l1;
   SList<int> l2;
   for (int i = 0; i < n; ++i) {
@@ -194,8 +194,13 @@ TEST(slist_test, operations_test) {
   for (int i = 2 * n - 1; i >= 0; --i, ++it) {
     EXPECT_EQ(*it, i);
   }
-  l1.sort();
+  l1.merge_sort();
   it = l1.begin();
+  for (int i = 0; i < 2 * n; ++i, ++it) {
+    EXPECT_EQ(*it, i);
+  }
+  l1.reverse();
+  l1.sort();
   for (int i = 0; i < 2 * n; ++i, ++it) {
     EXPECT_EQ(*it, i);
   }

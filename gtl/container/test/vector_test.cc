@@ -22,48 +22,13 @@
 #include "gtl_slist.h"
 #include "gtl_stack.h"
 #include "gtl_vector.h"
+#include "test.h"
 
 using gtl::Array;
 using gtl::Deque;
 using gtl::List;
 using gtl::SList;
 using gtl::Vector;
-
-#define PRINT_TYPE_SIZE(Type) printf(#Type " size: %zu\n", sizeof Type);
-
-struct Person {
-  Person(const Person& other) : id(other.id) {
-    // printf("%s %d\n", __FUNCTION__, id);
-  }
-  Person(int i) : id(i) {
-    // printf("%s %d\n", __FUNCTION__, id);
-  }
-  ~Person() {
-    // printf("%d\n", id);
-    id = 0;
-  }
-  int id;
-};
-
-template <class Iterator>
-void print(Iterator first, Iterator end) {
-  auto it = first;
-  printf("[");
-  while (it != end) {
-    if (it != first) {
-      printf(",");
-    }
-    printf("%d", *it);
-    ++it;
-  }
-  printf("]\n");
-}
-
-template <class T>
-void print(const Vector<T>& vec) {
-  printf("(size = %zu, capacity = %zu)", vec.size(), vec.capacity());
-  print(vec.begin(), vec.end());
-}
 
 TEST(vector_test, constructor_assign_iterator_test) {
   Vector<int> empty_vec;
