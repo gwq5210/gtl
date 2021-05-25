@@ -415,13 +415,13 @@ class List {
     }
     List left;
     List right;
-    for (int i = 1; i < size_; i *= 2) {
-      printf("i = %d\n", i);
-      int c = 2 * i;
+    for (size_type i = 1; i < size_; i *= 2) {
+      printf("i = %zu\n", i);
+      size_type c = 2 * i;
       auto it = begin();
       auto last = end();
-      int n = size_ - size_ % c;
-      for (int j = 0; j < n; j += c) {
+      size_type n = size_ - size_ % c;
+      for (size_type j = 0; j < n; j += c) {
         last = std::next(it, i);
         left.splice(left.begin(), *this, it, last);
         // print_range("left", left.begin(), left.end());

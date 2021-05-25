@@ -203,7 +203,6 @@ TEST(deque_test, constructor_assign_iterator_test) {
   EXPECT_EQ(dq_move.empty(), true);
 }
 
-
 TEST(deque_test, modifiers_iterators_test) {
   int n = 10;
   Deque<int> dq;
@@ -248,6 +247,7 @@ TEST(deque_test, modifiers_iterators_test) {
 
   n = 16;
   Deque<int> new_dq(dq.begin(), dq.begin() + n);
+  printf("dq_new end\n");
 
   new_dq.insert(new_dq.begin() + n / 2, n, 100);
   for (int i = 0; i < n; ++i) {
@@ -283,4 +283,5 @@ TEST(deque_test, modifiers_iterators_test) {
     persons.emplace_back(i);
   }
   EXPECT_EQ(persons.size(), n);
+  printf("dq test end\n");
 }

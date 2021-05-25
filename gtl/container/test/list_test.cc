@@ -230,14 +230,17 @@ TEST(list_test, operations_test) {
   for (int i = 0; i < 2 * n; ++i, ++rit) {
     EXPECT_EQ(*rit, i);
   }
-  l1.sort();
+  l1.merge_sort();
   it = l1.begin();
+  EXPECT_EQ(l1.size(), 2 * n);
   for (int i = 0; i < 2 * n; ++i, ++it) {
     EXPECT_EQ(*it, i);
   }
+
   l1.reverse();
-  l1.merge_sort();
+  l1.sort();
   it = l1.begin();
+  EXPECT_EQ(l1.size(), 2 * n);
   for (int i = 0; i < 2 * n; ++i, ++it) {
     EXPECT_EQ(*it, i);
   }

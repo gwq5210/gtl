@@ -3,7 +3,7 @@
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 单链表单元测试
  * @date 2021-05-15
- * 
+ *
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
@@ -196,11 +196,15 @@ TEST(slist_test, operations_test) {
   }
   l1.merge_sort();
   it = l1.begin();
+  EXPECT_EQ(l1.size(), 2 * n);
   for (int i = 0; i < 2 * n; ++i, ++it) {
     EXPECT_EQ(*it, i);
   }
+
   l1.reverse();
   l1.sort();
+  it = l1.begin();
+  EXPECT_EQ(l1.size(), 2 * n);
   for (int i = 0; i < 2 * n; ++i, ++it) {
     EXPECT_EQ(*it, i);
   }
