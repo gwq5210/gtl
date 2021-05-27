@@ -29,6 +29,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
 set(INCLUDE_HEADERS
   gtl/algorithm/gtl_algorithm.h
   gtl/algorithm/gtl_heap_op.h
+  gtl/algorithm/gtl_seq_op.h
   gtl/algorithm/gtl_memory.h
   gtl/container/gtl_array.h
   gtl/container/gtl_common.h

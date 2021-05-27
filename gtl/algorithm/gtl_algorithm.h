@@ -8,3 +8,4 @@
  */
 
 #include "gtl_heap_op.h"
+#include "gtl_seq_op.h"

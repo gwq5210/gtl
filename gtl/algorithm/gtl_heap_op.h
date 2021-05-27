@@ -11,8 +11,6 @@
 
 #include <iterator>
 
-#include "gtl_common.h"
-
 namespace gtl {
 
 template <typename RandomIt, typename Compare>
@@ -47,17 +45,17 @@ RandomIt is_heap_until(RandomIt first, RandomIt last, Compare comp) {
   auto n = std::distance(first, last);
   typename std::iterator_traits<RandomIt>::difference_type i = 0;
   if (n <= 1) {
-    return true;
+    return last;
   }
   auto it = first;
   auto left_it = first + 1;
   for (; i < n / 2; ++i, ++it, ++left_it) {
     if (comp(*it, *left_it)) {
-      return it;
+      return left_it;
     }
     ++left_it;
     if (left_it < last && comp(*it, *left_it)) {
-      return it;
+      return left_it;
     }
   }
 
