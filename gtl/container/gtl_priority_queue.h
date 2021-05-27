@@ -9,8 +9,7 @@
 
 #pragma once
 
-#include <algorithm>
-
+#include "gtl_algorithm.h"
 #include "gtl_vector.h"
 
 namespace gtl {
@@ -32,11 +31,11 @@ class PriorityQueue {
                         const PriorityQueue<T_, Compare_, Container_>& rhs);
 
   PriorityQueue() = default;
-  explicit PriorityQueue(const Container& c) : c_(c) { std::make_heap(c_.begin(), c_.end(), compare_); }
-  explicit PriorityQueue(Container&& c) : c_(std::move(c)) { std::make_heap(c_.begin(), c_.end(), compare_); }
+  explicit PriorityQueue(const Container& c) : c_(c) { gtl::make_heap(c_.begin(), c_.end(), compare_); }
+  explicit PriorityQueue(Container&& c) : c_(std::move(c)) { gtl::make_heap(c_.begin(), c_.end(), compare_); }
   template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
   PriorityQueue(InputIt first, InputIt last) : c_(first, last) {
-    std::make_heap(c_.begin(), c_.end(), compare_);
+    gtl::make_heap(c_.begin(), c_.end(), compare_);
   }
 
   // Element access
@@ -49,16 +48,16 @@ class PriorityQueue {
   // Modifiers
   void push(const T& v) {
     c_.push_back(v);
-    std::push_heap(c_.begin(), c_.end(), compare_);
+    gtl::push_heap(c_.begin(), c_.end(), compare_);
   }
   void push(T&& v) {
     c_.push_back(std::move(v));
-    std::push_heap(c_.begin(), c_.end(), compare_);
+    gtl::push_heap(c_.begin(), c_.end(), compare_);
   }
   template <typename... Args>
   void emplace(Args&&... args) {
     c_.emplace_back(std::forward<Args>(args)...);
-    std::push_heap(c_.begin(), c_.end(), compare_);
+    gtl::push_heap(c_.begin(), c_.end(), compare_);
   }
   template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
   void push(InputIt first, InputIt last) {
@@ -67,7 +66,7 @@ class PriorityQueue {
     }
   }
   void pop() {
-    std::pop_heap(c_.begin(), c_.end());
+    gtl::pop_heap(c_.begin(), c_.end());
     c_.pop_back();
   }
   void swap(PriorityQueue& other) { std::swap(c_, other.c_); }
