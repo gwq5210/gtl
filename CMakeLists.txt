@@ -33,6 +33,7 @@ set(INCLUDE_HEADERS
   gtl/algorithm/gtl_memory.h
   gtl/container/gtl_array.h
   gtl/container/gtl_common.h
+  gtl/container/gtl_compressed_pair.h
   gtl/container/gtl_deque.h
   gtl/container/gtl_list.h
   gtl/container/gtl_priority_queue.h

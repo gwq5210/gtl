@@ -2,6 +2,8 @@
 
 #include <string>
 
+namespace gtl {
+
 template <class Iterator>
 void print_range(const std::string& name, Iterator first, Iterator end) {
   auto it = first;
@@ -21,3 +23,5 @@ void print(const Container& c) {
   printf("(size = %zu, capacity = %zu)", c.size(), c.capacity());
   print(c.begin(), c.end());
 }
+
+}  // namespace gtl
