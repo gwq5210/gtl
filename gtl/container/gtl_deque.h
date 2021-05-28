@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "gtl_algorithm.h"
+#include "gtl_iterator.h"
 #include "gtl_storage.h"
 #include "gtl_vector.h"
 
@@ -40,8 +42,8 @@ class ConstDequeIterator {
   }
   void clear() { init(); }
   void swap(ConstDequeIterator& other) {
-    std::swap(offset_, other.offset_);
-    std::swap(block_, other.block_);
+    gtl::swap(offset_, other.offset_);
+    gtl::swap(block_, other.block_);
   }
   size_type offset() const { return offset_; }
   BlockIterator block() { return block_; }
@@ -220,8 +222,8 @@ class Deque {
   using allocator_type = typename Block::allocator_type;
   using iterator = DequeIterator<Deque>;
   using const_iterator = ConstDequeIterator<Deque>;
-  using reverse_iterator = std::reverse_iterator<iterator>;
-  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+  using reverse_iterator = gtl::reverse_iterator<iterator>;
+  using const_reverse_iterator = gtl::reverse_iterator<const_iterator>;
 
   Deque() = default;
   Deque(size_type count) { insert_n(end(), count, T()); }
@@ -336,8 +338,8 @@ class Deque {
     }
   }
   void swap(Deque& other) {
-    std::swap(begin_, other.begin_);
-    std::swap(end_, other.end_);
+    gtl::swap(begin_, other.begin_);
+    gtl::swap(end_, other.end_);
     d_.swap(other.d_);
   }
 
@@ -351,21 +353,21 @@ class Deque {
   size_type front_capacity() const { return (begin_.block() - d_.begin()) * block_capacity_ + begin_.offset(); }
   template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
   void assign_range(InputIt first, InputIt last, size_type count = 0) {
-    count = count ? count : std::distance(first, last);
+    count = count ? count : gtl::distance(first, last);
     if (count <= size()) {
-      std::copy(first, last, begin());
+      gtl::copy(first, last, begin());
       erase(begin() + count, end());
     } else {
-      std::copy_n(first, size(), begin());
-      insert_range(end(), std::next(first, size()), last, count - size());
+      gtl::copy_n(first, size(), begin());
+      insert_range(end(), gtl::next(first, size()), last, count - size());
     }
   }
   void assign_n(size_type count, const T& v) {
     if (count <= size()) {
-      std::fill_n(begin(), count, v);
+      gtl::fill_n(begin(), count, v);
       erase(begin() + count, end());
     } else {
-      std::fill_n(begin(), size(), v);
+      gtl::fill_n(begin(), size(), v);
       insert_n(end(), count - size(), v);
     }
   }
@@ -410,11 +412,11 @@ typename Deque<T>::iterator Deque<T>::insert_n(const_iterator before, size_type 
         if (pos <= count) {
           gtl::uninitialized_move(begin(), begin() + pos, new_begin);
           gtl::uninitialized_fill_n(new_begin + pos, count - pos, v);
-          std::fill_n(begin(), pos, v);
+          gtl::fill_n(begin(), pos, v);
         } else {
           gtl::uninitialized_move(begin(), begin() + count, new_begin);
-          std::move(begin() + count, begin() + pos, new_begin + count);
-          std::fill_n(begin() + pos - count, count, v);
+          gtl::move(begin() + count, begin() + pos, new_begin + count);
+          gtl::fill_n(begin() + pos - count, count, v);
         }
         begin_ = new_begin;
       } else {
@@ -422,12 +424,12 @@ typename Deque<T>::iterator Deque<T>::insert_n(const_iterator before, size_type 
         auto new_end = end() + count;
         if (right_count <= count) {
           gtl::uninitialized_move(end() - right_count, end(), new_end - right_count);
-          std::fill_n(end() - right_count, right_count, v);
+          gtl::fill_n(end() - right_count, right_count, v);
           gtl::uninitialized_fill_n(end(), count - right_count, v);
         } else {
           gtl::uninitialized_move(end() - count, end(), end());
-          std::move(end() - right_count, end() - count, end() - right_count + count);
-          std::fill_n(end() - right_count, count, v);
+          gtl::move(end() - right_count, end() - count, end() - right_count + count);
+          gtl::fill_n(end() - right_count, count, v);
         }
         end_ = new_end;
       }
@@ -442,7 +444,7 @@ typename Deque<T>::iterator Deque<T>::insert_range(const_iterator before, InputI
                                                    size_type count /* = 0*/) {
   size_type pos = before - begin();
   if (first != last) {
-    count = count ? count : std::distance(first, last);
+    count = count ? count : gtl::distance(first, last);
     if (before == begin()) {
       reserve_at_front(count);
       begin_ -= count;
@@ -459,11 +461,11 @@ typename Deque<T>::iterator Deque<T>::insert_range(const_iterator before, InputI
         if (pos <= count) {
           gtl::uninitialized_move(begin(), begin() + pos, new_begin);
           gtl::uninitialized_copy_n(first, count - pos, new_begin + pos);
-          std::copy(std::next(first, count - pos), last, begin());
+          gtl::copy(gtl::next(first, count - pos), last, begin());
         } else {
           gtl::uninitialized_move(begin(), begin() + count, new_begin);
-          std::move(begin() + count, begin() + pos, new_begin + count);
-          std::copy(first, last, begin() + pos - count);
+          gtl::move(begin() + count, begin() + pos, new_begin + count);
+          gtl::copy(first, last, begin() + pos - count);
         }
         begin_ = new_begin;
       } else {
@@ -471,12 +473,12 @@ typename Deque<T>::iterator Deque<T>::insert_range(const_iterator before, InputI
         auto new_end = end() + count;
         if (right_count <= count) {
           gtl::uninitialized_move(end() - right_count, end(), new_end - right_count);
-          std::copy_n(first, right_count, end() - right_count);
-          gtl::uninitialized_copy(std::next(first, right_count), last, end());
+          gtl::copy_n(first, right_count, end() - right_count);
+          gtl::uninitialized_copy(gtl::next(first, right_count), last, end());
         } else {
           gtl::uninitialized_move(end() - count, end(), end());
-          std::copy(end() - right_count, end() - count, end() - right_count + count);
-          std::copy(first, last, end() - right_count);
+          gtl::copy(end() - right_count, end() - count, end() - right_count + count);
+          gtl::copy(first, last, end() - right_count);
         }
         end_ = new_end;
       }
@@ -506,14 +508,14 @@ typename Deque<T>::iterator Deque<T>::emplace(const_iterator before, Args&&... a
     T tmp(std::forward<Args>(args)...);
     auto it = begin() - 1;
     gtl::construct_at(it.curr(), std::move(front()));
-    std::move(begin() + 1, begin() + pos + 1, begin());
+    gtl::move(begin() + 1, begin() + pos + 1, begin());
     --begin_;
     at(pos) = std::move(tmp);
   } else {
     reserve_at_back(1);
     T tmp(std::forward<Args>(args)...);
     gtl::construct_at(end_.curr(), std::move(back()));
-    std::move_backward(begin() + pos, end() - 1, end() - 1);
+    gtl::move_backward(begin() + pos, end() - 1, end() - 1);
     at(pos) = std::move(tmp);
     ++end_;
   }
@@ -538,12 +540,12 @@ typename Deque<T>::iterator Deque<T>::erase(const_iterator first, const_iterator
   size_type right_count = end() - last;
   size_type count = last - first;
   if (left_count <= right_count) {
-    auto new_begin = std::move_backward(cbegin(), first, iterator(last.block(), last.offset()));
+    auto new_begin = gtl::move_backward(cbegin(), first, iterator(last.block(), last.offset()));
     gtl::destroy(begin(), begin() + count);
     begin_.CopyFrom(new_begin);
     return iterator(last.block(), last.offset());
   } else {
-    auto new_end = std::move(last, cend(), iterator(first.block(), first.offset()));
+    auto new_end = gtl::move(last, cend(), iterator(first.block(), first.offset()));
     gtl::destroy(end() - count, end());
     end_.CopyFrom(new_end);
     return iterator(first.block(), first.offset());

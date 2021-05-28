@@ -9,13 +9,15 @@
 
 #pragma once
 
-#include "gtl_memory.h"
 
 #include <algorithm>
 #include <iterator>
 #include <type_traits>
 
+#include "gtl_algorithm.h"
 #include "gtl_common.h"
+#include "gtl_iterator.h"
+#include "gtl_memory.h"
 
 namespace gtl {
 
@@ -188,8 +190,8 @@ class List {
 
   using iterator = ListIterator<List>;
   using const_iterator = ConstListIterator<List>;
-  using reverse_iterator = std::reverse_iterator<iterator>;
-  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+  using reverse_iterator = gtl::reverse_iterator<iterator>;
+  using const_reverse_iterator = gtl::reverse_iterator<const_iterator>;
 
   List() : dummy_head_(nullptr), size_(0) { init(); }
   explicit List(size_type count) {
@@ -211,8 +213,8 @@ class List {
   }
   List(List&& other) {
     init();
-    std::swap(dummy_head_, other.dummy_head_);
-    std::swap(size_, other.size_);
+    gtl::swap(dummy_head_, other.dummy_head_);
+    gtl::swap(size_, other.size_);
   }
   List(std::initializer_list<T> il) {
     init();
@@ -236,7 +238,7 @@ class List {
   void assign(size_type count, const T& v) { insert(begin(), count, v); }
   template <typename InputIt>
   void assign(InputIt first, InputIt last) {
-    assign_range(std::distance(first, last), first, last);
+    assign_range(gtl::distance(first, last), first, last);
   }
   void assign(std::initializer_list<T> il) { assign_range(il.size(), il.begin(), il.end()); }
   void assign(const List& other) {
@@ -246,8 +248,8 @@ class List {
   }
   void assign(List&& other) {
     clear();
-    std::swap(dummy_head_, other.dummy_head_);
-    std::swap(size_, other.size_);
+    gtl::swap(dummy_head_, other.dummy_head_);
+    gtl::swap(size_, other.size_);
   }
 
   allocator_type get_allocator() const { return allocator_; }
@@ -344,8 +346,8 @@ class List {
   void clear() { erase(begin(), end()); }
 
   // Operations
-  void merge(List& other) { merge(other, std::less<>()); }
-  void merge(List&& other) { merge(other, std::less<>()); }
+  void merge(List& other) { merge(other, std::less<T>()); }
+  void merge(List&& other) { merge(other, std::less<T>()); }
   template <typename Compare>
   void merge(List&& other, Compare comp) {
     merge(other, comp);
@@ -395,19 +397,19 @@ class List {
       it = next;
     }
   }
-  void merge_sort() { merge_sort(std::less<>()); }
+  void merge_sort() { merge_sort(std::less<T>()); }
   template <typename Compare>
   void merge_sort(Compare comp) {
     if (size_ <= 1) {
       return;
     }
     List right;
-    right.splice(right.begin(), *this, std::next(begin(), size_ / 2), end());
+    right.splice(right.begin(), *this, gtl::next(begin(), size_ / 2), end());
     merge_sort(comp);
     right.merge_sort(comp);
     merge(right);
   }
-  void sort() { sort(std::less<>()); }
+  void sort() { sort(std::less<T>()); }
   template <typename Compare>
   void sort(Compare comp) {
     if (size_ <= 1) {
@@ -422,11 +424,11 @@ class List {
       auto last = end();
       size_type n = size_ - size_ % c;
       for (size_type j = 0; j < n; j += c) {
-        last = std::next(it, i);
+        last = gtl::next(it, i);
         left.splice(left.begin(), *this, it, last);
         // print_range("left", left.begin(), left.end());
         it = last;
-        last = std::next(last, i);
+        last = gtl::next(last, i);
         right.splice(right.begin(), *this, it, last);
         // print_range("right", right.begin(), right.end());
         left.merge(right);
@@ -437,7 +439,7 @@ class List {
       n = size_ % c;
       if (n > i) {
         // printf("process_end\n");
-        last = std::next(it, i);
+        last = gtl::next(it, i);
         left.splice(left.begin(), *this, it, last);
         // print_range("left", left.begin(), left.end());
         right.splice(right.begin(), *this, last, end());
@@ -448,7 +450,7 @@ class List {
       }
     }
   }
-  void qsort() { qsort(std::less<>()); }
+  void qsort() { qsort(std::less<T>()); }
   template <typename Compare>
   void qsort(Compare comp) {
     if (size_ <= 1) {
@@ -483,11 +485,11 @@ class List {
       return;
     }
     if (count <= size_) {
-      auto it = std::copy(first, last, begin());
+      auto it = gtl::copy(first, last, begin());
       erase(it, end());
     } else {
-      std::copy_n(first, size_, begin());
-      insert(end(), std::next(first, size_), last);
+      gtl::copy_n(first, size_, begin());
+      insert(end(), gtl::next(first, size_), last);
     }
   }
   void assign_n(size_type count, const T& v) {
@@ -495,10 +497,10 @@ class List {
       return;
     }
     if (count <= size_) {
-      auto it = std::fill_n(begin(), count, v);
+      auto it = gtl::fill_n(begin(), count, v);
       erase(it, end());
     } else {
-      auto it = std::fill_n(begin(), size_, v);
+      auto it = gtl::fill_n(begin(), size_, v);
       insert(it, count, v);
     }
   }
@@ -526,7 +528,7 @@ class List {
     return node;
   }
   void destroy_node(ListNode* node) {
-    std::destroy_at(to_node(node));
+    gtl::destroy_at(to_node(node));
     allocator_.deallocate(to_node(node), 1);
   }
 

@@ -11,38 +11,14 @@
 
 #include <iterator>
 
+#include "gtl_algorithm.h"
+#include "gtl_iterator.h"
+
 namespace gtl {
 
 template <typename RandomIt, typename Compare>
-bool is_heap(RandomIt first, RandomIt last, Compare comp) {
-  auto n = std::distance(first, last);
-  typename std::iterator_traits<RandomIt>::difference_type i = 0;
-  if (n <= 1) {
-    return true;
-  }
-  auto it = first;
-  auto left_it = first + 1;
-  for (; i < n / 2; ++i, ++it, ++left_it) {
-    if (comp(*it, *left_it)) {
-      return false;
-    }
-    ++left_it;
-    if (left_it != last && comp(*it, *left_it)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-template <typename RandomIt>
-bool is_heap(RandomIt first, RandomIt last) {
-  return gtl::is_heap(first, last, std::less<>());
-}
-
-template <typename RandomIt, typename Compare>
 RandomIt is_heap_until(RandomIt first, RandomIt last, Compare comp) {
-  auto n = std::distance(first, last);
+  auto n = gtl::distance(first, last);
   typename std::iterator_traits<RandomIt>::difference_type i = 0;
   if (n <= 1) {
     return last;
@@ -64,12 +40,22 @@ RandomIt is_heap_until(RandomIt first, RandomIt last, Compare comp) {
 
 template <typename RandomIt>
 RandomIt is_heap_until(RandomIt first, RandomIt last) {
-  return gtl::is_heap_until(first, last, std::less<>());
+  return gtl::is_heap_until(first, last, std::less<typename std::iterator_traits<RandomIt>::value_type>());
+}
+
+template <typename RandomIt, typename Compare>
+bool is_heap(RandomIt first, RandomIt last, Compare comp) {
+  return gtl::is_heap_until(first, last, comp) == last;
+}
+
+template <typename RandomIt>
+bool is_heap(RandomIt first, RandomIt last) {
+  return gtl::is_heap(first, last, std::less<typename std::iterator_traits<RandomIt>::value_type>());
 }
 
 template <typename RandomIt, typename SizeType, typename Compare>
 void sift_down(RandomIt first, RandomIt last, SizeType i, Compare comp) {
-  auto n = std::distance(first, last);
+  auto n = gtl::distance(first, last);
   while (i < n / 2) {
     auto l = 2 * i + 1;
     if (l + 1 < n && comp(*(first + l), *(first + l + 1))) {
@@ -78,7 +64,7 @@ void sift_down(RandomIt first, RandomIt last, SizeType i, Compare comp) {
     if (!comp(*(first + i), *(first + l))) {
       break;
     }
-    std::iter_swap(first + i, first + l);
+    gtl::iter_swap(first + i, first + l);
     i = l;
   }
 }
@@ -86,7 +72,7 @@ void sift_down(RandomIt first, RandomIt last, SizeType i, Compare comp) {
 template <typename RandomIt, typename SizeType, typename Compare>
 void sift_up(RandomIt first, RandomIt last, SizeType i, Compare comp) {
   while (i > 0 && comp(*(first + (i - 1) / 2), *(first + i))) {
-    std::iter_swap(first + i, first + (i - 1) / 2);
+    gtl::iter_swap(first + i, first + (i - 1) / 2);
     i = (i - 1) / 2;
   }
 }
@@ -94,7 +80,7 @@ void sift_up(RandomIt first, RandomIt last, SizeType i, Compare comp) {
 template <typename RandomIt, typename Compare>
 void make_heap(RandomIt first, RandomIt last, Compare comp) {
   if (first != last) {
-    for (auto i = std::distance(first, last) / 2 - 1; i >= 0; --i) {
+    for (auto i = gtl::distance(first, last) / 2 - 1; i >= 0; --i) {
       gtl::sift_down(first, last, i, comp);
     }
   }
@@ -102,33 +88,33 @@ void make_heap(RandomIt first, RandomIt last, Compare comp) {
 
 template <typename RandomIt>
 void make_heap(RandomIt first, RandomIt last) {
-  return gtl::make_heap(first, last, std::less<>());
+  return gtl::make_heap(first, last, std::less<typename std::iterator_traits<RandomIt>::value_type>());
 }
 
 template <typename RandomIt, typename Compare>
 void push_heap(RandomIt first, RandomIt last, Compare comp) {
   if (first != last) {
-    gtl::sift_up(first, last, std::distance(first, last) - 1, comp);
+    gtl::sift_up(first, last, gtl::distance(first, last) - 1, comp);
   }
 }
 
 template <typename RandomIt>
 void push_heap(RandomIt first, RandomIt last) {
-  return gtl::push_heap(first, last, std::less<>());
+  return gtl::push_heap(first, last, std::less<typename std::iterator_traits<RandomIt>::value_type>());
 }
 
 template <typename RandomIt, typename Compare>
 void pop_heap(RandomIt first, RandomIt last, Compare comp) {
   if (first != last) {
     --last;
-    std::iter_swap(first, last);
+    gtl::iter_swap(first, last);
     gtl::sift_down(first, last, 0, comp);
   }
 }
 
 template <typename RandomIt>
 void pop_heap(RandomIt first, RandomIt last) {
-  return gtl::pop_heap(first, last, std::less<>());
+  return gtl::pop_heap(first, last, std::less<typename std::iterator_traits<RandomIt>::value_type>());
 }
 
 template <typename RandomIt, typename Compare>
@@ -140,7 +126,7 @@ void sort_heap(RandomIt first, RandomIt last, Compare comp) {
 
 template <typename RandomIt>
 void sort_heap(RandomIt first, RandomIt last) {
-  return gtl::sort_heap(first, last, std::less<>());
+  return gtl::sort_heap(first, last, std::less<typename std::iterator_traits<RandomIt>::value_type>());
 }
 
 }  // namespace gtl

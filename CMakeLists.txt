@@ -41,6 +41,9 @@ set(INCLUDE_HEADERS
   gtl/container/gtl_stack.h
   gtl/container/gtl_storage.h
   gtl/container/gtl_vector.h
+  gtl/iterator/gtl_iterator_op.h
+  gtl/iterator/gtl_iterator.h
+  gtl/iterator/gtl_reverse_iterator.h
 )
 aux_source_directory(${GTL_DIR}/container/test CONTAINER_TEST_SRCS)
 aux_source_directory(${GTL_DIR}/algorithm/test ALGORITHM_TEST_SRCS)

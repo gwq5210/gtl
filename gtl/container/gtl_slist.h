@@ -9,13 +9,14 @@
 
 #pragma once
 
-#include "gtl_memory.h"
 
 #include <algorithm>
 #include <iterator>
 #include <type_traits>
 
+#include "gtl_algorithm.h"
 #include "gtl_common.h"
+#include "gtl_memory.h"
 
 namespace gtl {
 
@@ -173,8 +174,8 @@ class SList {
   }
   SList(SList&& other) {
     init();
-    std::swap(dummy_head_, other.dummy_head_);
-    std::swap(size_, other.size_);
+    gtl::swap(dummy_head_, other.dummy_head_);
+    gtl::swap(size_, other.size_);
   }
   SList(std::initializer_list<T> il) {
     init();
@@ -198,7 +199,7 @@ class SList {
   void assign(size_type count, const T& v) { insert_after(before_begin(), count, v); }
   template <typename InputIt>
   void assign(InputIt first, InputIt last) {
-    assign_range(std::distance(first, last), first, last);
+    assign_range(gtl::distance(first, last), first, last);
   }
   void assign(std::initializer_list<T> il) { assign_range(il.size(), il.begin(), il.end()); }
   void assign(const SList& other) {
@@ -208,8 +209,8 @@ class SList {
   }
   void assign(SList&& other) {
     clear();
-    std::swap(dummy_head_, other.dummy_head_);
-    std::swap(size_, other.size_);
+    gtl::swap(dummy_head_, other.dummy_head_);
+    gtl::swap(size_, other.size_);
   }
 
   allocator_type get_allocator() const { return allocator_; }
@@ -224,8 +225,8 @@ class SList {
   iterator before_begin() { return iterator(dummy_head_); }
   const_iterator before_begin() const { return iterator(dummy_head_); }
   const_iterator cbefore_begin() const { return before_begin(); };
-  iterator before_end() { return std::next(before_begin(), size_); }
-  const_iterator before_end() const { return std::next(before_begin(), size_); }
+  iterator before_end() { return gtl::next(before_begin(), size_); }
+  const_iterator before_end() const { return gtl::next(before_begin(), size_); }
   const_iterator cbefore_end() const { return before_end(); };
   iterator begin() { return iterator(dummy_head_->next); };
   const_iterator begin() const { return const_iterator(dummy_head_->next); };
@@ -291,14 +292,14 @@ class SList {
     if (count > size_) {
       insert_after(before_end(), count - size_, v);
     } else if (count < size_) {
-      erase_after(std::next(before_begin(), count), end());
+      erase_after(gtl::next(before_begin(), count), end());
     }
   }
   void clear() { erase_after(before_begin(), end()); }
 
   // Operations
-  void merge(SList& other) { merge(other, std::less<>()); }
-  void merge(SList&& other) { merge(other, std::less<>()); }
+  void merge(SList& other) { merge(other, std::less<T>()); }
+  void merge(SList&& other) { merge(other, std::less<T>()); }
   template <typename Compare>
   void merge(SList&& other, Compare comp) {
     merge(other, comp);
@@ -354,19 +355,19 @@ class SList {
       splice_after(before_begin(), *this, it);
     }
   }
-  void merge_sort() { merge_sort(std::less<>()); }
+  void merge_sort() { merge_sort(std::less<T>()); }
   template <typename Compare>
   void merge_sort(Compare comp) {
     if (size_ <= 1) {
       return;
     }
     SList right;
-    right.splice_after(right.before_begin(), *this, std::next(before_begin(), size_ / 2), end());
+    right.splice_after(right.before_begin(), *this, gtl::next(before_begin(), size_ / 2), end());
     merge_sort(comp);
     right.merge_sort(comp);
     merge(right, comp);
   }
-  void sort() { sort(std::less<>()); }
+  void sort() { sort(std::less<T>()); }
   template <typename Compare>
   void sort(Compare comp) {
     if (size_ <= 1) {
@@ -380,19 +381,19 @@ class SList {
       auto it = before_begin();
       size_type n = size_ - size_ % c;
       for (size_type j = 0; j < n; j += c) {
-        left.splice_after(left.before_begin(), *this, it, std::next(it, i + 1));
-        right.splice_after(right.before_begin(), *this, it, std::next(it, i + 1));
+        left.splice_after(left.before_begin(), *this, it, gtl::next(it, i + 1));
+        right.splice_after(right.before_begin(), *this, it, gtl::next(it, i + 1));
         // print_range("left", left.begin(), left.end());
         // print_range("right", right.begin(), right.end());
         left.merge(right);
         splice_after(it, left);
-        it = std::next(it, c);
+        it = gtl::next(it, c);
         // print_range("this", begin(), end());
       }
       n = size_ % c;
       if (n > i) {
         // printf("process_end\n");
-        left.splice_after(left.before_begin(), *this, it, std::next(it, i + 1));
+        left.splice_after(left.before_begin(), *this, it, gtl::next(it, i + 1));
         right.splice_after(right.before_begin(), *this, it, end());
         // print_range("left", left.begin(), left.end());
         // print_range("right", right.begin(), right.end());
@@ -402,7 +403,7 @@ class SList {
       }
     }
   }
-  void qsort() { qsort(std::less<>()); }
+  void qsort() { qsort(std::less<T>()); }
   template <typename Compare>
   void qsort(Compare comp) {
     if (size_ <= 1) {
@@ -438,11 +439,11 @@ class SList {
       return;
     }
     if (count <= size_) {
-      std::copy(first, last, begin());
-      erase_after(std::next(before_begin(), count), end());
+      gtl::copy(first, last, begin());
+      erase_after(gtl::next(before_begin(), count), end());
     } else {
-      std::copy_n(first, size_, begin());
-      insert_after(before_end(), std::next(first, size_), last);
+      gtl::copy_n(first, size_, begin());
+      insert_after(before_end(), gtl::next(first, size_), last);
     }
   }
   void assign_n(size_type count, const T& v) {
@@ -450,10 +451,10 @@ class SList {
       return;
     }
     if (count <= size_) {
-      std::fill_n(begin(), count, v);
-      erase_after(std::next(before_begin(), count), end());
+      gtl::fill_n(begin(), count, v);
+      erase_after(gtl::next(before_begin(), count), end());
     } else {
-      std::fill_n(begin(), size_, v);
+      gtl::fill_n(begin(), size_, v);
       insert_after(before_end(), count, v);
     }
   }
@@ -485,7 +486,7 @@ class SList {
     return node;
   }
   void destroy_node(SListNode* node) {
-    std::destroy_at(to_node(node));
+    gtl::destroy_at(to_node(node));
     allocator_.deallocate(to_node(node), 1);
   }
   void init() {

@@ -13,6 +13,7 @@
 #include <iterator>
 #include <type_traits>
 
+#include "gtl_algorithm.h"
 #include "gtl_memory.h"
 #include "gtl_storage.h"
 
@@ -155,8 +156,8 @@ class Vector {
   iterator erase(const_iterator pos) { return erase(pos, pos + 1); }
   iterator erase(const_iterator first, const_iterator last) {
     if (first != last) {
-      gtl::destroy(std::move(last, cend(), iterator(first)), end());
-      d_.incr_size(-std::distance(first, last));
+      gtl::destroy(gtl::move(last, cend(), iterator(first)), end());
+      d_.incr_size(-gtl::distance(first, last));
     }
     return iterator(first);
   }
@@ -238,11 +239,11 @@ typename Vector<T>::iterator Vector<T>::insert(const_iterator before, size_type 
   if (!d_.full(count)) {
     if (count <= n) {
       gtl::uninitialized_move(end() - count, end(), end());
-      std::move_backward(begin() + insert_pos, begin() + insert_pos + n - count, end());
-      std::fill_n(begin() + insert_pos, count, v);
+      gtl::move_backward(begin() + insert_pos, begin() + insert_pos + n - count, end());
+      gtl::fill_n(begin() + insert_pos, count, v);
     } else {
       gtl::uninitialized_move(end() - n, end(), end() + count - n);
-      std::fill_n(begin() + insert_pos, n, v);
+      gtl::fill_n(begin() + insert_pos, n, v);
       gtl::uninitialized_fill_n(end(), count - n, v);
     }
     d_.incr_size(count);
@@ -259,7 +260,7 @@ typename Vector<T>::iterator Vector<T>::insert(const_iterator before, size_type 
 template <typename T>
 template <typename InputIt, typename Category>
 typename Vector<T>::iterator Vector<T>::insert(const_iterator before, InputIt first, InputIt last) {
-  size_type count = std::distance(first, last);
+  size_type count = gtl::distance(first, last);
   size_type insert_pos = before - begin();
   size_type n = end() - before;
   if (count == 0) {
@@ -268,12 +269,12 @@ typename Vector<T>::iterator Vector<T>::insert(const_iterator before, InputIt fi
   if (!d_.full(count)) {
     if (count <= n) {
       gtl::uninitialized_move(end() - count, end(), end());
-      std::move_backward(begin() + insert_pos, begin() + n - count, begin() + n - count);
-      std::copy(first, last, begin() + insert_pos);
+      gtl::move_backward(begin() + insert_pos, begin() + n - count, begin() + n - count);
+      gtl::copy(first, last, begin() + insert_pos);
     } else {
       gtl::uninitialized_move(end() - n, end(), end() + count - n);
       gtl::uninitialized_copy(first + n, last, end());
-      std::copy(first, first + n, begin() + insert_pos);
+      gtl::copy(first, first + n, begin() + insert_pos);
     }
     d_.incr_size(count);
   } else {
@@ -296,7 +297,7 @@ typename Vector<T>::iterator Vector<T>::emplace(const_iterator before, Args&&...
       construct_at(end(), std::forward<Args>(args)...);
     } else {
       gtl::uninitialized_move(end() - 1, end(), end());
-      std::move_backward(begin() + insert_pos, end() - 1, end() - 1);
+      gtl::move_backward(begin() + insert_pos, end() - 1, end() - 1);
       T tmp(std::forward<Args>(args)...);
       *(begin() + insert_pos) = std::move(tmp);
     }
@@ -317,16 +318,16 @@ template <typename T>
 template <typename InputIt, typename Category>
 typename Vector<T>::iterator Vector<T>::replace(const_iterator pos, InputIt first, InputIt last) {
   size_type n = cend() - pos;
-  size_type count = std::distance(first, last);
+  size_type count = gtl::distance(first, last);
   if (count == 0) {
     return iterator(pos);
   } else if (pos == end()) {
     return insert(pos, first, last);
   }
   if (count <= n) {
-    std::copy(first, last, iterator(pos));
+    gtl::copy(first, last, iterator(pos));
   } else if (!d_.full(count - n)) {
-    std::copy(first, first + n, iterator(pos));
+    gtl::copy(first, first + n, iterator(pos));
     gtl::uninitialized_copy(first + n, last, end());
     d_.incr_size(count - n);
   } else {

@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 namespace gtl {
 
 // 在给定地址 p 创建以参数 args... 初始化的 T 对象

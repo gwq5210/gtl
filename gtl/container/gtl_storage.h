@@ -81,7 +81,7 @@ class UStorage : public std::allocator<T> {
       data_ = nullptr;
     }
   }
-  void swap(UStorage& other) { std::swap(data_, other.data_); }
+  void swap(UStorage& other) { gtl::swap(data_, other.data_); }
   void init() { data_ = nullptr; }
   allocator_type get_allocator() const { return *this; }
 
@@ -174,8 +174,8 @@ class UStorage<T, 0> : public std::allocator<T> {
     capacity_ = 0;
   }
   void swap(UStorage& other) {
-    std::swap(data_, other.data_);
-    std::swap(capacity_, other.capacity_);
+    gtl::swap(data_, other.data_);
+    gtl::swap(capacity_, other.capacity_);
   }
   void init() {
     data_ = nullptr;
@@ -209,8 +209,8 @@ class Storage : public UStorage<T, fix_capacity> {
   using const_pointer = typename Base::const_pointer;
   using iterator = typename Base::iterator;
   using const_iterator = typename Base::const_iterator;
-  using reverse_iterator = std::reverse_iterator<iterator>;
-  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+  using reverse_iterator = gtl::reverse_iterator<iterator>;
+  using const_reverse_iterator = gtl::reverse_iterator<const_iterator>;
   using size_type = typename Base::size_type;
   using difference_type = typename Base::difference_type;
   using allocator_type = typename Base::allocator_type;
@@ -263,12 +263,12 @@ class Storage : public UStorage<T, fix_capacity> {
   template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
   void unsafe_append_copy(InputIt first, InputIt last, size_type count = 0) {
     gtl::uninitialized_copy(first, last, end());
-    size_ += (count ? count : std::distance(first, last));
+    size_ += (count ? count : gtl::distance(first, last));
   }
   template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
   void unsafe_append_move(InputIt first, InputIt last, size_type count = 0) {
     gtl::uninitialized_move(first, last, end());
-    size_ += (count ? count : std::distance(first, last));
+    size_ += (count ? count : gtl::distance(first, last));
   }
   template <typename... Args>
   void unsafe_append(Args&&... args) {
@@ -282,7 +282,7 @@ class Storage : public UStorage<T, fix_capacity> {
   }
   void swap(Storage& other) {
     Base::swap(other);
-    std::swap(size_, other.size_);
+    gtl::swap(size_, other.size_);
   }
   void init() {
     Base::init();

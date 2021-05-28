@@ -9,11 +9,13 @@
 
 #pragma once
 
-#include "gtl_memory.h"
-
 #include <algorithm>
 #include <iterator>
 #include <type_traits>
+
+#include "gtl_algorithm.h"
+#include "gtl_memory.h"
+#include "gtl_iterator.h"
 
 namespace gtl {
 
@@ -27,8 +29,8 @@ class Array {
   using const_pointer = const T*;
   using iterator = T*;
   using const_iterator = const T*;
-  using reverse_iterator = std::reverse_iterator<iterator>;
-  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+  using reverse_iterator = gtl::reverse_iterator<iterator>;
+  using const_reverse_iterator = gtl::reverse_iterator<const_iterator>;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
@@ -63,10 +65,10 @@ class Array {
   bool empty() const { return size_ == 0; }
 
   // Operations
-  void fill(const T& v) { std::fill_n(begin(), size_, v); }
+  void fill(const T& v) { gtl::fill_n(begin(), size_, v); }
   void swap(Array& other) {
     if (this != &other) {
-      std::swap_ranges(begin(), end(), other.begin());
+      gtl::swap_ranges(begin(), end(), other.begin());
     }
   }
 
