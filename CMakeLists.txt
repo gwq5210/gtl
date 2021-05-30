@@ -3,8 +3,10 @@ cmake_minimum_required(VERSION 3.6)
 set(CMAKE_CXX_STANDARD 20)
 if (MSVC)
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  set(LINK_COMMAND copy_if_different)
 else()
   add_compile_options(-Wall -fPIC -pipe)
+  set(LINK_COMMAND create_symlink)
 endif()
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type")
@@ -68,11 +70,7 @@ add_custom_target(
 macro(makeLink src dest target)
   add_custom_command(
     TARGET ${target} PRE_BUILD
-    if (MSVC)
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${src} ${dest}
-    else()
-      COMMAND ${CMAKE_COMMAND} -E create_symlink ${src} ${dest}
-    endif()
+    COMMAND ${CMAKE_COMMAND} -E ${LINK_COMMAND} ${src} ${dest}
     DEPENDS ${dest}
   )
 endmacro()
