@@ -68,7 +68,11 @@ add_custom_target(
 macro(makeLink src dest target)
   add_custom_command(
     TARGET ${target} PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ${src} ${dest}
+    if (MSVC)
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${src} ${dest}
+    else()
+      COMMAND ${CMAKE_COMMAND} -E create_symlink ${src} ${dest}
+    endif()
     DEPENDS ${dest}
   )
 endmacro()
