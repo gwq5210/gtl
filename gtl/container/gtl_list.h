@@ -9,7 +9,6 @@
 
 #pragma once
 
-
 #include <algorithm>
 #include <iterator>
 #include <type_traits>
@@ -18,64 +17,13 @@
 #include "gtl_common.h"
 #include "gtl_compressed_pair.h"
 #include "gtl_iterator.h"
+#include "gtl_list_base.h"
 #include "gtl_memory.h"
 
 namespace gtl {
 
-struct ListNode {
-  ListNode* next;
-  ListNode* prev;
-  ListNode() : next(nullptr), prev(nullptr) {}
-};
-
-inline ListNode* remove_node(ListNode* curr) {
-  ListNode* next = curr->next;
-  curr->prev->next = curr->next;
-  curr->next->prev = curr->prev;
-  curr->prev = nullptr;
-  curr->next = nullptr;
-  return next;
-}
-
-inline ListNode* insert_node_before(ListNode* before, ListNode* node) {
-  node->next = before;
-  node->prev = before->prev;
-  before->prev->next = node;
-  before->prev = node;
-  return node;
-}
-
-/**
- * @brief 移除[first, last]之间的节点
- *
- * @param first 移除的起始节点，包含该节点
- * @param last 移除的结束节点，包含该节点
- * @return ListNode* 返回移除区间的后一个节点，即last->next节点
- */
-inline ListNode* remove_range(ListNode* first, ListNode* last) {
-  ListNode* next = last->next;
-  first->prev->next = last->next;
-  last->next->prev = first->prev;
-  first->prev = nullptr;
-  last->next = nullptr;
-  return next;
-}
-
-/**
- * @brief 将[first, last]之间的节点插入到before节点前
- *
- * @param before 需要插入的位置，在该节点之前插入
- * @param first 插入区间的起始节点，包含该节点
- * @param last 插入区间的结束节点，包含该节点
- * @return ListNode* 返回插入的第一个节点，即first节点
- */
-inline ListNode* insert_range_before(ListNode* before, ListNode* first, ListNode* last) {
-  last->next = before;
-  first->prev = before->prev;
-  before->prev->next = first;
-  before->prev = last;
-  return first;
-}
+using doubly_list::ListHead;
+using doubly_list::ListNode;
 
 struct ListIteratorBase {
   using iterator_category = std::bidirectional_iterator_tag;
@@ -115,7 +63,7 @@ struct ConstListIterator : public ListIteratorBase {
   using Base = ListIteratorBase;
   using Self = ConstListIterator;
   explicit ConstListIterator(const ListNode* node) : Base(const_cast<ListNode*>(node)) {}
-  reference operator*() const { return ListType::node_value(node); }
+  reference operator*() const { return ListType::node_type::Value(node); }
   pointer operator->() const { return std::pointer_traits<pointer>::pointer_to(**this); }
   Self& operator++() {
     Base::operator++();
@@ -169,25 +117,17 @@ struct ListIterator : public ConstListIterator<ListType> {
 template <typename T>
 class List {
  public:
-  struct Node : public ListNode {
-    T val;
-    template <typename... Args>
-    Node(Args&&... args) {
-      gtl::construct_at(&val, std::forward<Args>(args)...);
-    }
-  };
-
+  using Node = doubly_list::ListNodeT<T>;
+  using node_type = Node;
   using value_type = T;
   using reference = T&;
   using const_reference = const T&;
   using pointer = T*;
   using const_pointer = const T*;
-  using size_type = size_t;
-  using difference_type = ptrdiff_t;
-  using allocator_type = std::allocator<Node>;
-
-  static Node* to_node(ListNode* list_node) { return static_cast<Node*>(list_node); }
-  static T& node_value(ListNode* list_node) { return to_node(list_node)->val; }
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using allocator_type = std::allocator<T>;
+  using NodeAllocator = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
 
   using iterator = ListIterator<List>;
   using const_iterator = ConstListIterator<List>;
@@ -253,13 +193,13 @@ class List {
     gtl::swap(get_size(), other.get_size());
   }
 
-  allocator_type get_allocator() const { return allocator(); }
+  allocator_type get_allocator() const { return static_cast<allocator_type>(get_node_allocator()); }
 
   // Element access
   T& front() { return *begin(); }
   const T& front() const { return *begin(); }
-  T& back() { return node_value(dummy_head_->prev); }
-  const T& back() const { return node_value(dummy_head_->prev); }
+  T& back() { return Node::Value(dummy_head_->prev); }
+  const T& back() const { return Node::Value(dummy_head_->prev); }
 
   // Iterators
   iterator begin() { return iterator(dummy_head_->next); };
@@ -299,7 +239,7 @@ class List {
   template <typename... Args>
   iterator emplace(const_iterator before, Args&&... args) {
     ++get_size();
-    return iterator(insert_node_before(before.node, construct_node(std::forward<Args>(args)...)));
+    return iterator(doubly_list::InsertBefore(before.node, new_node(std::forward<Args>(args)...)));
   }
   template <typename... Args>
   iterator emplace_back(Args&&... args) {
@@ -320,10 +260,10 @@ class List {
   iterator erase(const_iterator first, const_iterator last) {
     if (first != last) {
       ListNode* node = first.node;
-      remove_range(first.node, last.node->prev);
+      doubly_list::Remove(first.node, last.node->prev);
       while (node) {
         ListNode* next = node->next;
-        destroy_node(node);
+        delete_node(node);
         node = next;
         --get_size();
       }
@@ -512,8 +452,8 @@ class List {
     if (first != last && before != last) {
       ListNode* node = first.node;
       while (node != last.node) {
-        ListNode* next = remove_node(node);
-        insert_node_before(before.node, node);
+        ListNode* next = doubly_list::Remove(node);
+        doubly_list::InsertBefore(before.node, node);
         if (this != &other) {
           --other.get_size();
           ++get_size();
@@ -523,20 +463,13 @@ class List {
     }
   }
   template <typename... Args>
-  Node* construct_node(Args&&... args) {
-    Node* node = allocator().allocate(1);
-    construct_at(node, std::forward<Args>(args)...);
-    return node;
+  Node* new_node(Args&&... args) {
+    return Node::New(get_node_allocator(), std::forward<Args>(args)...);
   }
-  void destroy_node(ListNode* node) {
-    gtl::destroy_at(to_node(node));
-    allocator().deallocate(to_node(node), 1);
-  }
+  void delete_node(ListNode* node) { return Node::Delete(get_node_allocator(), node); }
 
   void init() {
     dummy_head_ = new ListNode();
-    dummy_head_->next = dummy_head_;
-    dummy_head_->prev = dummy_head_;
     get_size() = 0;
   }
   void destroy_list() {
@@ -546,11 +479,11 @@ class List {
   }
   size_type& get_size() { return size_alloc_.first(); }
   const size_type& get_size() const { return size_alloc_.first(); }
-  allocator_type& allocator() { return size_alloc_.second(); }
-  const allocator_type& allocator() const { return size_alloc_.second(); }
+  NodeAllocator& get_node_allocator() { return size_alloc_.second(); }
+  const NodeAllocator& get_node_allocator() const { return size_alloc_.second(); }
 
-  ListNode* dummy_head_;
-  CompressedPair<size_type, allocator_type> size_alloc_;
+  ListHead* dummy_head_;
+  CompressedPair<size_type, NodeAllocator> size_alloc_;
 };  // class List
 
 template <typename T>

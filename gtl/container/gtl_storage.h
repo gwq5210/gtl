@@ -73,7 +73,9 @@ class UStorage : public std::allocator<T> {
 
   // Capacity
   size_type capacity() const { return fixed_capacity; }
-  void allocate() { data_ = allocator_type::allocate(fixed_capacity); }
+  void allocate() { data_ = allocator_type::allocate(fixed_capacity);
+  memset(data_, -1, sizeof(T)*fixed_capacity);
+   }
   void release() {
     if (begin()) {
       // printf("deallocate %zu %p\n", capacity_, data_);

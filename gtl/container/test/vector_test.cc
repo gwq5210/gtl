@@ -12,6 +12,7 @@
 #include <deque>
 #include <forward_list>
 #include <list>
+#include <unordered_map>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -350,4 +351,5 @@ TEST(vector_test, modifiers_iterators_test) {
   PRINT_TYPE_SIZE((Vector<int>));
   PRINT_TYPE_SIZE((gtl::UStorage<int>));
   PRINT_TYPE_SIZE((gtl::UStorage<int, 16>));
+  PRINT_TYPE_SIZE((std::unordered_map<int, int>));
 }

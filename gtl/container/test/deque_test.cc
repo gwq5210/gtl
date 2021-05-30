@@ -204,7 +204,7 @@ TEST(deque_test, constructor_assign_iterator_test) {
 }
 
 TEST(deque_test, modifiers_iterators_test) {
-  int n = 10;
+  int n = 102400;
   Deque<int> dq;
   for (int i = 0; i < n; ++i) {
     dq.push_back(i);
@@ -228,11 +228,9 @@ TEST(deque_test, modifiers_iterators_test) {
     dq.emplace(dq.end(), i);
     EXPECT_EQ(dq.back(), i);
   }
-  print_range("dq", dq.begin(), dq.end());
   for (int i = 0; i < n; ++i) {
     dq.insert(dq.begin() + i / 2, i);
     EXPECT_EQ(dq[i / 2], i);
-    print_range("dq", dq.begin(), dq.end());
   }
   int x = dq[n + 1];
   dq.erase(dq.begin() + n);

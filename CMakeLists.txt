@@ -36,9 +36,11 @@ set(INCLUDE_HEADERS
   gtl/container/gtl_compressed_pair.h
   gtl/container/gtl_deque.h
   gtl/container/gtl_list.h
+  gtl/container/gtl_list_base.h
   gtl/container/gtl_priority_queue.h
   gtl/container/gtl_queue.h
   gtl/container/gtl_slist.h
+  gtl/container/gtl_slist_base.h
   gtl/container/gtl_stack.h
   gtl/container/gtl_storage.h
   gtl/container/gtl_vector.h

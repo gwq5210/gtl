@@ -91,9 +91,10 @@ class ConstDequeIterator {
         block_ += n / DequeType::block_capacity_;
         offset_ = n % DequeType::block_capacity_;
       } else {
-        n -= (DequeType::block_capacity_ - 1) - offset_;
-        block_ += n / DequeType::block_capacity_;
-        offset_ = (DequeType::block_capacity_ - 1) + n % DequeType::block_capacity_;
+        n = -n;
+        n += (DequeType::block_capacity_ - 1) - offset_;
+        block_ -= n / DequeType::block_capacity_;
+        offset_ = (DequeType::block_capacity_ - 1) - n % DequeType::block_capacity_;
       }
     }
     return *this;
@@ -397,9 +398,9 @@ typename Deque<T>::iterator Deque<T>::insert_n(const_iterator before, size_type 
       reserve_at_front(count);
       auto it = begin_;
       begin_ -= count;
-      printf("insert_n %zd\n", it - begin_);
+      // printf("insert_n %zd\n", it - begin_);
       gtl::uninitialized_fill_n(begin(), count, v);
-      printf("insert_n end\n");
+      // printf("insert_n end\n");
     } else if (before == end()) {
       reserve_at_front(count);
       gtl::uninitialized_fill_n(end(), count, v);
@@ -559,19 +560,19 @@ void Deque<T>::reserve_at_front(size_type count) {
     return;
   }
   n = front_capacity();
-  printf("front_capacity %zu %zu\n", n, count);
+  // printf("front_capacity %zu %zu\n", n, count);
   size_type block_count = count / block_capacity_ + (count % block_capacity_ ? 1 : 0);
   if (count > n) {
     count -= n;
     block_count = count / block_capacity_ + (count % block_capacity_ ? 1 : 0);
-    reallocate_block_storage(count, true);
+    reallocate_block_storage(block_count, true);
   }
   auto it = begin_.block();
-  printf("new block count %zu %zu %zu\n", size(), block_count, n);
+  // printf("new block count %zu %zu %zu\n", size(), block_count, n);
   for (; block_count > 0; --block_count) {
     gtl::construct_at(--it, block_capacity_);
   }
-  printf("reserve_at_front end\n");
+  // printf("reserve_at_front end\n");
 }
 
 template <typename T>
@@ -581,15 +582,18 @@ void Deque<T>::reserve_at_back(size_type count) {
     return;
   }
   n = back_capacity();
-  printf("back_capacity %zu %zu\n", n, count);
+  // printf("back_capacity %zu %zu\n", n, count);
   size_type block_count = count / block_capacity_ + 1;
   if (count >= n) {
     count -= n;
     block_count = count / block_capacity_ + 1;
-    reallocate_block_storage(count, false);
+    reallocate_block_storage(block_count, false);
+  }
+  if (empty()) {
+    --block_count;
   }
   auto it = end_.block();
-  printf("new block count %zu %zu %zu\n", size(), block_count, n);
+  // printf("new block count %zu %zu %zu\n", size(), block_count, n);
   for (; block_count > 0; --block_count) {
     gtl::construct_at(++it, block_capacity_);
   }
@@ -613,7 +617,7 @@ void Deque<T>::reallocate_block_storage(size_type count, bool add_at_front) {
   begin_.set_block(new_block_storage.begin() + begin_block_offset);
   end_.set_block(new_block_storage.begin() + end_block_offset);
   d_.swap(new_block_storage);
-  printf("offset %zu %zu %zu %zu\n", count, begin_block_offset, end_block_offset, d_.capacity());
+  // printf("offset %zu %zu %zu %zu\n", count, begin_block_offset, end_block_offset, d_.capacity());
 }
 
 template <typename T>
