@@ -396,7 +396,7 @@ typename Deque<T>::iterator Deque<T>::insert_n(const_iterator before, size_type 
   if (count > 0) {
     if (before == begin()) {
       reserve_at_front(count);
-      auto it = begin_;
+      // auto it = begin_;
       begin_ -= count;
       // printf("insert_n %zd\n", it - begin_);
       gtl::uninitialized_fill_n(begin(), count, v);

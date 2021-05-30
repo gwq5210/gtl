@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.6)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=c++2a")
+set(CMAKE_CXX_STANDARD 20)
+if (MSVC)
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+else()
+  add_compile_options(-Wall -fPIC -pipe)
+endif()
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type")
 endif()
