@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 
 set(CMAKE_CXX_STANDARD 20)
-if (MSVC)
+if (WIN32)
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   set(LINK_COMMAND copy_if_different)
 else()
