@@ -349,7 +349,7 @@ class Deque {
   size_type begin_block_capacity() const { return begin_.offset(); }
   void reserve_at_front(size_type count);
   void reserve_at_back(size_type count);
-  void reallocate_block_storage(size_type count, bool add_at_front);
+  void reallocate_block_storage(size_type block_count, bool add_at_front);
   size_type back_capacity() const { return (d_.finish() - end_.block()) * block_capacity_ - end_.offset(); }
   size_type front_capacity() const { return (begin_.block() - d_.begin()) * block_capacity_ + begin_.offset(); }
   template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
@@ -530,10 +530,12 @@ typename Deque<T>::iterator Deque<T>::erase(const_iterator first, const_iterator
   }
   if (first == begin()) {
     gtl::destroy(first, last);
+    gtl::destroy(first.block(), last.block());
     begin_.CopyFrom(last);
     return begin();
   } else if (last == end()) {
     gtl::destroy(first, last);
+    gtl::destroy(first.block() + 1, last.block() + 1);
     end_.CopyFrom(first);
     return end();
   }
@@ -542,12 +544,14 @@ typename Deque<T>::iterator Deque<T>::erase(const_iterator first, const_iterator
   size_type count = last - first;
   if (left_count <= right_count) {
     auto new_begin = gtl::move_backward(cbegin(), first, iterator(last.block(), last.offset()));
-    gtl::destroy(begin(), begin() + count);
+    gtl::destroy(begin(), new_begin);
+    gtl::destroy(begin_.block(), new_begin.block());
     begin_.CopyFrom(new_begin);
     return iterator(last.block(), last.offset());
   } else {
     auto new_end = gtl::move(last, cend(), iterator(first.block(), first.offset()));
-    gtl::destroy(end() - count, end());
+    gtl::destroy(new_end, end());
+    gtl::destroy(new_end.block() + 1, end_.block() + 1);
     end_.CopyFrom(new_end);
     return iterator(first.block(), first.offset());
   }
@@ -600,14 +604,14 @@ void Deque<T>::reserve_at_back(size_type count) {
 }
 
 template <typename T>
-void Deque<T>::reallocate_block_storage(size_type count, bool add_at_front) {
-  BlockStorage new_block_storage(d_.capacity() + count);
-  size_type mid_offset = (new_block_storage.capacity() - (end_.block() - begin_.block() + 1) - count) / 2;
+void Deque<T>::reallocate_block_storage(size_type block_count, bool add_at_front) {
+  BlockStorage new_block_storage(d_.capacity() + block_count);
+  size_type mid_offset = (new_block_storage.capacity() - (end_.block() - begin_.block() + 1) - block_count) / 2;
   size_type begin_block_offset = begin_.block() - d_.begin() + mid_offset;
   size_type end_block_offset = end_.block() - d_.begin() + mid_offset;
   if (add_at_front) {
-    begin_block_offset += count;
-    end_block_offset += count;
+    begin_block_offset += block_count;
+    end_block_offset += block_count;
   }
   if (!empty()) {
     gtl::uninitialized_move(begin_.block(), end_.block() + 1, new_block_storage.begin() + begin_block_offset);
@@ -617,7 +621,7 @@ void Deque<T>::reallocate_block_storage(size_type count, bool add_at_front) {
   begin_.set_block(new_block_storage.begin() + begin_block_offset);
   end_.set_block(new_block_storage.begin() + end_block_offset);
   d_.swap(new_block_storage);
-  // printf("offset %zu %zu %zu %zu\n", count, begin_block_offset, end_block_offset, d_.capacity());
+  // printf("offset %zu %zu %zu %zu\n", block_count, begin_block_offset, end_block_offset, d_.capacity());
 }
 
 template <typename T>
