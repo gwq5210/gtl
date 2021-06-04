@@ -54,16 +54,17 @@ struct ListIteratorBase {
   bool operator!=(const Self& other) const { return node != other.node; }
 };
 
-template <typename ListType>
-struct ConstListIterator : public ListIteratorBase {
-  using reference = typename ListType::const_reference;
-  using pointer = typename ListType::const_pointer;
-  using difference_type = typename ListType::difference_type;
-  using value_type = typename ListType::value_type;
+template <typename T, typename Difference = std::ptrdiff_t>
+struct ListConstIterator : public ListIteratorBase {
+  using reference = const T&;
+  using pointer = const T*;
+  using difference_type = Difference;
+  using value_type = T;
+  using Node = doubly_list::ListNodeT<T>;
   using Base = ListIteratorBase;
-  using Self = ConstListIterator;
-  explicit ConstListIterator(const ListNode* node) : Base(const_cast<ListNode*>(node)) {}
-  reference operator*() const { return ListType::node_type::Value(node); }
+  using Self = ListConstIterator;
+  explicit ListConstIterator(const ListNode* node) : Base(const_cast<ListNode*>(node)) {}
+  reference operator*() const { return Node::Value(node); }
   pointer operator->() const { return std::pointer_traits<pointer>::pointer_to(**this); }
   Self& operator++() {
     Base::operator++();
@@ -85,11 +86,11 @@ struct ConstListIterator : public ListIteratorBase {
   }
 };
 
-template <typename ListType>
-struct ListIterator : public ConstListIterator<ListType> {
-  using reference = typename ListType::reference;
-  using pointer = typename ListType::pointer;
-  using Base = ConstListIterator<ListType>;
+template <typename T, typename Difference = std::ptrdiff_t>
+struct ListIterator : public ListConstIterator<T, Difference> {
+  using reference = T&;
+  using pointer = const T&;
+  using Base = ListConstIterator<T, Difference>;
   using Self = ListIterator;
   explicit ListIterator(ListNode* node) : Base(node) {}
   reference operator*() const { return const_cast<reference>(Base::operator*()); }
@@ -129,8 +130,8 @@ class List {
   using allocator_type = std::allocator<T>;
   using NodeAllocator = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
 
-  using iterator = ListIterator<List>;
-  using const_iterator = ConstListIterator<List>;
+  using iterator = ListIterator<T, difference_type>;
+  using const_iterator = ListConstIterator<T, difference_type>;
   using reverse_iterator = gtl::reverse_iterator<iterator>;
   using const_reverse_iterator = gtl::reverse_iterator<const_iterator>;
 

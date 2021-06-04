@@ -44,16 +44,17 @@ struct SListIteratorBase {
   bool operator!=(const Self& other) const { return node != other.node; }
 };
 
-template <typename SListType>
-struct ConstSListIterator : public SListIteratorBase {
-  using reference = typename SListType::const_reference;
-  using pointer = typename SListType::const_pointer;
-  using difference_type = typename SListType::difference_type;
-  using value_type = typename SListType::value_type;
+template <typename T, typename Difference = std::ptrdiff_t>
+struct SListConstIterator : public SListIteratorBase {
+  using reference = const T&;
+  using pointer = const T*;
+  using difference_type = Difference;
+  using value_type = T;
+  using Node = singly_list::SListNodeT<T>;
   using Base = SListIteratorBase;
-  using Self = ConstSListIterator;
-  explicit ConstSListIterator(const SListNode* node) : Base(const_cast<SListNode*>(node)) {}
-  reference operator*() const { return SListType::node_type::Value(node); }
+  using Self = SListConstIterator;
+  explicit SListConstIterator(const SListNode* node) : Base(const_cast<SListNode*>(node)) {}
+  reference operator*() const { return Node::Value(node); }
   pointer operator->() const { return std::pointer_traits<pointer>::pointer_to(**this); }
   Self& operator++() {
     Base::operator++();
@@ -66,13 +67,13 @@ struct ConstSListIterator : public SListIteratorBase {
   }
 };
 
-template <typename SListType>
-struct SListIterator : public ConstSListIterator<SListType> {
-  using reference = typename SListType::reference;
-  using pointer = typename SListType::pointer;
-  using difference_type = typename SListType::difference_type;
-  using value_type = typename SListType::value_type;
-  using Base = ConstSListIterator<SListType>;
+template <typename T, typename Difference = std::ptrdiff_t>
+struct SListIterator : public SListConstIterator<T, Difference> {
+  using reference = T&;
+  using pointer = T*;
+  using difference_type = Difference;
+  using value_type = T;
+  using Base = SListConstIterator<T, Difference>;
   using Self = SListIterator;
   explicit SListIterator(SListNode* node) : Base(node) {}
   reference operator*() const { return const_cast<reference>(Base::operator*()); }
@@ -100,8 +101,8 @@ class SList {
   using const_pointer = const T*;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using iterator = SListIterator<SList>;
-  using const_iterator = ConstSListIterator<SList>;
+  using iterator = SListIterator<T, difference_type>;
+  using const_iterator = SListConstIterator<T, difference_type>;
   using allocator_type = std::allocator<T>;
   using NodeAllocator = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
 
