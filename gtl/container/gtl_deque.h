@@ -541,7 +541,6 @@ typename Deque<T>::iterator Deque<T>::erase(const_iterator first, const_iterator
   }
   size_type left_count = first - begin();
   size_type right_count = end() - last;
-  size_type count = last - first;
   if (left_count <= right_count) {
     auto new_begin = gtl::move_backward(cbegin(), first, iterator(last.block(), last.offset()));
     gtl::destroy(begin(), new_begin);

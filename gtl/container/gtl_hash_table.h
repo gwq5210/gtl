@@ -12,8 +12,8 @@
 #include <functional>
 #include <memory>
 
-#include "gtl_slist_base.h"
-#include "gtl_storage.h"
+#include "gtl_slist.h"
+#include "gtl_vector.h"
 
 namespace gtl {
 
@@ -21,7 +21,6 @@ template <typename T, typename Hash = std::hash<T>, typename KeyEquel = std::equ
 class HashTable {
  public:
   using Node = singly_list::SListNodeT<T>;
-  using node_type = Node;
   using value_type = T;
   using reference = T&;
   using const_reference = const T&;
@@ -32,8 +31,16 @@ class HashTable {
   using allocator_type = std::allocator<T>;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
+  using iterator = SListIterator<T, difference_type>;
+  using const_iterator = SListConstIterator<T, difference_type>;
+  using local_iterator = SListIterator<T, difference_type>;
+  using const_local_iterator = SListConstIterator<T, difference_type>;
   using NodeAllocator = typename std::allocator_traits<allocator_type>::rebind_alloc<Node>;
-  using BucketStorage = UStorage<Node*>;
+  struct HashNode {
+    Node* node_begin;
+    Node* node_end;
+  };
+  using BucketVector = Vector<HashNode*>;
 
   allocator_type get_allocator() const { return static_cast<allocator_type>(get_node_allocator()); }
 
