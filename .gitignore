@@ -37,3 +37,4 @@ include
 lib
 bin
 *cmake
+.DS_Store
