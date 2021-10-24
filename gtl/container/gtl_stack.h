@@ -14,7 +14,7 @@
 
 namespace gtl {
 
-template <typename T, typename Container = List<T>>
+template <typename T, typename Container = Deque<T>>
 class Stack {
  public:
   using container_type = Container;

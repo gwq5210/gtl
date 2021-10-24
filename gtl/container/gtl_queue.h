@@ -10,10 +10,11 @@
 #pragma once
 
 #include "gtl_deque.h"
+#include "gtl_list.h"
 
 namespace gtl {
 
-template <typename T, typename Container = List<T>>
+template <typename T, typename Container = Deque<T>>
 class Queue {
  public:
   using container_type = Container;
