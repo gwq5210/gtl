@@ -150,6 +150,10 @@ class ReverseIterator {
 
 # 函数适配器
 
+早期的C++提供了一些函数适配器，如bind1st和bind2nd（C++11后可用bind替代）
+
+早期提供功能支持的几个工具在C++11中弃用，并于 C++17 中移除（旧否定器于 C++17 中弃用并于 C++20 中移除），这里不再过多介绍
+
 # 参考
 
 - [适配器模式（详解版）](http://c.biancheng.net/view/1361.html)
