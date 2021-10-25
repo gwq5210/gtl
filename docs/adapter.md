@@ -157,6 +157,6 @@ class ReverseIterator {
 # 参考
 
 - [适配器模式（详解版）](http://c.biancheng.net/view/1361.html)
-- [《STL源码剖析》-第三章](https://item.jd.com/11821611.html)
+- [STL源码剖析](https://item.jd.com/11821611.html)
 - [迭代器库](https://zh.cppreference.com/w/cpp/iterator)
 - [函数对象](https://zh.cppreference.com/w/cpp/utility/functional)
