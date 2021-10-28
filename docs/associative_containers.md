@@ -27,6 +27,8 @@ STL的红黑树实现中，会提供两个函数insert_unique和insert_equal分�
 
 由于实现的特性，关联式容器是根据键值有序的，默认从小到大排序（使用std::less<T>进行比较）
 
+![rbtree](images/rbtree.png)
+
 # 迭代器失效
 
 关联容器的迭代器和引用除了元素被删除外不会被非法化（包括end迭代器）

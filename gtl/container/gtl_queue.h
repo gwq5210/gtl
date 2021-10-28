@@ -32,7 +32,9 @@ class Queue {
   explicit Queue(const Container& c) : c_(c) {}
   explicit Queue(Container&& c) : c_(std::move(c)) {}
   template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
-  Queue(InputIt first, InputIt last) : c_(first, last) {}
+  Queue(InputIt first, InputIt last) {
+    push(first, last);
+  }
   ~Queue() = default;
 
   // Element access

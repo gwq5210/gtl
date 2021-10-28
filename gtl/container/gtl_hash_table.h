@@ -17,24 +17,24 @@
 
 namespace gtl {
 
-template <typename T, typename Hash = std::hash<T>, typename KeyEquel = std::equal_to<T>>
+template <typename Key, typename Value, typename Hash = std::hash<Key>, typename KeyEquel = std::equal_to<Key>>
 class HashTable {
  public:
-  using Node = singly_list::SListNodeT<T>;
-  using value_type = T;
-  using reference = T&;
-  using const_reference = const T&;
-  using pointer = T*;
-  using const_pointer = const T*;
+  using Node = singly_list::SListNodeT<Value>;
+  using value_type = Value
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using pointer = value_type*;
+  using const_pointer = const value_type*;
   using hasher = Hash;
   using key_equel = KeyEquel;
-  using allocator_type = std::allocator<T>;
+  using allocator_type = std::allocator<value_type>;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using iterator = SListIterator<T, difference_type>;
-  using const_iterator = SListConstIterator<T, difference_type>;
-  using local_iterator = SListIterator<T, difference_type>;
-  using const_local_iterator = SListConstIterator<T, difference_type>;
+  using iterator = SListIterator<value_type, difference_type>;
+  using const_iterator = SListConstIterator<value_type, difference_type>;
+  using local_iterator = SListIterator<value_type, difference_type>;
+  using const_local_iterator = SListConstIterator<value_type, difference_type>;
   using NodeAllocator = typename std::allocator_traits<allocator_type>::rebind_alloc<Node>;
   struct HashNode {
     Node* node_begin;

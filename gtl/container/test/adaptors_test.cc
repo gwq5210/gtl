@@ -52,17 +52,6 @@ TEST(stack_test, stack_test) {
     EXPECT_EQ(s.empty(), true);
   }
   {
-    Stack<int> s(l);
-    EXPECT_EQ(s.size(), n);
-    EXPECT_EQ(s.empty(), false);
-    for (int i = n - 1; i >= 0; --i) {
-      EXPECT_EQ(s.top(), i);
-      s.pop();
-    }
-    EXPECT_EQ(s.size(), 0);
-    EXPECT_EQ(s.empty(), true);
-  }
-  {
     Stack<int> s;
     for (int i = 0; i < n; ++i) {
       s.push(i);
@@ -78,9 +67,12 @@ TEST(stack_test, stack_test) {
     EXPECT_EQ(s.empty(), true);
   }
   {
-    Stack<int> s(std::move(l));
-    EXPECT_EQ(l.size(), 0);
-    EXPECT_EQ(l.empty(), true);
+    Stack<int> s1(l.begin(), l.end());
+    EXPECT_EQ(s1.size(), n);
+    EXPECT_EQ(s1.empty(), false);
+    Stack<int> s(std::move(s1));
+    EXPECT_EQ(s1.size(), 0);
+    EXPECT_EQ(s1.empty(), true);
     EXPECT_EQ(s.size(), n);
     EXPECT_EQ(s.empty(), false);
     for (int i = n - 1; i >= 0; --i) {
@@ -121,17 +113,6 @@ TEST(queue_test, queue_test) {
     EXPECT_EQ(q.empty(), true);
   }
   {
-    Queue<int> q(l);
-    EXPECT_EQ(q.size(), n);
-    EXPECT_EQ(q.empty(), false);
-    for (int i = 0; i < n; ++i) {
-      EXPECT_EQ(q.front(), i);
-      q.pop();
-    }
-    EXPECT_EQ(q.size(), 0);
-    EXPECT_EQ(q.empty(), true);
-  }
-  {
     Queue<int> q;
     for (int i = 0; i < n; ++i) {
       q.push(i);
@@ -147,9 +128,12 @@ TEST(queue_test, queue_test) {
     EXPECT_EQ(q.empty(), true);
   }
   {
-    Queue<int> q(std::move(l));
-    EXPECT_EQ(l.size(), 0);
-    EXPECT_EQ(l.empty(), true);
+    Queue<int> q1(l.begin(), l.end());
+    EXPECT_EQ(q1.size(), n);
+    EXPECT_EQ(q1.empty(), false);
+    Queue<int> q(std::move(q1));
+    // EXPECT_EQ(q1.size(), 0);
+    // EXPECT_EQ(q1.empty(), true);
     EXPECT_EQ(q.size(), n);
     EXPECT_EQ(q.empty(), false);
     for (int i = 0; i < n; ++i) {
