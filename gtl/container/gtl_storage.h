@@ -152,17 +152,8 @@ class UStorage<T, 0> : public std::allocator<T> {
 
   // Capacity
   size_type capacity() const { return capacity_; }
-  size_type next_capacity(size_type new_size) {
-    size_type next_cap = 1;
-    while (next_cap < new_size) {
-      next_cap <<= 1;
-    }
-    next_cap = std::max(next_cap, min_capacity_);
-    // printf("next_cap %zu %zu\n", new_size, next_cap);
-    return next_cap;
-  }
   void allocate(size_type n) {
-    capacity_ = next_capacity(n);
+    capacity_ = std::max(n, min_capacity_);;
     data_ = allocator_type::allocate(capacity_);
   }
   void release() {
@@ -220,7 +211,7 @@ class Storage : public UStorage<T, fix_capacity> {
   Storage(const Storage& other) = delete;
   Storage& operator=(const Storage& other) = delete;
   Storage(Storage&& other) { assign(std::move(other)); }
-  Storage& operator=(Storage&& other) { assign(std::move(other)); }
+  Storage& operator=(Storage&& other) { assign(std::move(other)); return *this; }
   ~Storage() { release(); }
 
   void assign(Storage&& other) {

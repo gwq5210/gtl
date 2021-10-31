@@ -46,8 +46,9 @@ struct SListNodeT : public SListNode {
 
   static SListNodeT* From(SListNode* slist_node) { return static_cast<SListNodeT*>(slist_node); }
   static T& Value(SListNode* slist_node) { return From(slist_node)->val; }
-  static const SListNodeT* From(const SListNode* slist_node) { return static_cast<SListNodeT*>(slist_node); }
+  static const SListNodeT* From(const SListNode* slist_node) { return static_cast<const SListNodeT*>(slist_node); }
   static const T& Value(const SListNode* slist_node) { return From(slist_node)->val; }
+  static const T& CValue(const SListNode* slist_node) { return From(slist_node)->val; }
   template <typename Allocator, typename... Args>
   static SListNodeT* New(Allocator& alloc, Args&&... args) {
     SListNodeT* node = alloc.allocate(1);
@@ -101,6 +102,14 @@ inline SListNode* InsertAfter(SListNode* after, SListNode* first, SListNode* las
   last->next = after->next;
   after->next = first;
   return first;
+}
+
+inline SListNode* PrevNode(SListNode* head, SListNode* node) {
+  SListNode* prev = head;
+  while (prev->next != node) {
+    prev = prev->next;
+  }
+  return prev;
 }
 
 inline std::size_t Size(SListHead* slist_head) {

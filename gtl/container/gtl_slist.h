@@ -53,6 +53,7 @@ struct SListConstIterator : public SListIteratorBase {
   using Node = singly_list::SListNodeT<T>;
   using Base = SListIteratorBase;
   using Self = SListConstIterator;
+  SListConstIterator(): Base() {}
   explicit SListConstIterator(const SListNode* node) : Base(const_cast<SListNode*>(node)) {}
   reference operator*() const { return Node::Value(node); }
   pointer operator->() const { return std::pointer_traits<pointer>::pointer_to(**this); }
@@ -75,6 +76,7 @@ struct SListIterator : public SListConstIterator<T, Difference> {
   using value_type = T;
   using Base = SListConstIterator<T, Difference>;
   using Self = SListIterator;
+  SListIterator(): Base() {}
   explicit SListIterator(SListNode* node) : Base(node) {}
   reference operator*() const { return const_cast<reference>(Base::operator*()); }
   pointer operator->() const { return const_cast<pointer>(Base::operator->()); }

@@ -63,6 +63,7 @@ struct ListConstIterator : public ListIteratorBase {
   using Node = doubly_list::ListNodeT<T>;
   using Base = ListIteratorBase;
   using Self = ListConstIterator;
+  ListConstIterator(): Base() {}
   explicit ListConstIterator(const ListNode* node) : Base(const_cast<ListNode*>(node)) {}
   reference operator*() const { return Node::Value(node); }
   pointer operator->() const { return std::pointer_traits<pointer>::pointer_to(**this); }
@@ -92,6 +93,7 @@ struct ListIterator : public ListConstIterator<T, Difference> {
   using pointer = const T&;
   using Base = ListConstIterator<T, Difference>;
   using Self = ListIterator;
+  ListIterator(): Base() {}
   explicit ListIterator(ListNode* node) : Base(node) {}
   reference operator*() const { return const_cast<reference>(Base::operator*()); }
   pointer operator->() const { return const_cast<pointer>(Base::operator->()); }

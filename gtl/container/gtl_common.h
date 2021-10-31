@@ -24,4 +24,13 @@ void print(const Container& c) {
   print(c.begin(), c.end());
 }
 
+template <typename SizeType>
+SizeType next2power(SizeType new_size) {
+  SizeType ret = 1;
+  while (ret < new_size) {
+    ret <<= 1;
+  }
+  return ret;
+}
+
 }  // namespace gtl

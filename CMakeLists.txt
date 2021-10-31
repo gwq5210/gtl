@@ -51,6 +51,7 @@ set(INCLUDE_HEADERS
   gtl/container/gtl_stack.h
   gtl/container/gtl_storage.h
   gtl/container/gtl_vector.h
+  gtl/container/gtl_hash_table.h
   gtl/iterator/gtl_iterator_op.h
   gtl/iterator/gtl_iterator.h
   gtl/iterator/gtl_reverse_iterator.h

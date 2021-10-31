@@ -42,8 +42,9 @@ struct ListNodeT : public ListNode {
 
   static ListNodeT* From(ListNode* list_node) { return static_cast<ListNodeT*>(list_node); }
   static T& Value(ListNode* list_node) { return From(list_node)->val; }
-  static const ListNodeT* From(const ListNode* list_node) { return static_cast<ListNodeT*>(list_node); }
+  static const ListNodeT* From(const ListNode* list_node) { return static_cast<const ListNodeT*>(list_node); }
   static const T& Value(const ListNode* list_node) { return From(list_node)->val; }
+  static const T& CValue(const ListNode* list_node) { return From(list_node)->val; }
   template <typename Allocator, typename... Args>
   static ListNodeT* New(Allocator& alloc, Args&&... args) {
     ListNodeT* node = alloc.allocate(1);

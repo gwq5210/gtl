@@ -14,6 +14,7 @@
 #include <type_traits>
 
 #include "gtl_algorithm.h"
+#include "gtl_common.h"
 #include "gtl_memory.h"
 #include "gtl_storage.h"
 
@@ -38,11 +39,11 @@ class Vector {
 
   // constructor
   Vector() = default;
-  explicit Vector(size_type size) : d_(size) {
+  explicit Vector(size_type size) : d_(alloc_storage(size)) {
     printf("%s\n", __FUNCTION__);
     d_.unsafe_append_value_construct(size);
   }
-  Vector(size_type size, const T& v) : d_(size) {
+  Vector(size_type size, const T& v) : d_(alloc_storage(size)) {
     printf("%s\n", __FUNCTION__);
     d_.unsafe_append_fill(size, v);
   }
@@ -50,14 +51,14 @@ class Vector {
   Vector(InputIt first, InputIt last) {
     printf("%s range\n", __FUNCTION__);
     size_type count = std::distance(first, last);
-    d_.allocate(count);
+    d_ = alloc_storage(count);
     d_.unsafe_append_copy(first, last, count);
   }
-  Vector(std::initializer_list<T> il) : d_(il.size()) {
+  Vector(std::initializer_list<T> il) : d_(alloc_storage(il.size())) {
     printf("%s il %zu\n", __FUNCTION__, il.size());
     d_.unsafe_append_copy(il.begin(), il.end(), il.size());
   }
-  Vector(const Vector& other) : d_(other.size()) { d_.unsafe_append_copy(other.begin(), other.end(), other.size()); }
+  Vector(const Vector& other) : d_(alloc_storage(other.size())) { d_.unsafe_append_copy(other.begin(), other.end(), other.size()); }
   Vector(Vector&& other) { d_.swap(other.d_); }
   ~Vector() { release(); }
   Vector& operator=(const Vector& other) {
@@ -211,11 +212,14 @@ class Vector {
     }
     replace(begin(), first, last);
   }
+  StorageType alloc_storage(size_type new_capacity) {
+    return StorageType(next2power(new_capacity));
+  }
   void grow(size_type new_capacity) {
     if (capacity() >= new_capacity) {
       return;
     }
-    StorageType new_storage(new_capacity);
+    StorageType new_storage = alloc_storage(new_capacity);
     new_storage.unsafe_append_move(begin(), end());
     printf("grow capacity new capacity: %zu/%zu, ptr: %p/%p\n", capacity(), new_storage.capacity(), new_storage.begin(),
            d_.begin());
@@ -248,7 +252,7 @@ typename Vector<T>::iterator Vector<T>::insert(const_iterator before, size_type 
     }
     d_.incr_size(count);
   } else {
-    StorageType new_storage(size() + count);
+    StorageType new_storage = alloc_storage(size() + count);
     new_storage.unsafe_append_move(begin(), end() - n);
     new_storage.unsafe_append_fill(count, v);
     new_storage.unsafe_append_move(end() - n, end());
@@ -278,7 +282,7 @@ typename Vector<T>::iterator Vector<T>::insert(const_iterator before, InputIt fi
     }
     d_.incr_size(count);
   } else {
-    StorageType new_storage(size() + count);
+    StorageType new_storage = alloc_storage(size() + count);
     new_storage.unsafe_append_move(begin(), end() - n);
     new_storage.unsafe_append_copy(first, last);
     new_storage.unsafe_append_move(end() - n, end());
@@ -303,7 +307,7 @@ typename Vector<T>::iterator Vector<T>::emplace(const_iterator before, Args&&...
     }
     d_.incr_size(1);
   } else {
-    StorageType new_storage(size() + 1);
+    StorageType new_storage = alloc_storage(size() + 1);
     new_storage.unsafe_append_move(begin(), begin() + insert_pos);
     new_storage.unsafe_append(std::forward<Args>(args)...);
     if (!at_end) {
@@ -331,7 +335,7 @@ typename Vector<T>::iterator Vector<T>::replace(const_iterator pos, InputIt firs
     gtl::uninitialized_copy(first + n, last, end());
     d_.incr_size(count - n);
   } else {
-    StorageType new_storage(size() + count - n);
+    StorageType new_storage = alloc_storage(size() + count - n);
     new_storage.unsafe_append_move(begin(), iterator(pos));
     new_storage.unsafe_append_copy(first, last, count);
     d_.swap(new_storage);

@@ -383,6 +383,9 @@ class Deque {
     begin_.clear();
     end_.clear();
   }
+  BlockStorage alloc_block_storage(size_type size) {
+    return BlockStorage(next2power(size));
+  }
 
  private:
   iterator begin_;
@@ -604,7 +607,7 @@ void Deque<T>::reserve_at_back(size_type count) {
 
 template <typename T>
 void Deque<T>::reallocate_block_storage(size_type block_count, bool add_at_front) {
-  BlockStorage new_block_storage(d_.capacity() + block_count);
+  BlockStorage new_block_storage = alloc_block_storage(d_.capacity() + block_count);
   size_type mid_offset = (new_block_storage.capacity() - (end_.block() - begin_.block() + 1) - block_count) / 2;
   size_type begin_block_offset = begin_.block() - d_.begin() + mid_offset;
   size_type end_block_offset = end_.block() - d_.begin() + mid_offset;
