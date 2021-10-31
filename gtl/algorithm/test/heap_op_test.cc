@@ -63,6 +63,8 @@ TEST(heap_op_test, heap_op_test) {
   EXPECT_EQ(std::is_heap(vec_copy.begin(), vec_copy.end()), gtl::is_heap(vec_copy.begin(), vec_copy.end()));
   EXPECT_EQ(std::is_heap_until(vec.begin(), vec.end()), gtl::is_heap_until(vec.begin(), vec.end()));
   EXPECT_EQ(std::is_heap_until(vec_copy.begin(), vec_copy.end()), gtl::is_heap_until(vec_copy.begin(), vec_copy.end()));
+  gtl::make_heap(vec.begin(), vec.end());
+  gtl::make_heap(vec_copy.begin(), vec_copy.end());
   gtl::sort_heap(vec.begin(), vec.end());
   std::sort_heap(vec_copy.begin(), vec_copy.end());
   EXPECT_EQ(std::is_sorted(vec.begin(), vec.end()), std::is_sorted(vec_copy.begin(), vec_copy.end()));
