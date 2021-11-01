@@ -27,7 +27,7 @@ namespace gtl {
 template <typename Key, typename Value>
 class MapKeyFunc {
  public:
-  const Key& operator()(const std::pair<Key, Value>& p) const { MapKeyFunc::GetKey(p); }
+  const Key& operator()(const std::pair<Key, Value>& p) const { return MapKeyFunc::GetKey(p); }
   static const Key& GetKey(const std::pair<Key, Value>& p) { return std::get<0>(p); }
   static const Value& GetValue(const std::pair<Key, Value>& p) { return std::get<1>(p); }
 };
@@ -150,8 +150,19 @@ class HashTable {
     return emplace(unique, std::move(value));
   }
   template <typename P>
+  std::pair<iterator, bool> insert(P&& value) {
+    return emplace(false, std::move(value));
+  }
+  template <typename P>
+  std::pair<iterator, bool> insert(const_iterator hint, P&& value) {
+    return emplace_hint(false, hint, std::move(value));
+  }
+  template <typename P>
   std::pair<iterator, bool> insert(bool unique, const_iterator hint, P&& value) {
     return emplace_hint(unique, hint, std::move(value));
+  }
+  std::pair<iterator, bool> insert(const Value& value) {
+    return emplace(false, value);
   }
   std::pair<iterator, bool> insert(bool unique, const Value& value) {
     return emplace(unique, value);
@@ -162,6 +173,9 @@ class HashTable {
   std::pair<iterator, bool> insert_equal(const Value& value) {
     return emplace_equal(value);
   }
+  std::pair<iterator, bool> insert(Value&& value) {
+    return emplace(false, std::move(value));
+  }
   std::pair<iterator, bool> insert(bool unique, Value&& value) {
     return emplace(unique, std::move(value));
   }
@@ -171,6 +185,12 @@ class HashTable {
   std::pair<iterator, bool> insert_equal(Value&& value) {
     return emplace_equal(std::move(value));
   }
+  std::pair<iterator, bool> insert(const_iterator hint, const Value& value) {
+    return emplace_hint(false, hint, value);
+  }
+  std::pair<iterator, bool> insert(const_iterator hint, Value&& value) {
+    return emplace_hint(false, hint, std::move(value));
+  }
   std::pair<iterator, bool> insert(bool unique, const_iterator hint, const Value& value) {
     return emplace_hint(unique, hint, value);
   }
@@ -178,17 +198,33 @@ class HashTable {
     return emplace_hint(unique, hint, std::move(value));
   }
   template <typename InputIt>
+  void insert(InputIt first, InputIt last) {
+    insert(false, first, last);
+  }
+  template <typename InputIt>
   void insert(bool unique, InputIt first, InputIt last) {
+    check_for_rehash(gtl::distance(first, last));
     for (InputIt it = first; it != last; ++it) {
       emplace(unique, *it);
     }
+  }
+  void insert(std::initializer_list<value_type> ilist) {
+    insert(false, ilist.begin(), ilist.end());
   }
   void insert(bool unique, std::initializer_list<value_type> ilist) {
     insert(unique, ilist.begin(), ilist.end());
   }
   template <typename... Args>
+  std::pair<iterator, bool> emplace(Args&&... args) {
+    return emplace_hint(false, const_iterator(), std::forward<Args>(args)...);
+  }
+  template <typename... Args>
   std::pair<iterator, bool> emplace(bool unique, Args&&... args) {
     return emplace_hint(unique, const_iterator(), std::forward<Args>(args)...);
+  }
+  template <typename... Args>
+  std::pair<iterator, bool> emplace_hint(const_iterator hint, Args&&... args) {
+    return insert_node(false, hint, std::forward<Args>(args)...);
   }
   template <typename... Args>
   std::pair<iterator, bool> emplace_hint(bool unique, const_iterator hint, Args&&... args) {
@@ -390,7 +426,7 @@ class HashTable {
   NodeAllocator& get_node_allocator() { return size_alloc_.second(); }
   const NodeAllocator& get_node_allocator() const { return size_alloc_.second(); }
   BucketStorage alloc_buckets(size_type size) {
-    size = std::min(size, min_bucket_size_);
+    size = std::max(size, min_bucket_size_);
     BucketStorage buckets(size);
     gtl::uninitialized_fill_n(buckets.begin(), size, HashNode());
     return buckets;
@@ -496,7 +532,7 @@ class HashTable {
     head_.next = nullptr;
     get_size() = 0;
 
-    printf("rehash new bucket count %zu\n", bucket_count());
+    printf("rehash new bucket count %zu %zu\n", bucket_count(), new_bucket_count);
     SListNode* prev = &old_head;
     SListNode* first = prev->next;
     while (first) {
@@ -527,6 +563,9 @@ class HashTable {
       insert(false, other.begin(), other.end());
     }
     return *this;
+  }
+  HashTable& assign(std::initializer_list<value_type> ilist) {
+    return assign(false, ilist);
   }
   HashTable& assign(bool unique, std::initializer_list<value_type> ilist) {
     release();
