@@ -20,6 +20,10 @@
 using gtl::HashTable;
 
 TEST(hash_table_test, constructor_test) {
+  
+}
+
+TEST(hash_table_test, constructor1_test) {
   int n = 100;
   HashTable<int, int, gtl::SetKeyFunc<int, int>> ht;
   std::unordered_map<int, int> um;

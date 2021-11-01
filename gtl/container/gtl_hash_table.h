@@ -109,8 +109,23 @@ class HashTable {
   };
   using BucketStorage = UStorage<HashNode>;
 
-  HashTable(): max_load_factor_(default_max_load_factor_), buckets_(alloc_buckets(min_bucket_size_)), size_alloc_(0) {}
+  // constructor
+  HashTable(): HashTable(min_bucket_size_) {}
+  HashTable(size_type bucket_count): max_load_factor_(default_max_load_factor_), buckets_(alloc_buckets(bucket_count)), size_alloc_(0) {}
+  template <typename InputIt>
+  HashTable(bool unique, InputIt first, InputIt last, size_type bucket_count = gtl::distance(first, last)): HashTable(bucket_count) {
+    insert(unique, first, last);
+  }
+  HashTable(const HashTable& other): HashTable(false, other.begin(), other.end(), other.bucket_count()) {
+    max_load_factor_ = other.max_load_factor_
+  }
+  HashTable(HashTable&& other) { move_from(std::move(other)); }
+  HashTable(bool unique, std::initializer_list<value_type> ilist, size_type bucket_count = ilist.size()): HashTable(unique, ilist.begin(), ilist.end(), bucket_count) {}
   ~HashTable() { release(); }
+
+  HashTable& operator=(const HashTable& other) {}
+  HashTable& operator=(HashTable&& other) {}
+  HashTable& operator=(std::initializer_list<value_type> ilist) {}
 
   allocator_type get_allocator() const { return static_cast<allocator_type>(get_node_allocator()); }
 
@@ -326,6 +341,7 @@ class HashTable {
   NodeAllocator& get_node_allocator() { return size_alloc_.second(); }
   const NodeAllocator& get_node_allocator() const { return size_alloc_.second(); }
   BucketStorage alloc_buckets(size_type size) {
+    size = std::min(size, min_bucket_size_);
     BucketStorage buckets(size);
     gtl::uninitialized_fill_n(buckets.begin(), size, HashNode());
     return buckets;
@@ -446,6 +462,14 @@ class HashTable {
   }
   const key_type& get_key(const value_type& value) const {
     return get_key_func_(value);
+  }
+  void move_from(HashTable&& other) {
+    max_load_factor_ = other.max_load_factor_;
+    get_size() = other.size();
+    buckets_.swap(other.buckets_);
+    gtl::swap(head_, other.head_);
+
+    other.init();
   }
 
   ExtractKey get_key_func_;
