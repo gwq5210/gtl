@@ -12,6 +12,7 @@
 #include <cmath>
 
 #include <functional>
+#include <limits>
 #include <memory>
 #include <utility>
 
@@ -113,19 +114,19 @@ class HashTable {
   HashTable(): HashTable(min_bucket_size_) {}
   HashTable(size_type bucket_count): max_load_factor_(default_max_load_factor_), buckets_(alloc_buckets(bucket_count)), size_alloc_(0) {}
   template <typename InputIt>
-  HashTable(bool unique, InputIt first, InputIt last, size_type bucket_count = gtl::distance(first, last)): HashTable(bucket_count) {
+  HashTable(bool unique, InputIt first, InputIt last, size_type bucket_count = 0): HashTable(bucket_count ? bucket_count : gtl::distance(first, last)) {
     insert(unique, first, last);
   }
   HashTable(const HashTable& other): HashTable(false, other.begin(), other.end(), other.bucket_count()) {
-    max_load_factor_ = other.max_load_factor_
+    max_load_factor_ = other.max_load_factor_;
   }
   HashTable(HashTable&& other) { move_from(std::move(other)); }
-  HashTable(bool unique, std::initializer_list<value_type> ilist, size_type bucket_count = ilist.size()): HashTable(unique, ilist.begin(), ilist.end(), bucket_count) {}
+  HashTable(bool unique, std::initializer_list<value_type> ilist, size_type bucket_count = 0): HashTable(unique, ilist.begin(), ilist.end(), bucket_count ? bucket_count : ilist.size()) {}
   ~HashTable() { release(); }
 
-  HashTable& operator=(const HashTable& other) {}
-  HashTable& operator=(HashTable&& other) {}
-  HashTable& operator=(std::initializer_list<value_type> ilist) {}
+  HashTable& operator=(const HashTable& other) { return assign(other); }
+  HashTable& operator=(HashTable&& other) { return assign(std::move(other)); }
+  HashTable& operator=(std::initializer_list<value_type> ilist) { return assign(false, ilist); }
 
   allocator_type get_allocator() const { return static_cast<allocator_type>(get_node_allocator()); }
 
@@ -140,6 +141,7 @@ class HashTable {
   // Capacity
   bool empty() const { return head_.next == nullptr; }
   size_type size() const { return get_size(); }
+  size_type max_size() const { return std::numeric_limits<difference_type>::max(); }
 
   // Modifiers
   void clear() { release(); }
@@ -259,8 +261,9 @@ class HashTable {
     return iterator(find_node(key).node);
   }
   const_iterator find(const key_type& key) const {
-    return iterator(find_node(key).node);
+    return const_iterator(find_node(key).node);
   }
+  size_type count(const key_type& key) const { return count_equal(key); }
   size_type count_unique(const key_type& key) const { return count(true, key); }
   size_type count_equal(const key_type& key) const { return count(false, key); }
   size_type count(bool unique, const key_type& key) const {
@@ -277,6 +280,8 @@ class HashTable {
   bool contains(const key_type& key) const {
     return find_node(key).node;
   }
+  std::pair<iterator, iterator> equal_range(const key_type& key) { return equal_range(false, key); }
+  std::pair<const_iterator, const_iterator> equal_range(const key_type& key) const { return equal_range(false, key); }
   std::pair<iterator, iterator> equal_range(bool unique, const key_type& key) {
     auto res = find_node(key);
     if (!res.node) {
@@ -326,8 +331,52 @@ class HashTable {
   float max_load_factor() const { return max_load_factor_; }
   void max_load_factor(float load_factor) { max_load_factor_ = load_factor; }
 
+  // Observers
   key_equal key_eq() const { return key_equal_; }
   hasher hash_function() const { return hasher_; }
+
+  // Compare
+  bool equals(const HashTable& other) const {
+    if (size() != other.size()) {
+      return false;
+    }
+    SListNode* prev = &head_;
+    while (prev->next) {
+      const key_type& key = get_key(Node::Value(prev->next));
+      auto range_res = find_range(key, prev);
+      auto node_it = other.find_node(key);
+      if (!node_it.node) {
+        return false;
+      }
+      auto other_range_res = other.find_range(key, node_it.before);
+      if (other_range_res.count != range_res.count) {
+        return false;
+      }
+      SListNode* l = range_res.before->next;
+      SListNode* r = other_range_res.before->next;
+      for (; l != range_res.node->next; l = l->next, r = r->next) {
+        if (!(Node::Value(l) == Node::Value(r))) {
+          return false;
+        }
+      }
+      prev = range_res.node;
+    }
+    return true;
+  }
+  bool equals_unique(const HashTable& other) const {
+    if (size() != other.size()) {
+      return false;
+    }
+    SListNode* node = head_.next;
+    while (node) {
+      auto res = find_node(get_key(Node::Value(node)));
+      if (!res.node || !(Node::Value(node) == Node::Value(res.node))) {
+        return false;
+      }
+      node = node->next;
+    }
+    return true;
+  }
 
  private:
   template <typename... Args>
@@ -471,6 +520,26 @@ class HashTable {
 
     other.init();
   }
+  HashTable& assign(const HashTable& other) {
+    if (this != &other) {
+      release();
+      reserve(other.bucket_count());
+      insert(false, other.begin(), other.end());
+    }
+    return *this;
+  }
+  HashTable& assign(bool unique, std::initializer_list<value_type> ilist) {
+    release();
+    reserve(ilist.size());
+    insert(unique, ilist.begin(), ilist.end());
+    return *this;
+  }
+  HashTable& assign(HashTable&& other) {
+    release();
+    reserve(other.bucket_count());
+    move_from(other);
+    return *this;
+  }
 
   ExtractKey get_key_func_;
   key_equal key_equal_;
@@ -480,5 +549,15 @@ class HashTable {
   BucketStorage buckets_;
   CompressedPair<size_type, NodeAllocator> size_alloc_;
 };  // class HashTable
+
+template <typename Key, typename Value, typename ExtractKey, typename Hash, typename KeyEqual>
+bool operator==(const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& lhs, const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& rhs) {
+  return lhs.equals(rhs);
+}
+
+template <typename Key, typename Value, typename ExtractKey, typename Hash, typename KeyEqual>
+bool operator!=(const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& lhs, const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& rhs) {
+  return !(lhs == rhs);
+}
 
 }  // namespace gtl
