@@ -73,7 +73,7 @@ TEST(hash_table_test, constructor_asssign_test) {
 }
 
 TEST(hash_table_test, modifiers_lookup_test) {
-  int n = 10;
+  int n = 10000;
   ISet iset;
   for (int i = 0; i < n; ++i) {
     iset.insert_unique(i);
@@ -81,8 +81,12 @@ TEST(hash_table_test, modifiers_lookup_test) {
   }
   EXPECT_EQ(iset.size(), n);
   for (int i = 0; i < n; ++i) {
-    iset.insert_equal(i);
-    iset.insert_equal(i);
+    auto res = iset.insert_equal(i);
+    EXPECT_EQ(*res.first, i);
+    EXPECT_EQ(res.second, true);
+    res = iset.insert_equal(i);
+    EXPECT_EQ(*res.first, i);
+    EXPECT_EQ(res.second, true);
   }
   EXPECT_EQ(iset.size(), 3 * n);
   for (int i = 0; i < n; ++i) {
@@ -99,7 +103,7 @@ TEST(hash_table_test, modifiers_lookup_test) {
   int erase_n = 3;
   for (int i = 0; i < erase_n; ++i) {
     iset.erase(i);
-    EXPECT_EQ(iset.size(), n - 3 * (i + 1));
+    EXPECT_EQ(iset.size(), 3 * (n - (i + 1)));
   }
   size_t old_size = iset.size();
   size_t before_bucket_count = iset.bucket_count();

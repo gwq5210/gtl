@@ -503,6 +503,8 @@ class HashTable {
   }
   template <typename... Args>
   std::pair<iterator, bool> insert_node(bool unique, const_iterator hint, Args&&... args) {
+    // 迭代器可能会失效，要先判断是否需要rehash
+    check_for_rehash(1);
     Node* node = NewNode(std::forward<Args>(args)...);
     SListNode* prev = hint.node;
     const key_type& key = get_key(Node::Value(node));
@@ -520,7 +522,6 @@ class HashTable {
       }
       prev = result.before;
     }
-    check_for_rehash(1);
     insert_node(bucket_idx, prev, node);
     return std::make_pair(iterator(node), true);
   }
