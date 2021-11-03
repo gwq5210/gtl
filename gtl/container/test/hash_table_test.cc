@@ -49,21 +49,65 @@ void print_iset(const ISet& iset) {
   }
 }
 
-TEST(hash_table_test, constructor_asssign_test) {
+TEST(hash_table_test, constructor_assign_test) {
   int n = 10000;
   Vector<IIMapValue> vec;
   for (int i = 0; i < n; i++) {
     vec.emplace_back(std::make_pair(i, i));
+    vec.emplace_back(std::make_pair(i, i));
   }
 
   // map
-  IIMap iimap;
-  EXPECT_EQ(iimap.size(), 0);
-  EXPECT_EQ(iimap.empty(), true);
-  EXPECT_EQ(iimap.bucket_count(), IIMap::min_bucket_size_);
-  iimap.insert(vec.begin(), vec.end());
-  EXPECT_EQ(iimap.size(), n);
-  EXPECT_EQ(iimap.empty(), false);
+  {
+    IIMap iimap;
+    EXPECT_EQ(iimap, IIMap());
+    EXPECT_EQ(iimap.size(), 0);
+    EXPECT_EQ(iimap.empty(), true);
+    EXPECT_EQ(iimap.bucket_count(), IIMap::min_bucket_size_);
+    iimap.insert(vec.begin(), vec.end());
+    EXPECT_EQ(iimap.size(), 2 * n);
+    EXPECT_EQ(iimap.empty(), false);
+    iimap.clear();
+    EXPECT_EQ(iimap.size(), 0);
+    EXPECT_EQ(iimap.empty(), true);
+    iimap.insert(true, vec.begin(), vec.end());
+    EXPECT_EQ(iimap.size(), n);
+    EXPECT_EQ(iimap.empty(), false);
+  }
+
+  {
+    IIMap iimap(n);
+    EXPECT_EQ(iimap, IIMap());
+    EXPECT_EQ(iimap.size(), 0);
+    EXPECT_EQ(iimap.empty(), true);
+    EXPECT_EQ(iimap.bucket_count(), gtl::next2power(n));
+    iimap.insert(vec.begin(), vec.end());
+    EXPECT_EQ(iimap.size(), 2 * n);
+    EXPECT_EQ(iimap.empty(), false);
+    iimap.clear();
+    EXPECT_EQ(iimap.size(), 0);
+    EXPECT_EQ(iimap.empty(), true);
+    iimap.insert(true, vec.begin(), vec.end());
+    EXPECT_EQ(iimap.size(), n);
+    EXPECT_EQ(iimap.empty(), false);
+  }
+
+  {
+    IIMap iimap(true, vec.begin(), vec.end());
+    EXPECT_NE(iimap, IIMap());
+    EXPECT_EQ(iimap.size(), n);
+    EXPECT_EQ(iimap.empty(), false);
+    EXPECT_EQ(iimap.bucket_count(), gtl::next2power(2 * n));
+    iimap.insert(vec.begin(), vec.end());
+    EXPECT_EQ(iimap.size(), 3 * n);
+    EXPECT_EQ(iimap.empty(), false);
+    iimap.clear();
+    EXPECT_EQ(iimap.size(), 0);
+    EXPECT_EQ(iimap.empty(), true);
+    iimap.insert(true, vec.begin(), vec.end());
+    EXPECT_EQ(iimap.size(), n);
+    EXPECT_EQ(iimap.empty(), false);
+  }
 
   // set
   ISet iset;
@@ -92,7 +136,7 @@ TEST(hash_table_test, modifiers_lookup_test) {
   for (int i = 0; i < n; ++i) {
     EXPECT_EQ(iset.count(i), 3);
   }
-  print_iset(iset);
+  // print_iset(iset);
   for (int i = 0; i < n; ++i) {
     auto res = iset.equal_range(i);
     EXPECT_EQ(gtl::distance(res.first, res.second), 3);

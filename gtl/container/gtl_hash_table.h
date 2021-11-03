@@ -254,20 +254,20 @@ class HashTable {
     size_type bucket_idx = bucket(get_key(value));
     SListNode* before = PrevNode(buckets_[bucket_idx].node_before_begin, first.node);
     SListNode* prev = before;
-    printf("erase range before key: %d\n", get_key(Node::Value(before)));
+    // printf("erase range before key: %d\n", get_key(Node::Value(before)));
     while (prev->next != last.node) {
       HashNode& hnode = buckets_[bucket_idx];
       SListNode* node_end = hnode.node_finish->next;
-      printf("erase begin\n");
+      // printf("erase begin\n");
       size_type count = 0;
       while (prev->next != node_end && prev->next != last.node) {
-        printf("erase range key: %d\n", Node::Value(prev->next));
+        // printf("erase range key: %d\n", Node::Value(prev->next));
         prev = prev->next;
         ++count;
       }
       erase_node(bucket_idx, before, prev, count);
       prev = before;
-      printf("bucket %zu size %zu\n", bucket_idx, hnode.size());
+      // printf("bucket %zu size %zu\n", bucket_idx, hnode.size());
       if (prev->next == last.node) {
         break;
       }
@@ -357,7 +357,7 @@ class HashTable {
   // Hash policy
   float load_factor() const { return float(size()) / bucket_count(); }
   void rehash(size_type count) {
-    size_type new_bucket_count = next2power(size_type(std::ceil(count / max_load_factor())));
+    size_type new_bucket_count = size_type(std::ceil(count / max_load_factor()));
     if (bucket_count() >= new_bucket_count) {
       return;
     }
@@ -376,7 +376,7 @@ class HashTable {
     if (size() != other.size()) {
       return false;
     }
-    SListNode* prev = &head_;
+    const SListNode* prev = &head_;
     while (prev->next) {
       const key_type& key = get_key(Node::Value(prev->next));
       auto range_res = find_range(key, prev);
@@ -385,17 +385,17 @@ class HashTable {
         return false;
       }
       auto other_range_res = other.find_range(key, node_it.before);
-      if (other_range_res.count != range_res.count) {
+      if (other_range_res.second != range_res.second) {
         return false;
       }
-      SListNode* l = range_res.before->next;
-      SListNode* r = other_range_res.before->next;
-      for (; l != range_res.node->next; l = l->next, r = r->next) {
+      SListNode* l = range_res.first.before->next;
+      SListNode* r = other_range_res.first.before->next;
+      for (; l != range_res.first.node->next; l = l->next, r = r->next) {
         if (!(Node::Value(l) == Node::Value(r))) {
           return false;
         }
       }
-      prev = range_res.node;
+      prev = range_res.first.node;
     }
     return true;
   }
@@ -426,7 +426,7 @@ class HashTable {
   NodeAllocator& get_node_allocator() { return size_alloc_.second(); }
   const NodeAllocator& get_node_allocator() const { return size_alloc_.second(); }
   BucketStorage alloc_buckets(size_type size) {
-    size = std::max(size, min_bucket_size_);
+    size = std::max(next2power(size), min_bucket_size_);
     BucketStorage buckets(size);
     gtl::uninitialized_fill_n(buckets.begin(), size, HashNode());
     return buckets;
@@ -463,14 +463,14 @@ class HashTable {
     }
     return {hnode.node_before_begin, nullptr};
   }
-  std::pair<FindNodeResult, size_type> find_range(const key_type& key, SListNode* before) const {
+  std::pair<FindNodeResult, size_type> find_range(const key_type& key, const SListNode* before) const {
     std::pair<FindNodeResult, size_type> res = std::make_pair(FindNodeResult(), 0);
-    res.first.before = before;
+    res.first.before = const_cast<SListNode*>(before);
     while (before->next && key_equal_(key, get_key(Node::Value(before->next)))) {
       before = before->next;
       ++res.second;
     }
-    res.first.node = before;
+    res.first.node = const_cast<SListNode*>(before);;
     return res;
   }
   void erase_node(size_type bucket_idx, SListNode* before, SListNode* last, size_type count) {
