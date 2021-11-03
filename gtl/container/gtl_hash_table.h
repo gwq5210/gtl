@@ -247,30 +247,37 @@ class HashTable {
     return iterator(result.before->next);
   }
   iterator erase(const_iterator first, const_iterator last) {
+    // 范围为空，直接返回
     if (first == last) {
       return iterator(last.node);
     }
+    // 找到first的前一个节点before
     const value_type& value = Node::Value(first.node);
     size_type bucket_idx = bucket(get_key(value));
     SListNode* before = PrevNode(buckets_[bucket_idx].node_before_begin, first.node);
     SListNode* prev = before;
     // printf("erase range before key: %d\n", get_key(Node::Value(before)));
+    // 遍历[first, last)的节点并删除
     while (prev->next != last.node) {
       HashNode& hnode = buckets_[bucket_idx];
       SListNode* node_end = hnode.node_finish->next;
       // printf("erase begin\n");
       size_type count = 0;
+      // 判断该桶内元素删除的范围
       while (prev->next != node_end && prev->next != last.node) {
         // printf("erase range key: %d\n", Node::Value(prev->next));
         prev = prev->next;
         ++count;
       }
+      // 执行元素的删除
       erase_node(bucket_idx, before, prev, count);
       prev = before;
       // printf("bucket %zu size %zu\n", bucket_idx, hnode.size());
+      // 已经删除完毕，break
       if (prev->next == last.node) {
         break;
       }
+      // 计算下一个删除元素的桶位置
       bucket_idx = bucket(get_key(Node::Value(prev->next)));
     }
     return iterator(last.node);
@@ -319,13 +326,16 @@ class HashTable {
   std::pair<iterator, iterator> equal_range(const key_type& key) { return equal_range(false, key); }
   std::pair<const_iterator, const_iterator> equal_range(const key_type& key) const { return equal_range(false, key); }
   std::pair<iterator, iterator> equal_range(bool unique, const key_type& key) {
+    // 先查找单个元素，未找到则直接返回
     auto res = find_node(key);
     if (!res.node) {
       return std::make_pair(iterator(), iterator());
     }
+    // 如果键唯一，则找到后直接返回
     if (unique) {
       return std::make_pair(iterator(res.node), iterator(res.node->next));
     } else {
+      // 键不唯一，从before开始查找相同key的元素范围
       auto range_res = find_range(key, res.before);
       return std::make_pair(iterator(res.node), iterator(range_res.first.node->next));
     }
@@ -449,28 +459,34 @@ class HashTable {
     gtl::fill_n(buckets_.begin(), buckets_.capacity(), HashNode());
   }
   FindNodeResult find_node(const key_type& key) const {
+    // 定位到哈希桶
     return find_node(key, bucket(key));
   }
   FindNodeResult find_node(const key_type& key, size_type bucket_idx) const {
     const HashNode& hnode = buckets_[bucket_idx];
+    // 该桶为空直接返回未找到
     if (hnode.empty()) {
       return {const_cast<SListNode*>(&head_), nullptr};
     }
+    // 依次查找该桶的元素，找到相同的key则返回
     for (SListNode* prev = hnode.node_before_begin; prev->next != hnode.node_finish->next; prev = prev->next) {
       if (key_equal_(key, get_key(Node::Value(prev->next)))) {
         return {prev, prev->next};
       }
     }
+    // 到这里说明没找到
     return {hnode.node_before_begin, nullptr};
   }
   std::pair<FindNodeResult, size_type> find_range(const key_type& key, const SListNode* before) const {
     std::pair<FindNodeResult, size_type> res = std::make_pair(FindNodeResult(), 0);
+    // 从before->next开始，直到key不相同
     res.first.before = const_cast<SListNode*>(before);
     while (before->next && key_equal_(key, get_key(Node::Value(before->next)))) {
       before = before->next;
       ++res.second;
     }
-    res.first.node = const_cast<SListNode*>(before);;
+    // 此时before为key的最后一个元素
+    res.first.node = const_cast<SListNode*>(before);
     return res;
   }
   void erase_node(size_type bucket_idx, SListNode* before, SListNode* last, size_type count) {
@@ -480,9 +496,13 @@ class HashTable {
     }
     SListNode* first = before->next;
     SListNode* next = first->next;
+    // 更新该桶节点的范围
     buckets_[bucket_idx].erase_node(before, last);
+    // 将元素从链表中删除
     RemoveAfter(before, last);
+    // 更新size
     incr_size(-count);
+    // 析构节点并释放内存
     while (first) {
       next = first->next;
       DeleteNode(first);
@@ -493,7 +513,9 @@ class HashTable {
     insert_node(bucket_idx, before, node, node, 1);
   }
   void insert_node(size_type bucket_idx, SListNode* before, SListNode* first, SListNode* last, size_type count) {
+    // 将新的[first, last]内的元素插入到before节点后
     InsertAfter(before, first, last);
+    // 更新该桶内的元素范围
     buckets_[bucket_idx].insert_node(before, first, last);
     incr_size(count);
     // 更新下一个bucket的前一个节点
@@ -503,16 +525,20 @@ class HashTable {
   }
   template <typename... Args>
   std::pair<iterator, bool> insert_node(bool unique, const_iterator hint, Args&&... args) {
+    // 原位构造元素
     Node* node = NewNode(std::forward<Args>(args)...);
     SListNode* prev = hint.node;
     const key_type& key = get_key(Node::Value(node));
     size_type bucket_idx = bucket(key);
+    // 元素唯一的情况下，已找到元素直接结束插入
     if (prev && (key_equal_(get_key(Node::Value(prev)), key) || (prev->next && key_equal_(get_key(Node::Value(prev->next)), key)))) {
+      // hint或hint->next对应元素的key与新元素的key相同，使用hint作为插入位置
       if (unique) {
         DeleteNode(node);
         return std::make_pair(iterator(), false);
       }
     } else {
+      // 找到对应元素的插入位置
       FindNodeResult result = find_node(key, bucket_idx);
       if (unique && result.node) {
         DeleteNode(node);
@@ -520,6 +546,7 @@ class HashTable {
       }
       prev = result.before;
     }
+    // 插入元素
     insert_node(bucket_idx, prev, node);
     // 可以先添加，然后再rehash
     check_for_rehash(0);
@@ -527,24 +554,32 @@ class HashTable {
   }
   void check_for_rehash(size_type new_count) { reserve(size() + new_count); }
   void do_rehash(size_type new_bucket_count) {
+    // 1. 新分配桶数组
     BucketStorage new_buckets = alloc_buckets(new_bucket_count);
     SListNode old_head = head_;
-    buckets_.swap(new_buckets);
+    buckets_.swap(new_buckets); // 与旧桶数组交换
     head_.next = nullptr;
     get_size() = 0;
 
     printf("rehash new bucket count %zu %zu\n", bucket_count(), new_bucket_count);
-    SListNode* prev = &old_head;
+    SListNode* prev = &old_head; // 旧链表的伪头节点，便于实现
     SListNode* first = prev->next;
+    // 2. 遍历所有元素的链表
     while (first) {
+      // 计算链表头节点在新桶数组中的位置
       const key_type& key = get_key(Node::Value(first));
       size_type new_bucket_idx = bucket(key);
+      // 找到相同key的元素
       auto range_res = find_range(key, prev);
+      // 将(range_res.first.before, range_res.first.node]这些元素从链表中移除
       RemoveAfter(range_res.first.before, range_res.first.node);
+      // 插入到新链表中并设置桶的所在元素的范围
       insert_node(new_bucket_idx, buckets_[new_bucket_idx].node_before_begin ? buckets_[new_bucket_idx].node_before_begin : &head_, first, range_res.first.node, range_res.second);
+      // 旧链表的新头节点
       first = prev->next;
     }
     printf("rehash done. new bucket count %zu\n", bucket_count());
+    // 3. 旧桶数组在作用域结束时自动释放内存
   }
   const key_type& get_key(const value_type& value) const {
     return get_key_func_(value);
