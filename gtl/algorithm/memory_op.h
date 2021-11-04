@@ -1,5 +1,5 @@
 /**
- * @file gtl_memory.h
+ * @file memory_op.h
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 内存管理相关的函数库
  * @date 2021-05-15

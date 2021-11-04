@@ -89,7 +89,7 @@ destroy allocator_test
 
 # 未初始化内存算法的实现
 
-有了上述基础，可以实现简单的未初始化内存的算法，更多实现参见[gtl_memory.h](https://github.com/gwq5210/gtl/blob/main/gtl/algorithm/gtl_memory.h)
+有了上述基础，可以实现简单的未初始化内存的算法，更多实现参见[memory_op.h](https://github.com/gwq5210/gtl/blob/main/gtl/algorithm/memory_op.h)
 
 construct_at用到了std::forward的完美转发（C++11），两次强制转换是为了除去cv限定符
 

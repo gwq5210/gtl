@@ -1,5 +1,5 @@
 /**
- * @file gtl_hash_table.h
+ * @file hash_table.h
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 哈希表的实现
  * @date 2021-05-28
@@ -16,11 +16,11 @@
 #include <memory>
 #include <utility>
 
-#include "gtl_common.h"
-#include "gtl_compressed_pair.h"
-#include "gtl_slist.h"
-#include "gtl_storage.h"
-#include "gtl_vector.h"
+#include "common.h"
+#include "compressed_pair.h"
+#include "slist.h"
+#include "storage.h"
+#include "vector.h"
 
 namespace gtl {
 

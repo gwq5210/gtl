@@ -1,0 +1,99 @@
+/**
+ * @file smart_pointers.h
+ * @author gwq5210 (gwq5210@qq.com)
+ * @brief 智能指针实现
+ * @date 2021-11-04
+ *
+ * @copyright Copyright (c) 2021. All rights reserved.
+ */
+
+#pragma once
+
+#include <memory>
+
+#include "compressed_pair.h"
+
+namespace gtl {
+
+template <typename T>
+class AutoPtr {
+ public:
+  using element_type = T;
+
+  explicit AutoPtr(element_type* data = nullptr) : data_(data) {}
+  AutoPtr(AutoPtr& other) : data_(other.release()) {}
+  ~AutoPtr() { destroy(); }
+
+  AutoPtr& operator=(AutoPtr& other) { reset(other.release()); }
+
+  element_type* get() const { return data_; }
+  element_type* operator->() const { return get(); }
+  element_type& operator*() const { return *get(); }
+
+  void reset(element_type* data = nullptr) {
+    destroy();
+    data_ = data;
+  }
+  element_type* release() {
+    element_type* ret = data_;
+    data_ = nullptr;
+    return ret;
+  }
+
+ private:
+  void destroy() {
+    if (data_) {
+      delete data_;
+      data_ = nullptr;
+    }
+  }
+  element_type* data_;
+};
+
+template <typename T, typename Deleter = std::default_delete<T>>
+class UniquePtr {
+ public:
+  using pointer = T*;
+  using element_type = T;
+  using deleter_type = Deleter;
+
+  explicit UniquePtr(pointer data = nullptr) : data_(data) {}
+  UniquePtr(const UniquePtr& other) = delete;
+  UniquePtr(UniquePtr&& other) : data_(other.release()) {}
+  ~UniquePtr() { destroy(); }
+
+  UniquePtr& operator=(const UniquePtr& other) = delete;
+  UniquePtr& operator=(UniquePtr&& other) {
+    reset(other.release());
+  }
+
+  pointer operator->() const { return get(); }
+  element_type& operator*() const { return *get(); }
+
+  explicit operator bool() const { return data_ != nullptr; }
+  deleter_type& get_deleter() { return deleter_; }
+  const deleter_type& get_deleter() const { return deleter_; }
+
+  pointer get() const { return data_; }
+  void reset(pointer data = nullptr) {
+    destroy();
+    data_ = data;
+  }
+  pointer release() const {
+    pointer ret = data_;
+    destroy();
+    return ret;
+  }
+
+ private:
+  void destroy() {
+    if (data_) {
+      deleter_(data_);
+      data_ = nullptr;
+    }
+  }
+  pointer data_;
+  deleter_type deleter_;
+};
+
+}  // namespace gtl

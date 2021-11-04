@@ -1,5 +1,5 @@
 /**
- * @file gtl_storage.h
+ * @file storage.h
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 管理连续内存区域的类，用于实现Vector和Deque
  * @date 2021-05-16
@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "gtl_memory.h"
+#include "memory_op.h"
 
 namespace gtl {
 

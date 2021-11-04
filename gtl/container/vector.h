@@ -1,5 +1,5 @@
 /**
- * @file gtl_vector.h
+ * @file vector.h
  * @author gwq5210 (gwq5210@qq.com)
  * @brief vector的实现
  * @date 2021-05-15
@@ -13,10 +13,10 @@
 #include <iterator>
 #include <type_traits>
 
-#include "gtl_algorithm.h"
-#include "gtl_common.h"
-#include "gtl_memory.h"
-#include "gtl_storage.h"
+#include "algorithm.h"
+#include "common.h"
+#include "memory_op.h"
+#include "storage.h"
 
 namespace gtl {
 

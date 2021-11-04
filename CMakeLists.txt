@@ -34,33 +34,37 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
 
 set(INCLUDE_HEADERS
-  gtl/algorithm/gtl_algorithm.h
-  gtl/algorithm/gtl_heap_op.h
-  gtl/algorithm/gtl_seq_op.h
-  gtl/algorithm/gtl_memory.h
-  gtl/container/gtl_array.h
-  gtl/container/gtl_common.h
-  gtl/container/gtl_compressed_pair.h
-  gtl/container/gtl_deque.h
-  gtl/container/gtl_list.h
-  gtl/container/gtl_list_base.h
-  gtl/container/gtl_priority_queue.h
-  gtl/container/gtl_queue.h
-  gtl/container/gtl_slist.h
-  gtl/container/gtl_slist_base.h
-  gtl/container/gtl_stack.h
-  gtl/container/gtl_storage.h
-  gtl/container/gtl_vector.h
-  gtl/container/gtl_hash_table.h
-  gtl/iterator/gtl_iterator_op.h
-  gtl/iterator/gtl_iterator.h
-  gtl/iterator/gtl_reverse_iterator.h
+  gtl/algorithm/algorithm.h
+  gtl/algorithm/heap_op.h
+  gtl/algorithm/seq_op.h
+  gtl/algorithm/memory_op.h
+  gtl/container/array.h
+  gtl/container/common.h
+  gtl/container/compressed_pair.h
+  gtl/container/deque.h
+  gtl/container/list.h
+  gtl/container/list_base.h
+  gtl/container/priority_queue.h
+  gtl/container/queue.h
+  gtl/container/slist.h
+  gtl/container/slist_base.h
+  gtl/container/stack.h
+  gtl/container/storage.h
+  gtl/container/vector.h
+  gtl/container/hash_table.h
+  gtl/iterator/iterator_op.h
+  gtl/iterator/iterator.h
+  gtl/iterator/reverse_iterator.h
+  gtl/memory/smart_pointers.h
+  gtl/test/test_class.h
 )
 aux_source_directory(${GTL_DIR}/container/test CONTAINER_TEST_SRCS)
 aux_source_directory(${GTL_DIR}/algorithm/test ALGORITHM_TEST_SRCS)
+aux_source_directory(${GTL_DIR}/memory/test MEMORY_TEST_SRCS)
 set(TEST_SRCS
   ${CONTAINER_TEST_SRCS}
   ${ALGORITHM_TEST_SRCS}
+  ${MEMORY_TEST_SRCS}
 )
 
 add_custom_target(

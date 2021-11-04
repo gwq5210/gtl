@@ -1,5 +1,5 @@
 /**
- * @file gtl_deque.h
+ * @file deque.h
  * @author gwq5210 (gwq5210@qq.com)
  * @brief deque的实现
  * @date 2021-05-16
@@ -9,10 +9,10 @@
 
 #pragma once
 
-#include "gtl_algorithm.h"
-#include "gtl_iterator.h"
-#include "gtl_storage.h"
-#include "gtl_vector.h"
+#include "algorithm.h"
+#include "iterator.h"
+#include "storage.h"
+#include "vector.h"
 
 namespace gtl {
 

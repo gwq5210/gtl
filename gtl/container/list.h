@@ -1,261 +1,525 @@
-#ifndef _LINUX_LIST_H
-#define _LINUX_LIST_H
-
-/*
- * Simple doubly linked list implementation.
+/**
+ * @file list.h
+ * @author gwq5210 (gwq5210@qq.com)
+ * @brief 双向链表的实现
+ * @date 2021-05-15
  *
- * Some of the internal functions ("__xxx") are useful when
- * manipulating whole lists rather than single entries, as
- * sometimes we already know the next/prev entries and we can
- * generate better code by using them directly rather than
- * using the generic single-entry routines.
+ * @copyright Copyright (c) 2021. All rights reserved.
  */
 
-struct list_head {
-  struct list_head *next, *prev;
-};
+#pragma once
 
-#define LIST_HEAD_INIT(name) \
-  { &(name), &(name) }
+#include <algorithm>
+#include <iterator>
+#include <type_traits>
 
-#define LIST_HEAD(name) struct list_head name = LIST_HEAD_INIT(name)
+#include "algorithm.h"
+#include "common.h"
+#include "compressed_pair.h"
+#include "iterator.h"
+#include "list_base.h"
+#include "memory_op.h"
 
-static inline void INIT_LIST_HEAD(struct list_head* list) {
-  list->next = list;
-  list->prev = list;
-}
+namespace gtl {
 
-/*
- * Insert a new entry between two known consecutive entries.
- *
- * This is only for internal list manipulation where we know
- * the prev/next entries already!
- */
-static inline void __list_add(struct list_head* node, struct list_head* prev, struct list_head* next) {
-  next->prev = node;
-  node->next = next;
-  node->prev = prev;
-  prev->next = node;
-}
+using doubly_list::ListHead;
+using doubly_list::ListNode;
 
-/**
- * list_add - add a new entry
- * @new: new entry to be added
- * @head: list head to add it after
- *
- * Insert a new entry after the specified head.
- * This is good for implementing stacks.
- */
-static inline void list_add(struct list_head* node, struct list_head* head) { __list_add(node, head, head->next); }
+struct ListIteratorBase {
+  using iterator_category = std::bidirectional_iterator_tag;
+  using Self = ListIteratorBase;
+  ListNode* node;
+  ListIteratorBase() : node(nullptr) {}
+  ListIteratorBase(ListNode* n) : node(n) {}
 
-/**
- * list_add_tail - add a new entry
- * @new: new entry to be added
- * @head: list head to add it before
- *
- * Insert a new entry before the specified head.
- * This is useful for implementing queues.
- */
-static inline void list_add_tail(struct list_head* node, struct list_head* head) { __list_add(node, head->prev, head); }
-
-/*
- * Delete a list entry by making the prev/next entries
- * point to each other.
- *
- * This is only for internal list manipulation where we know
- * the prev/next entries already!
- */
-static inline void __list_del(struct list_head* prev, struct list_head* next) {
-  next->prev = prev;
-  prev->next = next;
-}
-
-/**
- * list_del - deletes entry from list.
- * @entry: the element to delete from the list.
- * Note: list_empty on entry does not return true after this, the entry is in an undefined state.
- */
-static inline void list_del(struct list_head* entry) { __list_del(entry->prev, entry->next); }
-
-/**
- * list_move - delete from one list and add as another's head
- * @list: the entry to move
- * @head: the head that will precede our entry
- */
-static inline void list_move(struct list_head* list, struct list_head* head) {
-  __list_del(list->prev, list->next);
-  list_add(list, head);
-}
-
-/**
- * list_move_tail - delete from one list and add as another's tail
- * @list: the entry to move
- * @head: the head that will follow our entry
- */
-static inline void list_move_tail(struct list_head* list, struct list_head* head) {
-  __list_del(list->prev, list->next);
-  list_add_tail(list, head);
-}
-
-/**
- * list_empty - tests whether a list is empty
- * @head: the list to test.
- */
-static inline int list_empty(const struct list_head* head) { return head->next == head; }
-
-static inline void __list_splice(struct list_head* list, struct list_head* head) {
-  struct list_head* first = list->next;
-  struct list_head* last = list->prev;
-  struct list_head* at = head->next;
-
-  first->prev = head;
-  head->next = first;
-
-  last->next = at;
-  at->prev = last;
-}
-
-/**
- * list_splice - join two lists
- * @list: the new list to add.
- * @head: the place to add it in the first list.
- */
-static inline void list_splice(struct list_head* list, struct list_head* head) {
-  if (!list_empty(list)) __list_splice(list, head);
-}
-
-/**
- * list_splice_init - join two lists and reinitialise the emptied list.
- * @list: the new list to add.
- * @head: the place to add it in the first list.
- *
- * The list at @list is reinitialised
- */
-static inline void list_splice_init(struct list_head* list, struct list_head* head) {
-  if (!list_empty(list)) {
-    __list_splice(list, head);
-    INIT_LIST_HEAD(list);
+  Self& operator++() {
+    node = node->next;
+    return *this;
   }
-}
-
-/**
- * list_entry - get the struct for this entry
- * @ptr:	the &struct list_head pointer.
- * @type:	the type of the struct this is embedded in.
- * @member:	the name of the list_struct within the struct.
- */
-#define list_entry(ptr, type, member) ((type*)((char*)(ptr) - (unsigned long)(&((type*)0)->member)))
-
-/**
- * list_for_each	-	iterate over a list
- * @pos:	the &struct list_head to use as a loop counter.
- * @head:	the head for your list.
- */
-#define list_for_each(pos, head) for (pos = (head)->next; pos != (head); pos = pos->next)
-
-/**
- * list_for_each_prev	-	iterate over a list backwards
- * @pos:	the &struct list_head to use as a loop counter.
- * @head:	the head for your list.
- */
-#define list_for_each_prev(pos, head) for (pos = (head)->prev; pos != (head); pos = pos->prev)
-
-/**
- * list_for_each_safe	-	iterate over a list safe against removal of list entry
- * @pos:	the &struct list_head to use as a loop counter.
- * @n:		another &struct list_head to use as temporary storage
- * @head:	the head for your list.
- */
-#define list_for_each_safe(pos, n, head) for (pos = (head)->next, n = pos->next; pos != (head); pos = n, n = pos->next)
-
-/**
- * list_for_each_entry	-	iterate over list of given type
- * @pos:	the type * to use as a loop counter.
- * @head:	the head for your list.
- * @member:	the name of the list_struct within the struct.
- */
-#define list_for_each_entry(pos, head, member)                                       \
-  for (pos = list_entry((head)->next, typeof(*pos), member); &pos->member != (head); \
-       pos = list_entry(pos->member.next, typeof(*pos), member))
-
-/**
- * Single-linked list. Added by Xie Han <xiehan@sogou-inc.com>.
- */
-
-struct slist_node {
-  struct slist_node* next;
-};
-
-struct slist_head {
-  struct slist_node first, *last;
-};
-
-#define SLIST_HEAD_INIT(name) \
-  { {(struct slist_node*)0}, &(name).first }
-
-#define SLIST_HEAD(name) struct slist_head name = SLIST_HEAD_INIT(name)
-
-static inline void INIT_SLIST_HEAD(struct slist_head* list) {
-  list->first.next = (struct slist_node*)0;
-  list->last = &list->first;
-}
-
-static inline void slist_add_head(struct slist_node* node, struct slist_head* list) {
-  node->next = list->first.next;
-  list->first.next = node;
-  if (!node->next) list->last = node;
-}
-
-static inline void slist_add_tail(struct slist_node* node, struct slist_head* list) {
-  node->next = (struct slist_node*)0;
-  list->last->next = node;
-  list->last = node;
-}
-
-static inline void slist_add_after(struct slist_node* node, struct slist_node* prev, struct slist_head* list) {
-  node->next = prev->next;
-  prev->next = node;
-  if (!node->next) list->last = node;
-}
-
-static inline void slist_del_head(struct slist_head* list) {
-  list->first.next = list->first.next->next;
-  if (!list->first.next) list->last = &list->first;
-}
-
-static inline void slist_del_after(struct slist_node* prev, struct slist_head* list) {
-  prev->next = prev->next->next;
-  if (!prev->next) list->last = prev;
-}
-
-static inline int slist_empty(struct slist_head* list) { return !list->first.next; }
-
-static inline void __slist_splice(struct slist_head* list, struct slist_node* at, struct slist_head* head) {
-  list->last->next = at->next;
-  at->next = list->first.next;
-  if (!list->last->next) head->last = list->last;
-}
-
-static inline void slist_splice(struct slist_head* list, struct slist_node* at, struct slist_head* head) {
-  if (!slist_empty(list)) __slist_splice(list, at, head);
-}
-
-static inline void slist_splice_init(struct slist_head* list, struct slist_node* at, struct slist_head* head) {
-  if (!slist_empty(list)) {
-    __slist_splice(list, at, head);
-    INIT_SLIST_HEAD(list);
+  Self operator++(int) {
+    ListNode* ret = node;
+    node = node->next;
+    return Self(ret);
   }
+  Self& operator--() {
+    node = node->prev;
+    return *this;
+  }
+  Self operator--(int) {
+    ListNode* ret = node;
+    node = node->prev;
+    return Self(ret);
+  }
+  bool operator==(const Self& other) const { return node == other.node; }
+  bool operator!=(const Self& other) const { return node != other.node; }
+};
+
+template <typename T, typename Difference = std::ptrdiff_t>
+struct ListConstIterator : public ListIteratorBase {
+  using reference = const T&;
+  using pointer = const T*;
+  using difference_type = Difference;
+  using value_type = T;
+  using Node = doubly_list::ListNodeT<T>;
+  using Base = ListIteratorBase;
+  using Self = ListConstIterator;
+  ListConstIterator(): Base() {}
+  explicit ListConstIterator(const ListNode* node) : Base(const_cast<ListNode*>(node)) {}
+  reference operator*() const { return Node::Value(node); }
+  pointer operator->() const { return std::pointer_traits<pointer>::pointer_to(**this); }
+  Self& operator++() {
+    Base::operator++();
+    return *this;
+  }
+  Self operator++(int) {
+    auto ret = *this;
+    Base::operator++();
+    return ret;
+  }
+  Self& operator--() {
+    Base::operator--();
+    return *this;
+  }
+  Self operator--(int) {
+    auto ret = *this;
+    Base::operator--();
+    return ret;
+  }
+};
+
+template <typename T, typename Difference = std::ptrdiff_t>
+struct ListIterator : public ListConstIterator<T, Difference> {
+  using reference = T&;
+  using pointer = const T&;
+  using Base = ListConstIterator<T, Difference>;
+  using Self = ListIterator;
+  ListIterator(): Base() {}
+  explicit ListIterator(ListNode* node) : Base(node) {}
+  reference operator*() const { return const_cast<reference>(Base::operator*()); }
+  pointer operator->() const { return const_cast<pointer>(Base::operator->()); }
+  Self& operator++() {
+    Base::operator++();
+    return *this;
+  }
+  Self operator++(int) {
+    auto ret = *this;
+    Base::operator++();
+    return ret;
+  }
+  Self& operator--() {
+    Base::operator--();
+    return *this;
+  }
+  Self operator--(int) {
+    auto ret = *this;
+    Base::operator--();
+    return ret;
+  }
+};
+
+template <typename T>
+class List {
+ public:
+  using Node = doubly_list::ListNodeT<T>;
+  using node_type = Node;
+  using value_type = T;
+  using reference = T&;
+  using const_reference = const T&;
+  using pointer = T*;
+  using const_pointer = const T*;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using allocator_type = std::allocator<T>;
+  using NodeAllocator = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
+
+  using iterator = ListIterator<T, difference_type>;
+  using const_iterator = ListConstIterator<T, difference_type>;
+  using reverse_iterator = gtl::reverse_iterator<iterator>;
+  using const_reverse_iterator = gtl::reverse_iterator<const_iterator>;
+
+  List() : dummy_head_(nullptr), size_alloc_(0) { init(); }
+  explicit List(size_type count) {
+    init();
+    insert(begin(), count, T());
+  }
+  List(size_type count, const T& v) {
+    init();
+    insert(begin(), count, v);
+  }
+  template <typename InputIt>
+  List(InputIt first, InputIt last) {
+    init();
+    insert(begin(), first, last);
+  }
+  List(const List& other) {
+    init();
+    insert(begin(), other.begin(), other.end());
+  }
+  List(List&& other) {
+    init();
+    gtl::swap(dummy_head_, other.dummy_head_);
+    gtl::swap(get_size(), other.get_size());
+  }
+  List(std::initializer_list<T> il) {
+    init();
+    insert(begin(), il);
+  }
+  ~List() { destroy_list(); }
+
+  List& operator=(const List& other) {
+    assign(other);
+    return *this;
+  }
+  List& operator=(List&& other) {
+    assign(std::move(other));
+    return *this;
+  }
+  List& operator=(std::initializer_list<T> il) {
+    assign(il);
+    return *this;
+  }
+
+  void assign(size_type count, const T& v) { insert(begin(), count, v); }
+  template <typename InputIt>
+  void assign(InputIt first, InputIt last) {
+    assign_range(gtl::distance(first, last), first, last);
+  }
+  void assign(std::initializer_list<T> il) { assign_range(il.size(), il.begin(), il.end()); }
+  void assign(const List& other) {
+    if (this != &other) {
+      assign_range(other.size(), other.begin(), other.end());
+    }
+  }
+  void assign(List&& other) {
+    clear();
+    gtl::swap(dummy_head_, other.dummy_head_);
+    gtl::swap(get_size(), other.get_size());
+  }
+
+  allocator_type get_allocator() const { return static_cast<allocator_type>(get_node_allocator()); }
+
+  // Element access
+  T& front() { return *begin(); }
+  const T& front() const { return *begin(); }
+  T& back() { return Node::Value(dummy_head_->prev); }
+  const T& back() const { return Node::Value(dummy_head_->prev); }
+
+  // Iterators
+  iterator begin() { return iterator(dummy_head_->next); };
+  const_iterator begin() const { return const_iterator(dummy_head_->next); };
+  const_iterator cbegin() const { return begin(); };
+  iterator end() { return iterator(dummy_head_); };
+  const_iterator end() const { return const_iterator(dummy_head_); };
+  const_iterator cend() const { return end(); };
+  reverse_iterator rbegin() { return reverse_iterator(end()); }
+  const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+  const_reverse_iterator crbegin() const { return rbegin(); }
+  reverse_iterator rend() { return reverse_iterator(begin()); }
+  const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
+  const_reverse_iterator crend() const { return rend(); }
+
+  // Capacity
+  bool empty() const { return size() == 0; }
+  size_type size() const { return get_size(); }
+
+  // Modifiers
+  iterator insert(const_iterator before, const T& v) { return emplace(before, v); }
+  iterator insert(const_iterator before, size_type count, const T& v) {
+    while (count--) {
+      before = emplace(before, v);
+    }
+    return iterator(before.node);
+  }
+  template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
+  iterator insert(const_iterator before, InputIt first, InputIt last) {
+    while (first != last) {
+      emplace(before, *first++);
+    }
+    return iterator(before.node);
+  }
+  iterator insert(const_iterator before, std::initializer_list<T> il) { return insert(before, il.begin(), il.end()); }
+  iterator insert(const_iterator before, T&& v) { return emplace(before, std::move(v)); }
+  template <typename... Args>
+  iterator emplace(const_iterator before, Args&&... args) {
+    ++get_size();
+    return iterator(doubly_list::InsertBefore(before.node, new_node(std::forward<Args>(args)...)));
+  }
+  template <typename... Args>
+  iterator emplace_back(Args&&... args) {
+    return emplace(end(), std::forward<Args>(args)...);
+  }
+  template <typename... Args>
+  iterator emplace_front(Args&&... args) {
+    return emplace(begin(), std::forward<Args>(args)...);
+  }
+  iterator push_back(const T& v) { return emplace_back(v); }
+  iterator push_back(T&& v) { return emplace_back(std::move(v)); }
+  iterator push_front(const T& v) { return emplace_front(v); }
+  iterator push_front(T&& v) { return emplace_front(std::move(v)); }
+  iterator erase(const_iterator pos) {
+    auto it = pos;
+    return erase(pos, ++it);
+  }
+  iterator erase(const_iterator first, const_iterator last) {
+    if (first != last) {
+      ListNode* node = first.node;
+      doubly_list::Remove(first.node, last.node->prev);
+      while (node) {
+        ListNode* next = node->next;
+        delete_node(node);
+        node = next;
+        --get_size();
+      }
+    }
+    return iterator(last.node);
+  }
+  void pop_back() { erase(const_iterator(dummy_head_->prev)); }
+  void pop_front() { erase(begin()); }
+  void resize(size_type count) { resize(count, T()); }
+  void resize(size_type count, const T& v) {
+    if (count > size()) {
+      insert(end(), count - size(), v);
+    } else if (count < size()) {
+      auto it = end();
+      printf("size %zu %zu\n", size() - count, size());
+      for (size_type i = size() - count; i > 0; --i) {
+        it = erase(--it);
+      }
+    }
+  }
+  void clear() { erase(begin(), end()); }
+
+  // Operations
+  void merge(List& other) { merge(other, std::less<T>()); }
+  void merge(List&& other) { merge(other, std::less<T>()); }
+  template <typename Compare>
+  void merge(List&& other, Compare comp) {
+    merge(other, comp);
+  }
+  template <typename Compare>
+  void merge(List& other, Compare comp) {
+    if (this != &other) {
+      auto left = begin();
+      auto right = other.begin();
+      while (left != end() && right != other.end()) {
+        if (comp(*right, *left)) {
+          splice(left, other, right);
+          right = other.begin();
+        } else {
+          ++left;
+        }
+      }
+      if (right != other.end()) {
+        splice(left, other);
+      }
+    }
+  }
+  void splice(const_iterator before, List& other) { transfer(before, other, other.begin(), other.end()); }
+  void splice(const_iterator before, List& other, const_iterator it) {
+    if (before != it) {
+      auto next = it;
+      transfer(before, other, it, ++next);
+    }
+  }
+  void splice(const_iterator before, List& other, const_iterator first, const_iterator last) {
+    transfer(before, other, first, last);
+  }
+  void splice(const_iterator before, List&& other) { splice(before, other); }
+  void splice(const_iterator before, List&& other, const_iterator it) { splice(before, other, it); }
+  void splice(const_iterator before, List&& other, const_iterator first, const_iterator last) {
+    splice(before, other, first, last);
+  }
+  void reverse() {
+    if (size() <= 1) {
+      return;
+    }
+    auto it = begin();
+    ++it;
+    while (it != end()) {
+      auto next = it;
+      transfer(begin(), *this, it, ++next);
+      it = next;
+    }
+  }
+  void merge_sort() { merge_sort(std::less<T>()); }
+  template <typename Compare>
+  void merge_sort(Compare comp) {
+    if (size() <= 1) {
+      return;
+    }
+    List right;
+    right.splice(right.begin(), *this, gtl::next(begin(), size() / 2), end());
+    merge_sort(comp);
+    right.merge_sort(comp);
+    merge(right);
+  }
+  void sort() { sort(std::less<T>()); }
+  template <typename Compare>
+  void sort(Compare comp) {
+    if (size() <= 1) {
+      return;
+    }
+    List left;
+    List right;
+    for (size_type i = 1; i < size(); i *= 2) {
+      printf("i = %zu\n", i);
+      size_type c = 2 * i;
+      auto it = begin();
+      auto last = end();
+      size_type n = size() - size() % c;
+      for (size_type j = 0; j < n; j += c) {
+        last = gtl::next(it, i);
+        left.splice(left.begin(), *this, it, last);
+        // print_range("left", left.begin(), left.end());
+        it = last;
+        last = gtl::next(last, i);
+        right.splice(right.begin(), *this, it, last);
+        // print_range("right", right.begin(), right.end());
+        left.merge(right);
+        splice(last, left);
+        it = last;
+        // print_range("this", begin(), end());
+      }
+      n = size() % c;
+      if (n > i) {
+        // printf("process_end\n");
+        last = gtl::next(it, i);
+        left.splice(left.begin(), *this, it, last);
+        // print_range("left", left.begin(), left.end());
+        right.splice(right.begin(), *this, last, end());
+        // print_range("right", right.begin(), right.end());
+        left.merge(right);
+        splice(end(), left);
+        // print_range("this", begin(), end());
+      }
+    }
+  }
+  void qsort() { qsort(std::less<T>()); }
+  template <typename Compare>
+  void qsort(Compare comp) {
+    if (size() <= 1) {
+      return;
+    }
+    List left;
+    List right;
+    auto it = begin();
+    ++it;
+    while (it != end()) {
+      if (comp(*it, front())) {
+        auto next = it;
+        left.transfer(left.end(), *this, it, ++next);
+        it = next;
+      } else {
+        ++it;
+      }
+    }
+    it = begin();
+    right.transfer(right.begin(), *this, ++it, end());
+    left.qsort(comp);
+    right.qsort(comp);
+    left.splice(left.end(), *this);
+    left.splice(left.end(), right);
+    *this = std::move(left);
+  }
+
+ private:
+  template <typename InputIt>
+  void assign_range(size_type count, InputIt first, InputIt last) {
+    if (count == 0) {
+      return;
+    }
+    if (count <= size()) {
+      auto it = gtl::copy(first, last, begin());
+      erase(it, end());
+    } else {
+      gtl::copy_n(first, size(), begin());
+      insert(end(), gtl::next(first, size()), last);
+    }
+  }
+  void assign_n(size_type count, const T& v) {
+    if (count == 0) {
+      return;
+    }
+    if (count <= size()) {
+      auto it = gtl::fill_n(begin(), count, v);
+      erase(it, end());
+    } else {
+      auto it = gtl::fill_n(begin(), size(), v);
+      insert(it, count, v);
+    }
+  }
+  void transfer(const_iterator before, List&& other, const_iterator first, const_iterator last) {
+    transfer(before, other, first, last);
+  }
+  void transfer(const_iterator before, List& other, const_iterator first, const_iterator last) {
+    if (first != last && before != last) {
+      ListNode* node = first.node;
+      while (node != last.node) {
+        ListNode* next = doubly_list::Remove(node);
+        doubly_list::InsertBefore(before.node, node);
+        if (this != &other) {
+          --other.get_size();
+          ++get_size();
+        }
+        node = next;
+      }
+    }
+  }
+  template <typename... Args>
+  Node* new_node(Args&&... args) {
+    return Node::New(get_node_allocator(), std::forward<Args>(args)...);
+  }
+  void delete_node(ListNode* node) { return Node::Delete(get_node_allocator(), node); }
+
+  void init() {
+    dummy_head_ = new ListNode();
+    get_size() = 0;
+  }
+  void destroy_list() {
+    clear();
+    delete dummy_head_;
+    dummy_head_ = nullptr;
+  }
+  size_type& get_size() { return size_alloc_.first(); }
+  const size_type& get_size() const { return size_alloc_.first(); }
+  NodeAllocator& get_node_allocator() { return size_alloc_.second(); }
+  const NodeAllocator& get_node_allocator() const { return size_alloc_.second(); }
+
+  ListHead* dummy_head_;
+  CompressedPair<size_type, NodeAllocator> size_alloc_;
+};  // class List
+
+template <typename T>
+using list = List<T>;
+
+template <typename T>
+bool operator==(const List<T>& lhs, const List<T>& rhs) {
+  return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
-#define slist_entry(ptr, type, member) ((type*)((char*)(ptr) - (unsigned long)(&((type*)0)->member)))
+template <typename T>
+bool operator!=(const List<T>& lhs, const List<T>& rhs) {
+  return !(lhs != rhs);
+}
 
-#define slist_for_each(pos, head) for (pos = (head)->first.next; pos; pos = pos->next)
+template <typename T>
+bool operator<(const List<T>& lhs, const List<T>& rhs) {
+  return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+}
 
-#define slist_for_each_safe(pos, prev, head) \
-  for (prev = &(head)->first, pos = prev->next; pos; prev = prev->next == pos ? pos : prev, pos = prev->next)
+template <typename T>
+bool operator>(const List<T>& lhs, const List<T>& rhs) {
+  return rhs < lhs;
+}
 
-#define slist_for_each_entry(pos, head, member)                                                            \
-  for (pos = slist_entry((head)->first.next, typeof(*pos), member); &pos->member != (struct slist_node*)0; \
-       pos = slist_entry(pos->member.next, typeof(*pos), member))
+template <typename T>
+bool operator<=(const List<T>& lhs, const List<T>& rhs) {
+  return !(lhs > rhs);
+}
 
-#endif
+template <typename T>
+bool operator>=(const List<T>& lhs, const List<T>& rhs) {
+  return !(lhs < rhs);
+}
+
+}  // namespace gtl

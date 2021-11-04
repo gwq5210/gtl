@@ -1,7 +1,7 @@
 /**
- * @file gtl_stack.h
+ * @file queue.h
  * @author gwq5210 (gwq5210@qq.com)
- * @brief stack的实现
+ * @brief queue的实现
  * @date 2021-05-16
  *
  * @copyright Copyright (c) 2021. All rights reserved.
@@ -9,13 +9,13 @@
 
 #pragma once
 
-#include "gtl_deque.h"
-#include "gtl_list.h"
+#include "deque.h"
+#include "list.h"
 
 namespace gtl {
 
 template <typename T, typename Container = Deque<T>>
-class Stack {
+class Queue {
  public:
   using container_type = Container;
   using value_type = typename Container::value_type;
@@ -24,21 +24,24 @@ class Stack {
   using const_reference = typename Container::const_reference;
 
   template <typename T_, typename Container_>
-  friend bool operator==(const Stack<T_, Container_>& lhs, const Stack<T_, Container_>& rhs);
+  friend bool operator==(const Queue<T_, Container_>& lhs, const Queue<T_, Container_>& rhs);
   template <typename T_, typename Container_>
-  friend bool operator<(const Stack<T_, Container_>& lhs, const Stack<T_, Container_>& rhs);
+  friend bool operator<(const Queue<T_, Container_>& lhs, const Queue<T_, Container_>& rhs);
 
-  Stack() = default;
-  explicit Stack(const Container& c) : c_(c) {}
-  explicit Stack(Container&& c) : c_(std::move(c)) {}
+  Queue() = default;
+  explicit Queue(const Container& c) : c_(c) {}
+  explicit Queue(Container&& c) : c_(std::move(c)) {}
   template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
-  Stack(InputIt first, InputIt last) {
+  Queue(InputIt first, InputIt last) {
     push(first, last);
   }
+  ~Queue() = default;
 
   // Element access
-  reference top() { return c_.back(); }
-  const_reference top() const { return c_.back(); }
+  reference front() { return c_.front(); }
+  const_reference front() const { return c_.front(); }
+  reference back() { return c_.back(); }
+  const_reference back() const { return c_.back(); }
 
   // Capacity
   bool empty() const { return c_.empty(); }
@@ -57,43 +60,43 @@ class Stack {
       emplace(*first);
     }
   }
-  void pop() { c_.pop_back(); }
-  void swap(Stack& other) { std::swap(c_, other.c_); }
+  void pop() { c_.pop_front(); }
+  void swap(Queue& other) { std::swap(c_, other.c_); }
 
  private:
   Container c_;
-};  // class Stack
+};  // class Queue
 
 template <typename T, typename Container = List<T>>
-using stack = Stack<T, Container>;
+using queue = Queue<T, Container>;
 
 template <typename T, typename Container>
-bool operator==(const Stack<T, Container>& lhs, const Stack<T, Container>& rhs) {
+bool operator==(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return lhs.c_ == rhs.c_;
 }
 
 template <typename T, typename Container>
-bool operator!=(const Stack<T, Container>& lhs, const Stack<T, Container>& rhs) {
+bool operator!=(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return !(lhs == rhs);
 }
 
 template <typename T, typename Container>
-bool operator<(const Stack<T, Container>& lhs, const Stack<T, Container>& rhs) {
+bool operator<(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return lhs.c_ < rhs.c_;
 }
 
 template <typename T, typename Container>
-bool operator>(const Stack<T, Container>& lhs, const Stack<T, Container>& rhs) {
+bool operator>(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return rhs < lhs;
 }
 
 template <typename T, typename Container>
-bool operator<=(const Stack<T, Container>& lhs, const Stack<T, Container>& rhs) {
+bool operator<=(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return !(lhs > rhs);
 }
 
 template <typename T, typename Container>
-bool operator>=(const Stack<T, Container>& lhs, const Stack<T, Container>& rhs) {
+bool operator>=(const Queue<T, Container>& lhs, const Queue<T, Container>& rhs) {
   return !(lhs < rhs);
 }
 

@@ -13,10 +13,10 @@
 
 #include "gtest/gtest.h"
 
-#include "gtl_algorithm.h"
-#include "gtl_hash_table.h"
-#include "gtl_iterator.h"
-#include "gtl_vector.h"
+#include "algorithm.h"
+#include "hash_table.h"
+#include "iterator.h"
+#include "vector.h"
 
 using gtl::HashTable;
 using gtl::Vector;

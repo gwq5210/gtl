@@ -12,8 +12,8 @@
 
 #include "gtest/gtest.h"
 
-#include "gtl_list.h"
-#include "gtl_vector.h"
+#include "list.h"
+#include "vector.h"
 
 using gtl::List;
 using gtl::Vector;

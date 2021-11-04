@@ -1,5 +1,5 @@
 /**
- * @file gtl_string.h
+ * @file string.h
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 字符串实现
  * @date 2021-05-28
@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "gtl_storage.h"
+#include "storage.h"
 
 namespace gtl {
 

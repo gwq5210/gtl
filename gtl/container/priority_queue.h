@@ -1,5 +1,5 @@
 /**
- * @file gtl_priority_queue.h
+ * @file priority_queue.h
  * @author gwq5210 (gwq5210@qq.com)
  * @brief priority_queue的实现
  * @date 2021-05-17
@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "gtl_algorithm.h"
-#include "gtl_vector.h"
+#include "algorithm.h"
+#include "vector.h"
 
 namespace gtl {
 

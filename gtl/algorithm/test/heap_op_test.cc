@@ -12,9 +12,9 @@
 
 #include "gtest/gtest.h"
 
-#include "gtl_common.h"
-#include "gtl_heap_op.h"
-#include "gtl_vector.h"
+#include "common.h"
+#include "heap_op.h"
+#include "vector.h"
 
 using gtl::Vector;
 

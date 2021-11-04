@@ -1,5 +1,5 @@
 /**
- * @file gtl_iterator_adaptors.h
+ * @file iterator_adaptors.h
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 逆向迭代器适配器实现
  * @date 2021-05-28
@@ -11,8 +11,8 @@
 
 #include <iterator>
 
-#include "gtl_iterator_op.h"
-#include "gtl_memory.h"
+#include "iterator_op.h"
+#include "memory_op.h"
 
 namespace gtl {
 

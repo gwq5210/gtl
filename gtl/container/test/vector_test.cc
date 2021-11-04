@@ -17,12 +17,12 @@
 
 #include "gtest/gtest.h"
 
-#include "gtl_array.h"
-#include "gtl_deque.h"
-#include "gtl_list.h"
-#include "gtl_slist.h"
-#include "gtl_stack.h"
-#include "gtl_vector.h"
+#include "array.h"
+#include "deque.h"
+#include "list.h"
+#include "slist.h"
+#include "stack.h"
+#include "vector.h"
 #include "test.h"
 
 using gtl::Array;

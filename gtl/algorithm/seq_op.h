@@ -1,5 +1,5 @@
 /**
- * @file gtl_seq_op.h
+ * @file seq_op.h
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 序列操作的实现
  * @date 2021-05-26

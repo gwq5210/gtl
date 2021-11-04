@@ -1,5 +1,5 @@
 /**
- * @file gtl_array.h
+ * @file array.h
  * @author gwq5210 (gwq5210@qq.com)
  * @brief array的实现
  * @date 2021-05-15
@@ -13,9 +13,9 @@
 #include <iterator>
 #include <type_traits>
 
-#include "gtl_algorithm.h"
-#include "gtl_memory.h"
-#include "gtl_iterator.h"
+#include "algorithm.h"
+#include "memory_op.h"
+#include "iterator.h"
 
 namespace gtl {
 
