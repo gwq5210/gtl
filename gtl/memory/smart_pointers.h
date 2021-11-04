@@ -176,7 +176,7 @@ std::enable_if_t<!std::is_array_v<T>, UniquePtr<T>> make_unique(Args&&... args) 
 
 template <typename T>
 std::enable_if_t<std::is_array_v<T> && std::extent_v<T> == 0, UniquePtr<T>> make_unique(std::size_t size) {
-  return UniquePtr<T>(new std::remove_extent_t<T>[size]);
+  return UniquePtr<T>(new std::remove_extent_t<T>[size]());
 }
 
 template <typename T>
