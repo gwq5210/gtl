@@ -19,13 +19,14 @@ namespace test {
 
 class Person {
  public:
-  Person(const std::string& name) : name_(name) {
+  Person(const std::string& name = "") : name_(name) {
     printf("person %s constructed\n", name_.c_str());
   }
   ~Person() {
     printf("person %s destroyed\n", name_.c_str());
   }
 
+  std::string& name() { return name_; }
   const std::string& name() const { return name_; }
   void set_name(const std::string& name) { name_ = name; }
 
