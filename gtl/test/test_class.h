@@ -34,6 +34,18 @@ class Person {
   std::string name_;
 };
 
+class Student : public Person {
+ public:
+  Student(const std::string& name = "", double score = 0.0) : Person(name), score_(score) {}
+
+  double score() const { return score_; }
+  double& score() { return score_; }
+  void set_score(double score) { score_ = score; }
+
+ private:
+  double score_;
+};
+
 }  // namespace test
 
 } // namespace gtl

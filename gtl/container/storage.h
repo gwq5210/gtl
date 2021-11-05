@@ -178,6 +178,9 @@ class UStorage<T, 0> : public std::allocator<T> {
   size_type capacity_;
 };  // class UStorage
 
+template <typename T>
+constexpr typename UStorage<T, 0>::size_type UStorage<T, 0>::min_capacity_;
+
 /**
  * @brief 管理连续内存区域的类，用于实现Vector
  *

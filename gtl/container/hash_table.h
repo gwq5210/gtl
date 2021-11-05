@@ -38,7 +38,7 @@ class SetKeyFunc {
   const Key& operator()(const Value& value) const { return value; }
 };
 
-template <typename Key, typename Value, typename ExtractKey, typename Hash = std::hash<Key>, typename KeyEquel = std::equal_to<Key>>
+template <typename Key, typename Value, typename ExtractKey, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
 class HashTable {
  public:
   using Node = singly_list::SListNodeT<Value>;
@@ -49,7 +49,7 @@ class HashTable {
   using pointer = value_type*;
   using const_pointer = const value_type*;
   using hasher = Hash;
-  using key_equal = KeyEquel;
+  using key_equal = KeyEqual;
   using allocator_type = std::allocator<value_type>;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
@@ -59,8 +59,6 @@ class HashTable {
   using const_local_iterator = SListConstIterator<value_type, difference_type>;
   // using NodeAllocator = typename std::allocator_traits<allocator_type>::rebind_alloc<Node>;
   using NodeAllocator = std::allocator<Node>;
-  static constexpr size_type min_bucket_size_ = 16;
-  static constexpr float default_max_load_factor_ = 0.85;
   struct HashNode {
     HashNode(): node_before_begin(nullptr), node_finish(nullptr) {}
     HashNode(SListNode* b, SListNode* f): node_before_begin(b), node_finish(f) {}
@@ -109,6 +107,8 @@ class HashTable {
     SListNode* node;
   };
   using BucketStorage = UStorage<HashNode>;
+  static constexpr size_type min_bucket_size_ = BucketStorage::min_capacity_;
+  static constexpr float default_max_load_factor_ = 0.75;
 
   // constructor
   HashTable(): HashTable(min_bucket_size_) {}
@@ -624,6 +624,11 @@ class HashTable {
   BucketStorage buckets_;
   CompressedPair<size_type, NodeAllocator> size_alloc_;
 };  // class HashTable
+
+template <typename Key, typename Value, typename ExtractKey, typename Hash, typename KeyEqual>
+constexpr typename HashTable<Key, Value, ExtractKey, Hash, KeyEqual>::size_type HashTable<Key, Value, ExtractKey, Hash, KeyEqual>::min_bucket_size_;
+template <typename Key, typename Value, typename ExtractKey, typename Hash, typename KeyEqual>
+constexpr float HashTable<Key, Value, ExtractKey, Hash, KeyEqual>::default_max_load_factor_;
 
 template <typename Key, typename Value, typename ExtractKey, typename Hash, typename KeyEqual>
 bool operator==(const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& lhs, const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& rhs) {

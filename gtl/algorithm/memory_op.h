@@ -29,12 +29,12 @@ T* default_construct_at(T* p) {
 
 // 获得对象或函数 arg 的实际地址，即使存在 operator& 的重载
 template <typename T>
-std::enable_if_t<std::is_object_v<T>, T*> addressof(T& v) {
+typename std::enable_if<std::is_object<T>::value, T*>::type addressof(T& v) {
   return reinterpret_cast<T*>(&const_cast<char&>(reinterpret_cast<const volatile char&>(v)));
 }
 
 template <typename T>
-std::enable_if_t<!std::is_object_v<T>, T*> addressof(T& v) {
+typename std::enable_if<!std::is_object<T>::value, T*>::type addressof(T& v) {
   return &v;
 }
 
@@ -52,14 +52,17 @@ const T* addressof(const T&& v) = delete;
  * @param p 指向要被销毁的对象的指针
  */
 template <typename T>
-void destroy_at(T* p) {
-  if constexpr (std::is_array_v<T>) {  // C++ 20
-    for (auto& v : *p) {
-      gtl::destroy_at(gtl::addressof(v));
-    }
-  } else {
-    p->~T();
+typename std::enable_if<std::is_array<T>::value, void>::type
+destroy_at(T* p) {
+  for (auto& v : *p) {
+    gtl::destroy_at(gtl::addressof(v));
   }
+}
+
+template <typename T>
+typename std::enable_if<!std::is_array<T>::value, void>::type
+destroy_at(T* p) {
+  p->~T();
 }
 
 template <typename ForwardIt>
