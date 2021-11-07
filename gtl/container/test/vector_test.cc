@@ -17,19 +17,20 @@
 
 #include "gtest/gtest.h"
 
-#include "array.h"
-#include "deque.h"
-#include "list.h"
-#include "slist.h"
-#include "stack.h"
-#include "vector.h"
-#include "test.h"
+#include "gtl/array.h"
+#include "gtl/deque.h"
+#include "gtl/list.h"
+#include "gtl/slist.h"
+#include "gtl/stack.h"
+#include "gtl/vector.h"
+#include "gtl/test_class.h"
 
 using gtl::Array;
 using gtl::Deque;
 using gtl::List;
 using gtl::SList;
 using gtl::Vector;
+using gtl::test::Person;
 
 TEST(vector_test, constructor_assign_iterator_test) {
   Vector<int> empty_vec;
@@ -295,33 +296,33 @@ TEST(vector_test, modifiers_iterators_test) {
 
   Vector<Person> erase_vec;
   for (int i = 0; i < n; ++i) {
-    erase_vec.emplace_back(i);
+    erase_vec.emplace_back(std::to_string(i));
   }
   printf("erase one end\n");
   erase_vec.erase(erase_vec.begin() + 2);
   EXPECT_EQ(erase_vec.size(), n - 1);
   for (size_t i = 0; i < erase_vec.size(); ++i) {
-    EXPECT_EQ(erase_vec[i].id, i >= 2 ? i + 1 : i);
+    EXPECT_EQ(erase_vec[i].name(), std::to_string(i >= 2 ? i + 1 : i));
   }
   printf("erase one end\n");
   erase_vec.erase(erase_vec.begin() + 2, erase_vec.begin() + 12);
   EXPECT_EQ(erase_vec.size(), n - 11);
   for (size_t i = 0; i < erase_vec.size(); ++i) {
-    EXPECT_EQ(erase_vec[i].id, i >= 2 ? i + 11 : i);
+    EXPECT_EQ(erase_vec[i].name(), std::to_string(i >= 2 ? i + 11 : i));
   }
   printf("erase range end\n");
 
   Vector<Person> persons;
   persons.reserve(n);
   for (int i = 0; i < n; ++i) {
-    persons.emplace_back(i);
+    persons.emplace_back(std::to_string(i));
   }
   EXPECT_EQ(persons.size(), n);
   printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
   persons.insert_safe(persons.begin(), persons.begin(), persons.end());
   for (size_t i = 0; i < persons.size() / 2; ++i) {
-    EXPECT_EQ(persons[i].id, i);
-    EXPECT_EQ(persons[i].id, persons[i + persons.size() / 2].id);
+    EXPECT_EQ(persons[i].name(), std::to_string(i));
+    EXPECT_EQ(persons[i].name(), persons[i + persons.size() / 2].name());
   }
   printf("persons capacity: %zu %zu\n", persons.capacity(), persons.size());
 

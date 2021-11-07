@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "deque.h"
-#include "list.h"
+#include "gtl/deque.h"
+#include "gtl/list.h"
 
 namespace gtl {
 

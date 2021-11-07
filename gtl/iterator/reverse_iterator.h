@@ -11,8 +11,8 @@
 
 #include <iterator>
 
-#include "iterator_op.h"
-#include "memory_op.h"
+#include "gtl/iterator_op.h"
+#include "gtl/memory_op.h"
 
 namespace gtl {
 

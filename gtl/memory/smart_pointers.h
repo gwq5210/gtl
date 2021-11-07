@@ -9,10 +9,12 @@
 
 #pragma once
 
+#include <cassert>
+
 #include <atomic>
 #include <memory>
 
-#include "compressed_pair.h"
+#include "gtl/compressed_pair.h"
 
 namespace gtl {
 
@@ -58,9 +60,13 @@ class AutoPtr {
   element_type& operator*() const { return *get(); }
 
   template <typename Y>
-  operator AutoPtrRef<Y>() { return AutoPtrRef<Y>(release()); }
+  operator AutoPtrRef<Y>() {
+    return AutoPtrRef<Y>(release());
+  }
   template <typename Y>
-  operator AutoPtr<Y>() { return AutoPtr<Y>(release()); }
+  operator AutoPtr<Y>() {
+    return AutoPtr<Y>(release());
+  }
 
   void reset(element_type* data = nullptr) {
     if (data != data_) {
@@ -205,117 +211,240 @@ class UniquePtr<T[], Deleter> {
   deleter_type deleter_;
 };
 
+struct RefCount {
+  RefCount() : use_count(1), weak_count(1) {}
+  void IncUseCount() { ++use_count; }
+  void IncWeakCount() { ++weak_count; }
+  std::size_t DecUseCount() { return --use_count; }
+  std::size_t DecWeakCount() { return --weak_count; }
+  std::atomic<std::size_t> use_count;
+  std::atomic<std::size_t> weak_count;
+};
+
 template <typename T>
-class SharedPtr {
+class PtrBase {
  public:
   using element_type = typename std::remove_extent<T>::type;
 
   template <typename Y>
-  friend class SharedPtr;
+  friend class PtrBase;
 
-  explicit SharedPtr(element_type* p = nullptr) { UnsafeReset(p); }
-  SharedPtr(const SharedPtr& other) : ref_count_(other.ref_count_), data_(other.data_) {
-    if (data_) {
-      assert(ref_count_);
-      ref_count_->fetch_add(1);
+  PtrBase(element_type* data = nullptr) : ref_count_(nullptr), data_(nullptr) { UnsafeReset(data); }
+  PtrBase(const PtrBase& other) = default;
+  template <typename Y>
+  PtrBase(const PtrBase<Y>& other) : ref_count_(other.ref_count_), data_(other.data_) {}
+  PtrBase(PtrBase&& other) : ref_count_(other.ref_count_), data_(other.data_) { other.UnsafeReset(); }
+  template <typename Y>
+  PtrBase(PtrBase<Y>&& other) : ref_count_(other.ref_count_), data_(other.data_) { other.UnsafeReset(); }
+  ~PtrBase() {}
+
+  PtrBase& operator=(const PtrBase& other) = default;
+  PtrBase& operator=(PtrBase&& other) {
+    PtrBase(std::move(other)).swap(*this);
+    return *this;
+  }
+
+  void DecUseCount() {
+    if (ref_count_) {
+      if (ref_count_->DecUseCount() == 0) {
+        DeleteData();
+        DecWeakCount();
+      }
     }
   }
-  SharedPtr(SharedPtr&& other) : ref_count_(other.ref_count_), data_(other.data_) { other.UnsafeReset(); }
-  template <typename Y>
-  SharedPtr(const SharedPtr<Y>& other) : ref_count_(other.ref_count_), data_(other.data_) {
-    if (data_) {
-      assert(ref_count_);
-      ref_count_->fetch_add(1);
+  void IncUseCount() {
+    if (ref_count_) {
+      ref_count_->IncUseCount();
     }
   }
+  void DecWeakCount() {
+    if (ref_count_) {
+      if (ref_count_->DecWeakCount() == 0) {
+        DeleteRefCount();
+      }
+    }
+  }
+  void IncWeakCount() {
+    if (ref_count_) {
+      ref_count_->IncWeakCount();
+    }
+  }
+  void UnsafeReset(element_type* data = nullptr) {
+    if (data) {
+      ref_count_ = new RefCount();
+      data_ = data;
+    } else {
+      data_ = nullptr;
+      ref_count_ = nullptr;
+    }
+  }
+
+  void DeleteData() {
+    std::default_delete<T>()(data_);
+    printf("delete data %p\n", data_);
+    data_ = nullptr;
+  }
+
+  void DeleteRefCount() {
+    delete ref_count_;
+    ref_count_ = nullptr;
+  }
+
+  void swap(PtrBase& other) {
+    std::swap(ref_count_, other.ref_count_);
+    std::swap(data_, other.data_);
+  }
+
+  element_type* get() const { return data_; }
+
+  std::size_t UseCount() const { return ref_count_ ? ref_count_->use_count.load() : 0; }
+  std::size_t Weakcount() const { return ref_count_ ? ref_count_->weak_count.load() : 0; }
+
+ public:
+  RefCount* ref_count_;
+  element_type* data_;
+};
+
+template <typename T>
+class SharedPtr {
+ public:
+  using element_type = typename PtrBase<T>::element_type;
+
   template <typename Y>
-  SharedPtr(SharedPtr<Y>&& other) : ref_count_(other.ref_count_), data_(other.data_) { other.UnsafeReset(); }
-  ~SharedPtr() { release(); }
+  friend class SharedPtr;
+  template <typename Y>
+  friend class WeakPtr;
+
+  explicit SharedPtr(element_type* p = nullptr) : ptr_base_(p) {}
+  SharedPtr(const SharedPtr& other) : ptr_base_(other.ptr_base_) { ptr_base_.IncUseCount(); }
+  SharedPtr(SharedPtr&& other) = default;
+  template <typename Y>
+  SharedPtr(const SharedPtr<Y>& other) : ptr_base_(other.ptr_base_) {
+    ptr_base_.IncUseCount();
+  }
+  template <typename Y>
+  SharedPtr(SharedPtr<Y>&& other) : ptr_base_(std::move(other.ptr_base_)) {}
+  ~SharedPtr() { ptr_base_.DecUseCount(); }
 
   SharedPtr& operator=(const SharedPtr& other) {
-    if (this != &other) {
-      release();
-      UnsafeCopy(other);
-    }
+    SharedPtr(other).swap(*this);
     return *this;
   }
   SharedPtr& operator=(SharedPtr&& other) {
-    release();
-    ref_count_ = other.ref_count_;
-    data_ = other.data_;
-    other.UnsafeReset();
+    SharedPtr(std::move(other)).swap(*this);
     return *this;
   }
 
   template <typename Y>
   SharedPtr& operator=(const SharedPtr<Y>& other) {
-    if (this != &other) {
-      release();
-      UnsafeCopy(other);
-    }
+    SharedPtr(other).swap(*this);
     return *this;
   }
   template <typename Y>
   SharedPtr& operator=(SharedPtr<Y>&& other) {
-    release();
-    ref_count_ = other.ref_count_;
-    data_ = other.data_;
-    other.UnsafeReset();
+    SharedPtr(std::move(other)).swap(*this);
     return *this;
   }
 
-  element_type* get() const { return data_; }
-  element_type* operator->() const { return get(); }
-  element_type& operator*() const { return *get(); }
+  element_type* get() const { return ptr_base_.get(); }
+  template <typename Ty = T>
+  typename std::enable_if<!std::is_array<Ty>::value, element_type*>::type operator->() const {
+    return get();
+  }
+  template <typename Ty = T>
+  typename std::enable_if<!std::is_array<Ty>::value, element_type&>::type operator*() const {
+    return *get();
+  }
+  template <typename Ty = T>
+  typename std::enable_if<std::is_array<Ty>::value && std::extent<T>::value == 0, element_type&>::type operator[](
+      std::size_t index) const {
+    return get()[index];
+  }
+
+  operator bool() const { return get() != nullptr; }
 
   void reset(element_type* data = nullptr) {
-    release();
-    UnsafeReset(data);
+    ptr_base_.DecUseCount();
+    ptr_base_.UnsafeReset(data);
   }
 
-  element_type* release() {
-    auto* ret = data_;
-    if (data_) {
-      assert(ref_count_);
-      if (ref_count_->fetch_sub(1) == 1) {
-        Destroy();
-      }
-    }
-    return ret;
-  }
+  std::size_t use_count() const { return ptr_base_.UseCount(); }
+  bool unique() const { return use_count() == 1; }
 
-  std::size_t use_count() const {
-    return ref_count_ ? ref_count_->load() : 0;
+  void swap(SharedPtr& other) {
+    ptr_base_.swap(other.ptr_base_);
   }
 
  private:
-  void UnsafeReset(element_type* data = nullptr) {
-    if (data) {
-      ref_count_ = new std::atomic<std::size_t>(1);
-      data_ = data;
+  SharedPtr(const PtrBase<T>& ptr_base) : ptr_base_(ptr_base) {
+    if (ptr_base_.UseCount()) {
+      ptr_base_.IncUseCount();
     } else {
-      ref_count_ = nullptr;
-      data_ = nullptr;
+      ptr_base_.UnsafeReset();
     }
+  }
+  PtrBase<T> ptr_base_;
+};
+
+template <typename T>
+class WeakPtr {
+ public:
+  using element_type = typename PtrBase<T>::element_type;
+
+  template <typename Y>
+  friend class WeakPtr;
+
+  WeakPtr() {}
+  WeakPtr(const WeakPtr& other) : ptr_base_(other.ptr_base_) { ptr_base_.IncWeakCount(); }
+  WeakPtr(WeakPtr&& other) = default;
+  template <typename Y>
+  WeakPtr(const WeakPtr<Y>& other) : ptr_base_(other.ptr_base_) { ptr_base_.IncWeakCount(); }
+  template <typename Y>
+  WeakPtr(WeakPtr<Y>&& other) : ptr_base_(std::move(other.ptr_base_base)) {}
+  template <typename Y>
+  WeakPtr(const SharedPtr<Y>& other) : ptr_base_(other.ptr_base_) { ptr_base_.IncWeakCount(); }
+  ~WeakPtr() { ptr_base_.DecWeakCount(); }
+
+  WeakPtr& operator=(const WeakPtr& other) {
+    WeakPtr(other).swap(*this);
+    return *this;
   }
   template <typename Y>
-  void UnsafeCopy(const SharedPtr<Y>& other) {
-    ref_count_ = other.ref_count_;
-    data_ = other.data_;
-    if (data_) {
-      assert(ref_count_);
-      ref_count_->fetch_add(1);
-    }
+  WeakPtr& operator=(const WeakPtr<Y>& other) {
+    WeakPtr(other).swap(*this);
+    return *this;
   }
-  void Destroy() {
-    delete data_;
-    delete ref_count_;
-    data_ = nullptr;
-    ref_count_ = nullptr;
+  WeakPtr& operator=(WeakPtr&& other) {
+    WeakPtr(std::move(other)).swap(*this);
+    return *this;
+  }
+  template <typename Y>
+  WeakPtr& operator=(WeakPtr<Y>&& other) {
+    WeakPtr(std::move(other)).swap(*this);
+    return *this;
+  }
+  template <typename Y>
+  WeakPtr& operator=(SharedPtr<Y>& other) {
+    WeakPtr(other).swap(*this);
+    return *this;
   }
 
-  std::atomic<std::size_t>* ref_count_;
-  element_type* data_;
+  SharedPtr<T> lock() const {
+    return SharedPtr<T>(ptr_base_);
+  }
+  bool expired() const {
+    return use_count() == 0;
+  }
+  std::size_t use_count() const { return ptr_base_.UseCount(); }
+
+  void swap(WeakPtr& other) {
+    ptr_base_.swap(other.ptr_base_);
+  }
+
+  void reset() { ptr_base_.UnsafeReset(); }
+
+ private:
+  PtrBase<T> ptr_base_;
 };
 
 template <typename T, typename... Args>
@@ -323,20 +452,35 @@ AutoPtr<T> make_auto_ptr(Args&&... args) {
   return AutoPtr<T>(new T(std::forward<Args>(args)...));
 }
 
+// 不是数组
 template <typename T, typename... Args>
 typename std::enable_if<!std::is_array<T>::value, UniquePtr<T>>::type make_unique(Args&&... args) {
   return UniquePtr<T>(new T(std::forward<Args>(args)...));
 }
 
+// 数组且未知边界
 template <typename T>
-typename std::enable_if<std::is_array<T>::value && std::extent<T>::value == 0, UniquePtr<T>>::type make_unique(std::size_t size) {
+typename std::enable_if<std::is_array<T>::value && std::extent<T>::value == 0, UniquePtr<T>>::type make_unique(
+    std::size_t size) {
   using Element = typename std::remove_extent<T>::type;
   return UniquePtr<T>(new Element[size]());
 }
 
+// 数组且已知边界
+template <typename T>
+typename std::enable_if<std::is_array<T>::value && std::extent<T>::value != 0, UniquePtr<T>>::type make_unique(
+    std::size_t size) = delete;
+
 template <typename T, typename... Args>
-SharedPtr<T> make_shared(Args&&... args) {
+typename std::enable_if<!std::is_array<T>::value, SharedPtr<T>>::type make_shared(Args&&... args) {
   return SharedPtr<T>(new T(std::forward<Args>(args)...));
+}
+
+template <typename T, typename... Args>
+typename std::enable_if<std::is_array<T>::value && std::extent<T>::value == 0, SharedPtr<T>>::type make_shared(
+    std::size_t size) {
+  using Element = typename std::remove_extent<T>::type;
+  return SharedPtr<T>(new Element[size]());
 }
 
 template <typename T>

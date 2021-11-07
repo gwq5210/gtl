@@ -22,6 +22,7 @@ set(TEST_NAME ${PROJECT_NAME}_test)
 enable_testing()
 
 set(GTL_DIR ${PROJECT_SOURCE_DIR}/gtl)
+set(GTL_EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/examples)
 set(INC_DIR ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME} CACHE PATH "gtl inc")
 set(LIB_DIR ${PROJECT_SOURCE_DIR}/lib CACHE PATH "gtl lib")
 set(BIN_DIR ${PROJECT_SOURCE_DIR}/bin CACHE PATH "gtl bin")
@@ -34,6 +35,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
 
 set(INCLUDE_HEADERS
+  examples/cow_string.h
   gtl/algorithm/algorithm.h
   gtl/algorithm/heap_op.h
   gtl/algorithm/seq_op.h
@@ -56,15 +58,21 @@ set(INCLUDE_HEADERS
   gtl/iterator/iterator.h
   gtl/iterator/reverse_iterator.h
   gtl/memory/smart_pointers.h
+  gtl/strings/string.h
+  gtl/srings/string_view.h
   gtl/test/test_class.h
 )
 aux_source_directory(${GTL_DIR}/container/test CONTAINER_TEST_SRCS)
 aux_source_directory(${GTL_DIR}/algorithm/test ALGORITHM_TEST_SRCS)
 aux_source_directory(${GTL_DIR}/memory/test MEMORY_TEST_SRCS)
+aux_source_directory(${GTL_DIR}/strings/test STRINGS_TEST_SRCS)
+aux_source_directory(${GTL_EXAMPLES_DIR}/test EXAMPLES_TEST_SRCS)
 set(TEST_SRCS
   ${CONTAINER_TEST_SRCS}
   ${ALGORITHM_TEST_SRCS}
   ${MEMORY_TEST_SRCS}
+  ${EXAMPLES_TEST_SRCS}
+  ${STRINGS_TEST_SRCS}
 )
 
 add_custom_target(
@@ -99,7 +107,7 @@ endforeach()
 # find_package(GTest REQUIRED)
 add_subdirectory(third_party/googletest)
 
-include_directories(${INC_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/include)
 add_executable(${TEST_NAME} ${TEST_SRCS})
 
 target_link_libraries(${TEST_NAME} GTest::gtest_main)

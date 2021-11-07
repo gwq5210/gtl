@@ -2,6 +2,8 @@
 
 #include <string>
 
+#define PRINT_TYPE_SIZE(Type) printf(#Type " size: %zu\n", sizeof Type)
+
 namespace gtl {
 
 template <class Iterator>

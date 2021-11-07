@@ -16,18 +16,19 @@
 
 #include "gtest/gtest.h"
 
-#include "array.h"
-#include "deque.h"
-#include "list.h"
-#include "slist.h"
-#include "stack.h"
-#include "vector.h"
-#include "test.h"
+#include "gtl/array.h"
+#include "gtl/deque.h"
+#include "gtl/list.h"
+#include "gtl/slist.h"
+#include "gtl/stack.h"
+#include "gtl/vector.h"
+#include "gtl/test_class.h"
 
 using gtl::Array;
 using gtl::Deque;
 using gtl::List;
 using gtl::SList;
+using gtl::test::Person;
 
 TEST(deque_test, constructor_assign_iterator_test) {
   Deque<int> empty_dq;
@@ -260,25 +261,25 @@ TEST(deque_test, modifiers_iterators_test) {
 
   Deque<Person> erase_dq;
   for (int i = 0; i < n; ++i) {
-    erase_dq.emplace_back(i);
+    erase_dq.emplace_back(std::to_string(i));
   }
   printf("erase one end\n");
   erase_dq.erase(erase_dq.begin() + 2);
   EXPECT_EQ(erase_dq.size(), n - 1);
   for (size_t i = 0; i < erase_dq.size(); ++i) {
-    EXPECT_EQ(erase_dq[i].id, i >= 2 ? i + 1 : i);
+    EXPECT_EQ(erase_dq[i].name(), std::to_string(i >= 2 ? i + 1 : i));
   }
   printf("erase one end\n");
   erase_dq.erase(erase_dq.begin() + 2, erase_dq.begin() + 12);
   EXPECT_EQ(erase_dq.size(), n - 11);
   for (size_t i = 0; i < erase_dq.size(); ++i) {
-    EXPECT_EQ(erase_dq[i].id, i >= 2 ? i + 11 : i);
+    EXPECT_EQ(erase_dq[i].name(), std::to_string(i >= 2 ? i + 11 : i));
   }
   printf("erase range end\n");
 
   Deque<Person> persons;
   for (int i = 0; i < n; ++i) {
-    persons.emplace_back(i);
+    persons.emplace_back(std::to_string(i));
   }
   EXPECT_EQ(persons.size(), n);
   printf("dq test end\n");

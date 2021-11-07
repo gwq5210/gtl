@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "algorithm.h"
-#include "vector.h"
+#include "gtl/algorithm.h"
+#include "gtl/vector.h"
 
 namespace gtl {
 

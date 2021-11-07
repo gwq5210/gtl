@@ -10,10 +10,12 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 
 #include <string>
 
-#include "storage.h"
+#include "gtl/storage.h"
+#include "gtl/iterator.h"
 
 namespace gtl {
 
@@ -22,7 +24,6 @@ class StringImpl {
  public:
   using traits_type = Traits;
   using value_type = Char;
-  using StringStorage = Storage<value_type>;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
   using reference = value_type&;
@@ -30,14 +31,16 @@ class StringImpl {
   using pointer = value_type*;
   using const_pointer = const value_type*;
   using iterator = pointer;
-  using const_pointer = const_pointer;
+  using const_iterator = const_pointer;
   using reverse_iterator = gtl::reverse_iterator<iterator>;
   using const_reverse_iterator = gtl::reverse_iterator<const_iterator>;
 
-  constexpr static size_type kMaxSmallBytesSize = sizeof(StringStorage) - 1;
+  struct StringStorage;
+
+  constexpr static size_type kMaxSmallBytesSize = sizeof(StringStorage);
   constexpr static size_type kMaxMediumBytesSize = 256;
-  constexpr static size_type kMaxSmallSize = kMaxSmallBytesSize / sizeof(value_type);
-  constexpr static size_type kMaxMediumSize = kMaxMediumBytesSize / sizeof(value_type);
+  constexpr static size_type kMaxSmallSize = kMaxSmallBytesSize / sizeof(value_type) - 1;
+  constexpr static size_type kMaxMediumSize = kMaxMediumBytesSize / sizeof(value_type) - 1;
 
   enum class StringType {
     kSmall,
@@ -46,12 +49,24 @@ class StringImpl {
   };
 
   struct StringStorage {
+    StringStorage() : size(0), capacity(0), data(nullptr) {}
+    StringStorage(const value_type* data, size_type len, size_type c) : size(len), capacity(c), data(nullptr) {
+      data = alloc_buffer(capacity + 1);
+      std::memcpy(MediumLargeString::Data(this), data, sizeof(value_type) * (len + 1));
+    }
     size_type size;
     size_type capacity;
-    value_type* data;
+    void* data;
+
+    void* alloc_buffer(size_type size) const {
+      return ::operator new(size * sizeof(value_type));
+    }
   };
 
   struct MediumLargeString {
+    MediumLargeString() : ref_count(1) {
+      data[0] = '\0';
+    }
     std::atomic<size_type> ref_count;
     value_type data[];
 
@@ -59,8 +74,12 @@ class StringImpl {
       return offsetof(MediumLargeString, data);
     }
 
+    static void ConstrctAt(StringStorage& store) {
+      gtl::construct_at((MediumLargeString*)store.data);
+    }
+
     static MediumLargeString& From(StringStorage& store) {
-      return *static_cast<MediumLargeString*>(store.data());
+      return *static_cast<MediumLargeString*>(store.data);
     }
 
     static value_type* Data(StringStorage& store) {
@@ -73,6 +92,9 @@ class StringImpl {
   };
 
   struct SmallString {
+    SmallString() {
+      Init();
+    }
     void Init() {
       size = 0;
       data[size] = '\0';
@@ -81,42 +103,62 @@ class StringImpl {
     value_type data[kMaxSmallSize];
   };
 
-  StringImpl() { Init(); }
+  StringImpl() : small_(), type_(StringType::kSmall) {}
+  StringImpl(const StringImpl& other) { UnsafeCopyFrom(other); }
+  StringImpl(StringImpl&& other) { UnsafeMoveFrom(std::move(other)); }
+  ~StringImpl() {}
 
+  StringImpl& operator=(const StringImpl& other) {
+    StringImpl(other).swap(*this);
+    return *this;
+  }
+  StringImpl& operator=(StringImpl&& other) {
+    StringImpl(other).swap(*this);
+    return *this;
+  }
+ 
   size_type capacity() const { return 0; }
 
   pointer c_str() { return data(); }
   const_pointer c_str() const { return data(); }
+  const_pointer cc_str() const { return data(); }
 
   pointer data() {
     switch (type_) {
-      case kSmall:
+      case StringType::kSmall:
       {
         return small_.data;
       }
-      case kMedium:
+      case StringType::kMedium:
       {
         return MediumLargeString::Data(store_);
       }
-      case kLarge:
+      case StringType::kLarge:
       {
         return MediumLargeString::Data(store_);
       }
     }
   }
 
+  const_pointer cdata() const { return data(); }
   const_pointer data() const {
     switch (type_) {
-      case kSmall:
+      case StringType::kSmall:
       {
         return small_.data;
       }
-      case kMedium:
-      case kLarge:
+      case StringType::kMedium:
+      case StringType::kLarge:
       {
         return MediumLargeString::Data(store_);
       }
     }
+  }
+
+  void swap(StringImpl& other) {
+    static_assert(sizeof(SmallString) == sizeof(StringStorage));
+    std::swap(small_, other.small_);
+    std::swap(type_, other.type_);
   }
 
  private:
@@ -124,14 +166,22 @@ class StringImpl {
     type_ = StringType::kSmall;
     small_.Init();
   }
-  void UnsafeCopyFrom(StringImpl& impl) {
-    if (impl.type_ == StringType::kSmall) {
-      small_ = impl.small_;
-    } else if (impl.type_ == StringType::kMedium) {
-      StringStorage new_store(impl.store_.capacity());
-
-    } else if (impl.type_ == StringType::kLarge) {
-
+  void UnsafeCopyFrom(const StringImpl& other) {
+    type_ = other.type_;
+    if (other.type_ == StringType::kSmall) {
+      small_ = other.small_;
+    } else if (other.type_ == StringType::kMedium) {
+    } else if (other.type_ == StringType::kLarge) {
+    } else {
+      assert(false);
+    }
+  }
+  void UnsafeMoveFrom(StringImpl&& other) {
+    type_ = other.type_;
+    if (other.type_ == StringType::kSmall) {
+      small_ = other.small_;
+    } else if (other.type_ == StringType::kMedium) {
+    } else if (other.type_ == StringType::kLarge) {
     } else {
       assert(false);
     }

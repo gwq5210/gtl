@@ -9,7 +9,9 @@
 
 #pragma once
 
-#include "memory_op.h"
+#include "gtl/memory_op.h"
+#include "gtl/seq_op.h"
+#include "gtl/iterator.h"
 
 namespace gtl {
 

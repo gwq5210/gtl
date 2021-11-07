@@ -11,7 +11,7 @@
 
 #include <utility>
 
-#include "memory_op.h"
+#include "gtl/memory_op.h"
 
 namespace gtl {
 

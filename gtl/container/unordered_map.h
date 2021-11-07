@@ -7,7 +7,7 @@
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
-#include "hash_table.h"
+#include "gtl/hash_table.h"
 
 namespace gtl {
 
