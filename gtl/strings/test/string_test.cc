@@ -13,5 +13,12 @@
 
 #include "gtl/string.h"
 
+using gtl::StringImpl;
+
 TEST(string_test, small_string_test) {
+  {
+    StringImpl<char> ss;
+    EXPECT_EQ(ss.size(), 0);
+    EXPECT_EQ(ss.empty(), true);
+  }
 }
