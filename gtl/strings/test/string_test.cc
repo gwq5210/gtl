@@ -9,16 +9,83 @@
 
 #include <cstdio>
 
+#include <string>
+
 #include "gtest/gtest.h"
 
 #include "gtl/string.h"
 
-using gtl::StringImpl;
+using gtl::StringCore;
+
+void small_string_test(const std::string& str) {
+  StringCore<char> ss;
+  EXPECT_EQ(ss.size(), 0);
+  EXPECT_EQ(ss.empty(), true);
+  EXPECT_EQ(ss.capacity(), StringCore<char>::kMaxSmallSize);
+  EXPECT_EQ(ss.string_type(), StringCore<char>::StringType::kSmall);
+
+  EXPECT_LE(str.size(), StringCore<char>::kMaxSmallSize);
+  StringCore<char> ss2(str.c_str(), str.size());
+  EXPECT_STREQ(ss2.cdata(), str.c_str());
+  EXPECT_EQ(ss2.size(), str.size());
+  EXPECT_EQ(ss2.empty(), false);
+  EXPECT_EQ(ss2.capacity(), StringCore<char>::kMaxSmallSize);
+  EXPECT_EQ(ss2.string_type(), StringCore<char>::StringType::kSmall);
+
+  StringCore<char> ss3(ss2);
+  EXPECT_STREQ(ss3.cdata(), str.c_str());
+  EXPECT_EQ(ss3.size(), str.size());
+  EXPECT_EQ(ss3.empty(), false);
+  EXPECT_EQ(ss3.capacity(), StringCore<char>::kMaxSmallSize);
+  EXPECT_EQ(ss3.string_type(), StringCore<char>::StringType::kSmall);
+
+  StringCore<char> ss4(std::move(ss2));
+  EXPECT_STREQ(ss2.cdata(), "");
+  EXPECT_EQ(ss2.size(), 0);
+  EXPECT_EQ(ss2.empty(), true);
+  EXPECT_EQ(ss2.capacity(), StringCore<char>::kMaxSmallSize);
+  EXPECT_EQ(ss2.string_type(), StringCore<char>::StringType::kSmall);
+  EXPECT_STREQ(ss4.cdata(), str.c_str());
+  EXPECT_EQ(ss4.size(), str.size());
+  EXPECT_EQ(ss4.empty(), false);
+  EXPECT_EQ(ss4.capacity(), StringCore<char>::kMaxSmallSize);
+  EXPECT_EQ(ss4.string_type(), StringCore<char>::StringType::kSmall);
+
+  StringCore<char> ss5;
+  EXPECT_STREQ(ss5.cdata(), "");
+  EXPECT_EQ(ss5.size(), 0);
+  EXPECT_EQ(ss5.empty(), true);
+  EXPECT_EQ(ss5.capacity(), StringCore<char>::kMaxSmallSize);
+  EXPECT_EQ(ss5.string_type(), StringCore<char>::StringType::kSmall);
+  ss5 = ss4;
+  EXPECT_STREQ(ss5.cdata(), str.c_str());
+  EXPECT_EQ(ss5.size(), str.size());
+  EXPECT_EQ(ss5.empty(), false);
+  EXPECT_EQ(ss5.capacity(), StringCore<char>::kMaxSmallSize);
+  EXPECT_EQ(ss5.string_type(), StringCore<char>::StringType::kSmall);
+
+  StringCore<char> ss6;
+  EXPECT_STREQ(ss6.cdata(), "");
+  EXPECT_EQ(ss6.size(), 0);
+  EXPECT_EQ(ss6.empty(), true);
+  EXPECT_EQ(ss6.capacity(), StringCore<char>::kMaxSmallSize);
+  EXPECT_EQ(ss6.string_type(), StringCore<char>::StringType::kSmall);
+  ss6 = std::move(ss5);
+  EXPECT_STREQ(ss6.cdata(), str.c_str());
+  EXPECT_EQ(ss6.size(), str.size());
+  EXPECT_EQ(ss6.empty(), false);
+  EXPECT_EQ(ss6.capacity(), StringCore<char>::kMaxSmallSize);
+  EXPECT_EQ(ss6.string_type(), StringCore<char>::StringType::kSmall);
+  EXPECT_STREQ(ss5.cdata(), "");
+  EXPECT_EQ(ss5.size(), 0);
+  EXPECT_EQ(ss5.empty(), true);
+  EXPECT_EQ(ss5.capacity(), StringCore<char>::kMaxSmallSize);
+  EXPECT_EQ(ss5.string_type(), StringCore<char>::StringType::kSmall);
+}
 
 TEST(string_test, small_string_test) {
-  {
-    StringImpl<char> ss;
-    EXPECT_EQ(ss.size(), 0);
-    EXPECT_EQ(ss.empty(), true);
-  }
+  std::string str("hello world!");
+  small_string_test(str);
+  str = "hello world!hello worl";
+  small_string_test(str);
 }
