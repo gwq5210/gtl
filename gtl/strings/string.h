@@ -50,6 +50,12 @@ class StringCore {
 
   struct StringStorage {
     StringStorage() : size(0), capacity(0), data(nullptr) {}
+    void UnsafeCopyFrom(const_pointer str, size_type len) {
+      assert(str && data);
+      size = len;
+      std::memcpy(data, str, len);
+      data[len] = '\0';
+    }
     size_type size;
     size_type capacity;
     pointer data;
@@ -64,7 +70,7 @@ class StringCore {
 
     static LargeString* LargeStringPtr(StringStorage& store) { return reinterpret_cast<LargeString*>(static_cast<char*>(store.data) - GetDataOffset()); }
 
-    static LargeString* LargeStringPtr(const StringStorage& store) { return reinterpret_cast<LargeString*>(static_cast<const char*>(store.data) - GetDataOffset()); }
+    static const LargeString* LargeStringPtr(const StringStorage& store) { return reinterpret_cast<const LargeString*>(static_cast<const char*>(store.data) - GetDataOffset()); }
 
     static void ConstrctAt(StringStorage& store) { gtl::construct_at(LargeStringPtr(store)); }
 
@@ -72,9 +78,9 @@ class StringCore {
 
     static const LargeString& From(const StringStorage& store) { return *LargeStringPtr(store); }
 
-    static value_type* Data(StringStorage& store) { return From(store).data; }
+    static pointer Data(StringStorage& store) { return From(store).data; }
 
-    static const value_type* Data(const StringStorage& store) { return From(store).data; }
+    static const_pointer Data(const StringStorage& store) { return From(store).data; }
 
     static std::atomic<size_type>& RefCount(StringStorage& store) { return From(store).ref_count; }
 
@@ -95,7 +101,7 @@ class StringCore {
       size = 0;
       data[size] = '\0';
     }
-    void Init(const value_type* str, size_type len) {
+    void Init(const_pointer str, size_type len) {
       if (str) {
         assert(len <= kMaxSmallSize);
         size = len;
@@ -110,7 +116,7 @@ class StringCore {
   };
 
   StringCore() : small_(), type_(StringType::kSmall) {}
-  StringCore(const value_type* str, size_type size = 0) : StringCore() { UnsafeInit(str, size); }
+  StringCore(const_pointer str, size_type size = 0) : StringCore() { UnsafeInit(str, size); }
   StringCore(const StringCore& other) { UnsafeCopyFrom(other); }
   StringCore(StringCore&& other) { UnsafeMoveFrom(std::move(other)); }
   ~StringCore() { Destroy(); }
@@ -150,6 +156,10 @@ class StringCore {
     std::swap(type_, other.type_);
   }
 
+  size_type use_count() const {
+    return type_ == StringType::kLarge ? LargeString::RefCount(store_).load() : 1;
+  }
+
  private:
   void* Allocate(size_type size) const { return ::operator new(size); }
   void Deallocate(void *p) const { ::operator delete(p); }
@@ -163,6 +173,35 @@ class StringCore {
     }
     return store_.data;
   }
+  void Reserve(size_type new_capacity) {
+    if (new_capacity <= capacity()) {
+      return;
+    }
+    StringStorage new_storage;
+    if (new_capacity <= kMaxMediumSize) {
+      // small to medium
+      assert(type_ == StringType::kSmall);
+      new_storage = AllocateMediumStorage();
+      new_storage.UnsafeCopyFrom(cdata(), size());
+    } else if (type_ == StringType::kMedium) {
+      // 1. medium to large
+      // 2. large reserve
+      new_storage = AllocateLargeStorage(new_capacity);
+      new_storage.UnsafeCopyFrom(cdata(), size());
+      Destroy();
+      type_ = StringType::kLarge;
+    }
+    store_ = new_storage;
+  }
+  void Resize(size_t new_size) {
+    if (new_size > capacity()) {
+      Reserve(new_size);
+    }
+    if (new_size > size()) {
+      gtl::fill_n(data() + size(), new_size - size(), value_type());
+    }
+    SetSize(new_size);
+  }
   void Destroy() {
     if (type_ == StringType::kMedium) {
       Deallocate(store_.data);
@@ -173,32 +212,54 @@ class StringCore {
   size_type GetSize() const {
     return type_ == StringType::kSmall ? small_.size : store_.size;
   }
+  void SetSize(size_type new_size) {
+    if (type_ == StringType::kSmall) {
+      assert(new_size <= kMaxSmallSize);
+      small_.size = new_size;
+    } else {
+      store_.size = new_size;
+    }
+    data()[new_size] = '\0';
+  }
+  void SetCapacity(size_type new_capacity) {
+    assert(type_ == StringType::kLarge);
+    store_.capacity = new_capacity;
+  }
   size_type GetCapacity() const {
     return type_ == StringType::kSmall ? kMaxSmallSize : store_.capacity;
   }
-  void UnsafeInitSmall(const value_type* str = nullptr, size_type len = 0) {
+  void UnsafeInitSmall(const_pointer str = nullptr, size_type len = 0) {
     small_.Init(str, len);
     type_ = StringType::kSmall;
   }
-  void UnsafeInitMedium(const value_type* str, size_type len) {
+  StringStorage AllocateMediumStorage() {
+    StringStorage store;
+    store.size = 0;
+    store.capacity = kMaxMediumSize;
+    store.data = static_cast<pointer>(Allocate(kMaxMediumSize + 1));
+    return store;
+  }
+  void UnsafeInitMedium(const_pointer str, size_t len) {
     assert(len <= kMaxMediumSize);
-    store_.size = len;
-    store_.capacity = kMaxMediumSize;
-    store_.data = static_cast<pointer>(Allocate(kMaxMediumSize + 1));
-    memcpy(store_.data, str, len);
-    store_.data[len] = '\0';
+    store_ = AllocateMediumStorage();
+    store_.UnsafeCopyFrom(str, len);
     type_ = StringType::kMedium;
   }
-  void UnsafeInitLarge(const value_type* str, size_type len) {
-    store_.size = len;
-    store_.capacity = len;
-    store_.data = static_cast<pointer>(static_cast<char *>(Allocate(LargeString::GetDataOffset() + len + 1)) + LargeString::GetDataOffset());
-    LargeString::ConstrctAt(store_);
-    memcpy(store_.data, str, len);
-    store_.data[len] = '\0';
+  StringStorage AllocateLargeStorage(size_type capacity) {
+    assert(capacity > kMaxMediumSize);
+    StringStorage store;
+    store.size = 0;
+    store.capacity = capacity;
+    store.data = static_cast<pointer>(static_cast<char *>(Allocate(LargeString::GetDataOffset() + capacity + 1)) + LargeString::GetDataOffset());
+    LargeString::ConstrctAt(store);
+    return store;
+  }
+  void UnsafeInitLarge(const_pointer str, size_type len, size_type c = 0) {
+    store_ = AllocateLargeStorage(c > 0 ? c : len);
+    store_.UnsafeCopyFrom(str, len);
     type_ = StringType::kLarge;
   }
-  void UnsafeInit(const value_type* str = nullptr, size_type len = 0) {
+  void UnsafeInit(const_pointer str = nullptr, size_type len = 0) {
     if (str == nullptr) {
       UnsafeInitSmall();
     } else {
@@ -208,7 +269,7 @@ class StringCore {
       } else if (len <= kMaxMediumSize) {
         UnsafeInitMedium(str, len);
       } else {
-        UnsafeInitLarge(str, len);
+        UnsafeInitLarge(str, len, len);
       }
     }
   }
@@ -222,13 +283,6 @@ class StringCore {
       store_ = other.store_;
       LargeString::IncRefCount(store_);
     }
-  }
-  void UnsafeCopyFromMedium(const StringCore& other) {
-    UnsafeInitMedium(other.cdata(), other.size());
-  }
-  void UnsafeCopyFromLarge(const StringCore& other) {
-    store_ = other.store_;
-    LargeString::IncRefCount(store_);
   }
   void UnsafeMoveFrom(StringCore&& other) {
     type_ = other.type_;

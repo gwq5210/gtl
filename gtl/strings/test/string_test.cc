@@ -18,6 +18,7 @@
 using gtl::StringCore;
 
 void string_test(const std::string& str, int capacity, StringCore<char>::StringType type) {
+  printf("test str: %s\n", str.c_str());
   StringCore<char> ss;
   EXPECT_EQ(ss.size(), 0);
   EXPECT_EQ(ss.empty(), true);
@@ -31,6 +32,7 @@ void string_test(const std::string& str, int capacity, StringCore<char>::StringT
   EXPECT_EQ(ss2.empty(), false);
   EXPECT_EQ(ss2.capacity(), capacity);
   EXPECT_EQ(ss2.string_type(), type);
+  EXPECT_EQ(ss2.use_count(), 1);
 
   StringCore<char> ss3(ss2);
   EXPECT_STREQ(ss3.cdata(), str.c_str());
@@ -38,6 +40,7 @@ void string_test(const std::string& str, int capacity, StringCore<char>::StringT
   EXPECT_EQ(ss3.empty(), false);
   EXPECT_EQ(ss3.capacity(), capacity);
   EXPECT_EQ(ss3.string_type(), type);
+  EXPECT_EQ(ss3.use_count(), type == StringCore<char>::StringType::kLarge ? 2 : 1);
 
   StringCore<char> ss4(std::move(ss2));
   EXPECT_STREQ(ss2.cdata(), "");
@@ -50,6 +53,7 @@ void string_test(const std::string& str, int capacity, StringCore<char>::StringT
   EXPECT_EQ(ss4.empty(), false);
   EXPECT_EQ(ss4.capacity(), capacity);
   EXPECT_EQ(ss4.string_type(), type);
+  EXPECT_EQ(ss4.use_count(), type == StringCore<char>::StringType::kLarge ? 2 : 1);
 
   StringCore<char> ss5;
   EXPECT_STREQ(ss5.cdata(), "");
@@ -63,6 +67,7 @@ void string_test(const std::string& str, int capacity, StringCore<char>::StringT
   EXPECT_EQ(ss5.empty(), false);
   EXPECT_EQ(ss5.capacity(), capacity);
   EXPECT_EQ(ss5.string_type(), type);
+  EXPECT_EQ(ss5.use_count(), type == StringCore<char>::StringType::kLarge ? 3 : 1);
 
   StringCore<char> ss6;
   EXPECT_STREQ(ss6.cdata(), "");
@@ -76,20 +81,22 @@ void string_test(const std::string& str, int capacity, StringCore<char>::StringT
   EXPECT_EQ(ss6.empty(), false);
   EXPECT_EQ(ss6.capacity(), capacity);
   EXPECT_EQ(ss6.string_type(), type);
+  EXPECT_EQ(ss6.use_count(), type == StringCore<char>::StringType::kLarge ? 3 : 1);
   EXPECT_STREQ(ss5.cdata(), "");
   EXPECT_EQ(ss5.size(), 0);
   EXPECT_EQ(ss5.empty(), true);
   EXPECT_EQ(ss5.capacity(), StringCore<char>::kMaxSmallSize);
   EXPECT_EQ(ss5.string_type(), StringCore<char>::StringType::kSmall);
+  EXPECT_EQ(ss5.use_count(), 1);
 }
 
-TEST(string_test, small_medium_test) {
+TEST(string_test, basic_test) {
   int capacity = StringCore<char>::kMaxSmallSize;
   StringCore<char>::StringType type = StringCore<char>::StringType::kSmall;
   std::string str("hello world!");
-  // string_test(str, capacity, type);
+  string_test(str, capacity, type);
   str = "hello world!hello worl";
-  // string_test(str, capacity, type);
+  string_test(str, capacity, type);
 
   capacity = StringCore<char>::kMaxMediumSize;
   type = StringCore<char>::StringType::kMedium;
