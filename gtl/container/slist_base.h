@@ -188,6 +188,6 @@ inline void SpliceAfter(SListNode* slist_head, SListNode* after, SListHead* othe
   InsertAfter(slist_head, after, node);
 }
 
-}  // namespace slist
+}  // namespace singly_list
 
 }  // namespace gtl

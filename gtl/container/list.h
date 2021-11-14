@@ -90,7 +90,7 @@ struct ListConstIterator : public ListIteratorBase {
 template <typename T, typename Difference = std::ptrdiff_t>
 struct ListIterator : public ListConstIterator<T, Difference> {
   using reference = T&;
-  using pointer = const T&;
+  using pointer = const T*;
   using Base = ListConstIterator<T, Difference>;
   using Self = ListIterator;
   ListIterator(): Base() {}

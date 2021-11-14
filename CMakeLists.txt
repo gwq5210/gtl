@@ -54,6 +54,7 @@ set(INCLUDE_HEADERS
   gtl/container/storage.h
   gtl/container/vector.h
   gtl/container/hash_table.h
+  gtl/container/lru_cache.h
   gtl/iterator/iterator_op.h
   gtl/iterator/iterator.h
   gtl/iterator/reverse_iterator.h

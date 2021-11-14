@@ -151,6 +151,6 @@ inline void SpliceBefore(ListNode* before, ListNode* curr) {
   InsertBefore(before, curr);
 }
 
-}  // namespace list
+}  // namespace doubly_list
 
 }  // namespace gtl
