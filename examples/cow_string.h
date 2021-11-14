@@ -21,10 +21,9 @@ class CowString {
  public:
   using size_type = std::size_t;
 
-  CowString() : size_(0), capacity_(0) {}
-  CowString(const char* str) : CowString() { Init(str); }
+  CowString(const char* str = nullptr) : size_(0), capacity_(0) { UnsafeInit(str); }
   CowString(const CowString& other) : size_(other.size_), capacity_(other.capacity_), str_(other.str_) {}
-  CowString(CowString&& other) : size_(other.size_), capacity_(other.capacity_), str_(std::move(other.str_)) { other.UnsafeReset(); }
+  CowString(CowString&& other) : size_(other.size_), capacity_(other.capacity_), str_(std::move(other.str_)) { other.UnsafeInit(); }
   ~CowString() {}
 
   CowString& operator=(const CowString& other) {
@@ -55,22 +54,19 @@ class CowString {
   }
 
  private:
-  void Init(const char* str, size_type size = 0) {
+  void UnsafeInit(const char* str = nullptr, size_type size = 0) {
+    size_ = size == 0 && str ? std::strlen(str) : size;
+    capacity_ = 16;
+    capacity_ = std::max(size_, capacity_);
+    str_ = gtl::make_shared<char[]>(capacity_ + 1);
     if (str) {
-      size_ = size > 0 ? size : std::strlen(str);
-      capacity_ = size_;
-      str_ = gtl::make_shared<char[]>(size_ + 1);
-      std::memcpy(str_.get(), str, size_ + 1);
+      std::memcpy(str_.get(), str, size_);
     }
-  }
-  void UnsafeReset() {
-    size_ = 0;
-    capacity_ = 0;
-    str_.reset(nullptr);
+    str_[size_] = '\0';
   }
   char* MutableData() {
-    if (str_) {
-      Init(str_.get(), size_);
+    if (str_.use_count() > 1) {
+      UnsafeInit(str_.get(), size_);
     }
     return str_.get();
   }

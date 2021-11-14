@@ -160,6 +160,9 @@ class StringCore {
     return type_ == StringType::kLarge ? LargeString::RefCount(store_).load() : 1;
   }
 
+  void reserve(size_type new_capacity) { Reserve(new_capacity); }
+  void resize(size_type new_size) { Resize(new_size); }
+
  private:
   void* Allocate(size_type size) const { return ::operator new(size); }
   void Deallocate(void *p) const { ::operator delete(p); }
