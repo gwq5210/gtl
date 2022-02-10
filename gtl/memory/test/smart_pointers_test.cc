@@ -3,7 +3,7 @@
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 智能指针测试
  * @date 2021-11-04
- * 
+ *
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
@@ -14,9 +14,9 @@
 
 #include "gtest/gtest.h"
 
-#include "gtl/vector.h"
 #include "gtl/smart_pointers.h"
 #include "gtl/test_class.h"
+#include "gtl/vector.h"
 
 using gtl::test::Person;
 using gtl::test::Student;
@@ -53,7 +53,7 @@ TEST(smart_pointers_test, auto_ptr_test) {
     p2 = p2;
     EXPECT_EQ(p2.get(), p_bak);
   }
-  
+
   {
     std::string name2 = "auto_ptr2";
     std::string name3 = "auto_ptr3";
@@ -145,7 +145,7 @@ TEST(smart_pointers_test, unique_ptr_test) {
     EXPECT_EQ(bool(p2), true);
     EXPECT_EQ(name, p2->name());
   }
-  
+
   {
     std::string name2 = "unique_ptr2";
     std::string name3 = "unique_ptr3";
@@ -293,7 +293,7 @@ TEST(smart_pointers_test, shared_ptr_test) {
     EXPECT_EQ(p.use_count(), 2);
     EXPECT_EQ(p2.use_count(), 2);
   }
-  
+
   {
     std::string name2 = "shared_ptr2";
     std::string name3 = "shared_ptr3";

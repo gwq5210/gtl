@@ -68,9 +68,13 @@ class StringCore {
 
     static size_type GetDataOffset() { return offsetof(LargeString, data); }
 
-    static LargeString* LargeStringPtr(StringStorage& store) { return reinterpret_cast<LargeString*>(static_cast<char*>(store.data) - GetDataOffset()); }
+    static LargeString* LargeStringPtr(StringStorage& store) {
+      return reinterpret_cast<LargeString*>(static_cast<char*>(store.data) - GetDataOffset());
+    }
 
-    static const LargeString* LargeStringPtr(const StringStorage& store) { return reinterpret_cast<const LargeString*>(static_cast<const char*>(store.data) - GetDataOffset()); }
+    static const LargeString* LargeStringPtr(const StringStorage& store) {
+      return reinterpret_cast<const LargeString*>(static_cast<const char*>(store.data) - GetDataOffset());
+    }
 
     static void ConstrctAt(StringStorage& store) { gtl::construct_at(LargeStringPtr(store)); }
 
@@ -86,13 +90,9 @@ class StringCore {
 
     static const std::atomic<size_type>& RefCount(const StringStorage& store) { return From(store).ref_count; }
 
-    static void IncRefCount(StringStorage& store) {
-      ++RefCount(store);
-    }
+    static void IncRefCount(StringStorage& store) { ++RefCount(store); }
 
-    static bool DecRefCount(StringStorage& store) {
-      return --RefCount(store) == 0;
-    }
+    static bool DecRefCount(StringStorage& store) { return --RefCount(store) == 0; }
   };
 
   struct SmallString {
@@ -146,9 +146,7 @@ class StringCore {
   pointer data() { return MutableData(); }
 
   const_pointer cdata() const { return data(); }
-  const_pointer data() const {
-    return type_ == StringType::kSmall ? small_.data : store_.data;
-  }
+  const_pointer data() const { return type_ == StringType::kSmall ? small_.data : store_.data; }
 
   void swap(StringCore& other) {
     assert(sizeof(SmallString) == sizeof(StringStorage));
@@ -156,16 +154,14 @@ class StringCore {
     std::swap(type_, other.type_);
   }
 
-  size_type use_count() const {
-    return type_ == StringType::kLarge ? LargeString::RefCount(store_).load() : 1;
-  }
+  size_type use_count() const { return type_ == StringType::kLarge ? LargeString::RefCount(store_).load() : 1; }
 
   void reserve(size_type new_capacity) { Reserve(new_capacity); }
   void resize(size_type new_size) { Resize(new_size); }
 
  private:
   void* Allocate(size_type size) const { return ::operator new(size); }
-  void Deallocate(void *p) const { ::operator delete(p); }
+  void Deallocate(void* p) const { ::operator delete(p); }
   pointer MutableData() {
     if (type_ == StringType::kSmall) {
       return small_.data;
@@ -212,9 +208,7 @@ class StringCore {
       Deallocate(LargeString::LargeStringPtr(store_));
     }
   }
-  size_type GetSize() const {
-    return type_ == StringType::kSmall ? small_.size : store_.size;
-  }
+  size_type GetSize() const { return type_ == StringType::kSmall ? small_.size : store_.size; }
   void SetSize(size_type new_size) {
     if (type_ == StringType::kSmall) {
       assert(new_size <= kMaxSmallSize);
@@ -228,9 +222,7 @@ class StringCore {
     assert(type_ == StringType::kLarge);
     store_.capacity = new_capacity;
   }
-  size_type GetCapacity() const {
-    return type_ == StringType::kSmall ? kMaxSmallSize : store_.capacity;
-  }
+  size_type GetCapacity() const { return type_ == StringType::kSmall ? kMaxSmallSize : store_.capacity; }
   void UnsafeInitSmall(const_pointer str = nullptr, size_type len = 0) {
     small_.Init(str, len);
     type_ = StringType::kSmall;
@@ -253,7 +245,8 @@ class StringCore {
     StringStorage store;
     store.size = 0;
     store.capacity = capacity;
-    store.data = static_cast<pointer>(static_cast<char *>(Allocate(LargeString::GetDataOffset() + capacity + 1)) + LargeString::GetDataOffset());
+    store.data = static_cast<pointer>(static_cast<char*>(Allocate(LargeString::GetDataOffset() + capacity + 1)) +
+                                      LargeString::GetDataOffset());
     LargeString::ConstrctAt(store);
     return store;
   }

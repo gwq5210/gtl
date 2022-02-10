@@ -52,16 +52,14 @@ const T* addressof(const T&& v) = delete;
  * @param p 指向要被销毁的对象的指针
  */
 template <typename T>
-typename std::enable_if<std::is_array<T>::value, void>::type
-destroy_at(T* p) {
+typename std::enable_if<std::is_array<T>::value, void>::type destroy_at(T* p) {
   for (auto& v : *p) {
     gtl::destroy_at(gtl::addressof(v));
   }
 }
 
 template <typename T>
-typename std::enable_if<!std::is_array<T>::value, void>::type
-destroy_at(T* p) {
+typename std::enable_if<!std::is_array<T>::value, void>::type destroy_at(T* p) {
   p->~T();
 }
 
@@ -165,7 +163,7 @@ void uninitialized_fill_range_n(ForwardIt first, SizeType count, const T& v, std
 /**
  * @brief 复制给定的 value 到以 [first, last) 定义的未初始化内存区域
  * 若初始化期间抛异常，则以未指定顺序销毁已构造的对象
- * 
+ *
  * TODO: 处理异常的情况
  */
 template <typename ForwardIt, typename T>
@@ -177,7 +175,7 @@ void uninitialized_fill(ForwardIt first, ForwardIt last, const T& v) {
 /**
  * @brief 复制给定值 value 到始于 first 的未初始化内存区域的首 count 个元素
  * 若初始化期间抛异常，则以未指定顺序销毁已构造的对象
- * 
+ *
  * TODO: 处理异常的情况
  */
 template <typename ForwardIt, typename SizeType, typename T>
@@ -251,7 +249,7 @@ void uninitialized_default_construct_range_n(ForwardIt first, SizeType count, st
 /**
  * @brief 以默认初始化(default-initialization)在范围 [first, last) 所指代的未初始化存储上构造对象
  * 若初始化期间抛异常，则以未指定顺序销毁已构造的对象
- * 
+ *
  * TODO: 处理异常的情况
  */
 template <typename ForwardIt>
@@ -263,7 +261,7 @@ void uninitialized_default_construct(ForwardIt first, ForwardIt last) {
 /**
  * @brief 在 first 起始的存储中以默认初始化(default-initialization)构造 count 个对象
  * 若初始化期间抛异常，则以未指定顺序销毁已构造的对象
- * 
+ *
  * TODO: 处理异常的情况
  */
 template <typename ForwardIt, typename SizeType>
@@ -289,7 +287,7 @@ void uninitialized_value_construct_range_n(ForwardIt first, SizeType count, std:
 /**
  * @brief 以值初始化(value-initialization)在范围 [first, last) 所指代的未初始化存储上构造对象
  * 若初始化期间抛异常，则以未指定顺序销毁已构造的对象
- * 
+ *
  * TODO: 处理异常的情况
  */
 template <typename ForwardIt>
@@ -301,7 +299,7 @@ void uninitialized_value_construct(ForwardIt first, ForwardIt last) {
 /**
  * @brief 在 first 起始的存储中以值初始化(value-initialization)构造 count 个对象
  * 若初始化期间抛异常，则以未指定顺序销毁已构造的对象
- * 
+ *
  * TODO: 处理异常的情况
  */
 template <typename ForwardIt, typename SizeType>

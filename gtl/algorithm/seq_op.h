@@ -193,7 +193,8 @@ std::pair<InputIt1, InputIt2> missmatch(InputIt1 first1, InputIt1 last1, InputIt
 }
 
 template <typename InputIt1, typename InputIt2, typename BinaryPredicate>
-std::pair<InputIt1, InputIt2> missmatch(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2, BinaryPredicate p) {
+std::pair<InputIt1, InputIt2> missmatch(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2,
+                                        BinaryPredicate p) {
   for (; first1 != last1 && first2 != last2 && p(*first1, *first2); ++first1, ++first2) {
   }
   return std::make_pair(first1, first2);

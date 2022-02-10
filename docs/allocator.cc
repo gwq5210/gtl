@@ -5,12 +5,8 @@
 
 class Test {
  public:
-  Test(const std::string& name): name_(name) {
-    printf("construct %s\n", name_.c_str());
-  }
-  ~Test() {
-    printf("destroy %s\n", name_.c_str());
-  }
+  Test(const std::string& name) : name_(name) { printf("construct %s\n", name_.c_str()); }
+  ~Test() { printf("destroy %s\n", name_.c_str()); }
 
  private:
   std::string name_;

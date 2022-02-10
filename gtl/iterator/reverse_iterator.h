@@ -38,9 +38,7 @@ class ReverseIterator {
 
   iterator_type base() const { return it_; }
 
-  reference operator*() {
-    return *gtl::prev(it_);
-  }
+  reference operator*() { return *gtl::prev(it_); }
   pointer operator->() { return gtl::addressof(**this); }
   reference operator[](difference_type n) { return *gtl::prev(n + 1); }
 

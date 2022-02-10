@@ -3,7 +3,7 @@
  * @author gwq5210 (gwq5210@qq.com)
  * @brief LRUCache实现
  * @date 2021-11-14
- * 
+ *
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
@@ -52,7 +52,7 @@ class LRUCache {
       ListNodeT::Value(node).second = value;
       return std::make_pair(Iterator(node), true);
     } else {
-      auto *new_node = ListNodeT::New(allocator_, std::make_pair(key, value));
+      auto* new_node = ListNodeT::New(allocator_, std::make_pair(key, value));
       doubly_list::AddToHead(&lru_, new_node);
       ht_.emplace(key, new_node);
       if (Size() > Capacity()) {
@@ -65,16 +65,10 @@ class LRUCache {
     }
   }
 
-  Value& Get(const Key& key) {
-    return GetValue(key);
-  }
-  const Value& Get(const Key& key) const {
-    return GetValue(key);
-  }
+  Value& Get(const Key& key) { return GetValue(key); }
+  const Value& Get(const Key& key) const { return GetValue(key); }
 
-  bool Exists(const Key& key) const {
-    return FindListNode(key) != nullptr;
-  }
+  bool Exists(const Key& key) const { return FindListNode(key) != nullptr; }
 
   SizeType Size() const { return ht_.size(); }
 
@@ -114,6 +108,7 @@ class LRUCache {
 };
 
 template <typename Key, typename Value, typename Hash, typename KeyEqual>
-constexpr typename LRUCache<Key, Value, Hash, KeyEqual>::SizeType LRUCache<Key, Value, Hash, KeyEqual>::kLRUCacheMinBucketSize;
+constexpr typename LRUCache<Key, Value, Hash, KeyEqual>::SizeType
+    LRUCache<Key, Value, Hash, KeyEqual>::kLRUCacheMinBucketSize;
 
 }  // namespace gtl

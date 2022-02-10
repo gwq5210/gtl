@@ -3,7 +3,7 @@
  * @author gwq5210 (gwq5210@qq.com)
  * @brief unordered_map的实现
  * @date 2021-11-01
- * 
+ *
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
@@ -15,8 +15,7 @@ template <typename Key, typename T, typename Hash = std::hash<Key>, typename Key
 class UnorderedMap {
  public:
   using key_type = Key;
-  using mapped_type = T,
-  using value_type = std::pair<const Key, T>;
+  using mapped_type = T, using value_type = std::pair<const Key, T>;
   using MapHashTable = HashTable<key_type, value_type, MapKeyFunc, Hash, KeyEquel>;
   using size_type = typename MapHashTable::size_type;
   using difference_type = typename MapHashTable::difference_type;
@@ -33,18 +32,23 @@ class UnorderedMap {
   using const_local_iterator = typename MapHashTable::const_local_iterator;
   static constexpr bool unique_ = true;
 
-  UnorderedMap(): mht_() {}
-  UnorderedMap(size_type bucket_count): mht_(bucket_count) {}
+  UnorderedMap() : mht_() {}
+  UnorderedMap(size_type bucket_count) : mht_(bucket_count) {}
   template <typename InputIt>
-  UnorderedMap(InputIt first, InputIt last, size_type bucket_count = gtl::distance(first, last)): mht_(unique_, first, last, bucket_count) {}
-  UnorderedMap(const UnorderedMap& other): mht_(other.mht_) {}
-  UnorderedMap(UnorderedMap&& other): mht_(std::move(other)) {}
-  UnorderedMap(std::initializer_list<value_type> ilist, size_type bucket_count = ilist.size()): mht_(unique_, ilist, bucket_count) {}
+  UnorderedMap(InputIt first, InputIt last, size_type bucket_count = gtl::distance(first, last))
+      : mht_(unique_, first, last, bucket_count) {}
+  UnorderedMap(const UnorderedMap& other) : mht_(other.mht_) {}
+  UnorderedMap(UnorderedMap&& other) : mht_(std::move(other)) {}
+  UnorderedMap(std::initializer_list<value_type> ilist, size_type bucket_count = ilist.size())
+      : mht_(unique_, ilist, bucket_count) {}
   ~UnorderedMap() {}
 
   UnorderedMap& operator=(const UnorderedMap& other) = default;
   UnorderedMap& operator=(UnorderedMap&& other) = default;
-  UnorderedMap& operator=(std::initializer_list<value_type> ilist) { mht_.assign(unique_, ilist); return *this; }
+  UnorderedMap& operator=(std::initializer_list<value_type> ilist) {
+    mht_.assign(unique_, ilist);
+    return *this;
+  }
 
   allocator_type get_allocator() const { mht_.get_allocator(); }
 
@@ -66,18 +70,32 @@ class UnorderedMap {
   std::pair<iterator, bool> insert(const value_type& value) { return mht_.insert(unique_, value); }
   std::pair<iterator, bool> insert(value_type&& value) { return mht_.insert(unique_, std::move(value)); }
   template <typename P>
-  std::pair<iterator, bool> insert(P&& value) { return mht_.insert(unique_, std::move(value)); }
-  std::pair<iterator, bool> insert(const_iterator hint, cosnt value_type& value) { return mht_.insert(unique_, hint, value); }
-  std::pair<iterator, bool> insert(const_iterator hint, value_type&& value) { return mht_.insert(unique_, hint, std::move(value)); }
+  std::pair<iterator, bool> insert(P&& value) {
+    return mht_.insert(unique_, std::move(value));
+  }
+  std::pair<iterator, bool> insert(const_iterator hint, cosnt value_type& value) {
+    return mht_.insert(unique_, hint, value);
+  }
+  std::pair<iterator, bool> insert(const_iterator hint, value_type&& value) {
+    return mht_.insert(unique_, hint, std::move(value));
+  }
   template <typename P>
-  std::pair<iterator, bool> insert(const_iterator hint, P&& value) { return mht_.insert(unique_, hint, std::move(value)); }
+  std::pair<iterator, bool> insert(const_iterator hint, P&& value) {
+    return mht_.insert(unique_, hint, std::move(value));
+  }
   template <typename InputIt>
-  void insert(InputIt first, InputIt last) { mht_.insert(unique_, first, last); }
+  void insert(InputIt first, InputIt last) {
+    mht_.insert(unique_, first, last);
+  }
   void insert(std::initializer_list<value_type> ilist) { mht_.insert(unique_, ilist); }
   template <typename... Args>
-  std::pair<iterator, bool> emplace(Args&&... args) { return mht_.emplace(unique_, std::forward<Args>(args)...); }
+  std::pair<iterator, bool> emplace(Args&&... args) {
+    return mht_.emplace(unique_, std::forward<Args>(args)...);
+  }
   template <typename... Args>
-  std::pair<iterator, bool> emplace_hint(Args&&... args) { return mht_.emplace_hint(unique_, std::forward<Args>(args)...); }
+  std::pair<iterator, bool> emplace_hint(Args&&... args) {
+    return mht_.emplace_hint(unique_, std::forward<Args>(args)...);
+  }
   iterator erase(const_iterator pos) { return mht_.erase(pos); }
   iterator erase(const_iterator first, const_iterator last) { return mht_.erase(first, last); }
   size_type erase(const key_type& key) { return mht_.erase(key); }
@@ -144,4 +162,4 @@ class UnorderedMap {
 template <typename Key, typename T, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
 using unordered_map = typename UnorderedMap<Key, T, Hash, KeyEqual>;
 
-} // namespace gtl
+}  // namespace gtl

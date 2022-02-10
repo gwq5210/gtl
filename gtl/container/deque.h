@@ -383,9 +383,7 @@ class Deque {
     begin_.clear();
     end_.clear();
   }
-  BlockStorage alloc_block_storage(size_type size) {
-    return BlockStorage(next2power(size));
-  }
+  BlockStorage alloc_block_storage(size_type size) { return BlockStorage(next2power(size)); }
 
  private:
   iterator begin_;

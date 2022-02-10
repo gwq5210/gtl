@@ -3,7 +3,7 @@
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 用于测试的类
  * @date 2021-11-04
- * 
+ *
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
@@ -23,12 +23,8 @@ class Teacher;
 
 class Person {
  public:
-  Person(const std::string& name = "") : name_(name) {
-    printf("person[%p] %s constructed\n", this, name_.c_str());
-  }
-  ~Person() {
-    printf("person[%p] %s destroyed\n", this, name_.c_str());
-  }
+  Person(const std::string& name = "") : name_(name) { printf("person[%p] %s constructed\n", this, name_.c_str()); }
+  ~Person() { printf("person[%p] %s destroyed\n", this, name_.c_str()); }
 
   std::string& name() { return name_; }
   const std::string& name() const { return name_; }
@@ -83,4 +79,4 @@ class Teacher : public Person {
 
 }  // namespace test
 
-} // namespace gtl
+}  // namespace gtl

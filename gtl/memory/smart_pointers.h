@@ -235,7 +235,9 @@ class PtrBase {
   PtrBase(const PtrBase<Y>& other) : ref_count_(other.ref_count_), data_(other.data_) {}
   PtrBase(PtrBase&& other) : ref_count_(other.ref_count_), data_(other.data_) { other.UnsafeReset(); }
   template <typename Y>
-  PtrBase(PtrBase<Y>&& other) : ref_count_(other.ref_count_), data_(other.data_) { other.UnsafeReset(); }
+  PtrBase(PtrBase<Y>&& other) : ref_count_(other.ref_count_), data_(other.data_) {
+    other.UnsafeReset();
+  }
   ~PtrBase() {}
 
   PtrBase& operator=(const PtrBase& other) = default;
@@ -371,9 +373,7 @@ class SharedPtr {
   std::size_t use_count() const { return ptr_base_.UseCount(); }
   bool unique() const { return use_count() == 1; }
 
-  void swap(SharedPtr& other) {
-    ptr_base_.swap(other.ptr_base_);
-  }
+  void swap(SharedPtr& other) { ptr_base_.swap(other.ptr_base_); }
 
  private:
   SharedPtr(const PtrBase<T>& ptr_base) : ptr_base_(ptr_base) {
@@ -398,11 +398,15 @@ class WeakPtr {
   WeakPtr(const WeakPtr& other) : ptr_base_(other.ptr_base_) { ptr_base_.IncWeakCount(); }
   WeakPtr(WeakPtr&& other) = default;
   template <typename Y>
-  WeakPtr(const WeakPtr<Y>& other) : ptr_base_(other.ptr_base_) { ptr_base_.IncWeakCount(); }
+  WeakPtr(const WeakPtr<Y>& other) : ptr_base_(other.ptr_base_) {
+    ptr_base_.IncWeakCount();
+  }
   template <typename Y>
   WeakPtr(WeakPtr<Y>&& other) : ptr_base_(std::move(other.ptr_base_base)) {}
   template <typename Y>
-  WeakPtr(const SharedPtr<Y>& other) : ptr_base_(other.ptr_base_) { ptr_base_.IncWeakCount(); }
+  WeakPtr(const SharedPtr<Y>& other) : ptr_base_(other.ptr_base_) {
+    ptr_base_.IncWeakCount();
+  }
   ~WeakPtr() { ptr_base_.DecWeakCount(); }
 
   WeakPtr& operator=(const WeakPtr& other) {
@@ -429,17 +433,11 @@ class WeakPtr {
     return *this;
   }
 
-  SharedPtr<T> lock() const {
-    return SharedPtr<T>(ptr_base_);
-  }
-  bool expired() const {
-    return use_count() == 0;
-  }
+  SharedPtr<T> lock() const { return SharedPtr<T>(ptr_base_); }
+  bool expired() const { return use_count() == 0; }
   std::size_t use_count() const { return ptr_base_.UseCount(); }
 
-  void swap(WeakPtr& other) {
-    ptr_base_.swap(other.ptr_base_);
-  }
+  void swap(WeakPtr& other) { ptr_base_.swap(other.ptr_base_); }
 
   void reset() { ptr_base_.UnsafeReset(); }
 

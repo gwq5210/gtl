@@ -38,7 +38,8 @@ class SetKeyFunc {
   const Key& operator()(const Value& value) const { return value; }
 };
 
-template <typename Key, typename Value, typename ExtractKey, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
+template <typename Key, typename Value, typename ExtractKey, typename Hash = std::hash<Key>,
+          typename KeyEqual = std::equal_to<Key>>
 class HashTable {
  public:
   using Node = singly_list::SListNodeT<Value>;
@@ -60,11 +61,13 @@ class HashTable {
   // using NodeAllocator = typename std::allocator_traits<allocator_type>::rebind_alloc<Node>;
   using NodeAllocator = std::allocator<Node>;
   struct HashNode {
-    HashNode(): node_before_begin(nullptr), node_finish(nullptr) {}
-    HashNode(SListNode* b, SListNode* f): node_before_begin(b), node_finish(f) {}
+    HashNode() : node_before_begin(nullptr), node_finish(nullptr) {}
+    HashNode(SListNode* b, SListNode* f) : node_before_begin(b), node_finish(f) {}
     local_iterator begin() { return node_before_begin ? iterator(node_before_begin->next) : iterator(nullptr); }
     const_local_iterator begin() const { return cbegin(); }
-    const_local_iterator cbegin() const { return node_before_begin ? iterator(node_before_begin->next) : iterator(nullptr); }
+    const_local_iterator cbegin() const {
+      return node_before_begin ? iterator(node_before_begin->next) : iterator(nullptr);
+    }
     local_iterator end() { return node_finish ? iterator(node_finish->next) : iterator(nullptr); }
     const_local_iterator end() const { return cend(); }
     const_local_iterator cend() const { return node_finish ? iterator(node_finish->next) : iterator(nullptr); }
@@ -72,11 +75,11 @@ class HashTable {
     bool empty() const { return node_before_begin == nullptr; }
     void insert_node(SListNode* before, SListNode* first, SListNode* last) {
       assert(before->next == first);
-      if (!node_before_begin) { // bucket为空，插入到所有元素的链表头部
+      if (!node_before_begin) {  // bucket为空，插入到所有元素的链表头部
         node_before_begin = before;
         node_finish = last;
       } else if (before == node_finish) {
-        node_finish = last; // 在bucket尾部插入，更新bucket尾部节点
+        node_finish = last;  // 在bucket尾部插入，更新bucket尾部节点
       }
     }
     void erase_node(SListNode* before, SListNode* last) {
@@ -101,8 +104,8 @@ class HashTable {
     SListNode* node_finish;
   };
   struct FindNodeResult {
-    FindNodeResult(): before(nullptr), node(nullptr) {}
-    FindNodeResult(SListNode* b, SListNode* n): before(b), node(n) {}
+    FindNodeResult() : before(nullptr), node(nullptr) {}
+    FindNodeResult(SListNode* b, SListNode* n) : before(b), node(n) {}
     SListNode* before;
     SListNode* node;
   };
@@ -111,17 +114,20 @@ class HashTable {
   static constexpr float default_max_load_factor_ = 0.75;
 
   // constructor
-  HashTable(): HashTable(min_bucket_size_) {}
-  HashTable(size_type bucket_count): max_load_factor_(default_max_load_factor_), buckets_(alloc_buckets(bucket_count)), size_alloc_(0) {}
+  HashTable() : HashTable(min_bucket_size_) {}
+  HashTable(size_type bucket_count)
+      : max_load_factor_(default_max_load_factor_), buckets_(alloc_buckets(bucket_count)), size_alloc_(0) {}
   template <typename InputIt>
-  HashTable(bool unique, InputIt first, InputIt last, size_type bucket_count = 0): HashTable(bucket_count ? bucket_count : gtl::distance(first, last)) {
+  HashTable(bool unique, InputIt first, InputIt last, size_type bucket_count = 0)
+      : HashTable(bucket_count ? bucket_count : gtl::distance(first, last)) {
     insert(unique, first, last);
   }
-  HashTable(const HashTable& other): HashTable(false, other.begin(), other.end(), other.bucket_count()) {
+  HashTable(const HashTable& other) : HashTable(false, other.begin(), other.end(), other.bucket_count()) {
     max_load_factor_ = other.max_load_factor_;
   }
   HashTable(HashTable&& other) { move_from(std::move(other)); }
-  HashTable(bool unique, std::initializer_list<value_type> ilist, size_type bucket_count = 0): HashTable(unique, ilist.begin(), ilist.end(), bucket_count ? bucket_count : ilist.size()) {}
+  HashTable(bool unique, std::initializer_list<value_type> ilist, size_type bucket_count = 0)
+      : HashTable(unique, ilist.begin(), ilist.end(), bucket_count ? bucket_count : ilist.size()) {}
   ~HashTable() { release(); }
 
   HashTable& operator=(const HashTable& other) { return assign(other); }
@@ -161,33 +167,15 @@ class HashTable {
   std::pair<iterator, bool> insert(bool unique, const_iterator hint, P&& value) {
     return emplace_hint(unique, hint, std::move(value));
   }
-  std::pair<iterator, bool> insert(const Value& value) {
-    return emplace(false, value);
-  }
-  std::pair<iterator, bool> insert(bool unique, const Value& value) {
-    return emplace(unique, value);
-  }
-  std::pair<iterator, bool> insert_unique(const Value& value) {
-    return emplace_unique(value);
-  }
-  std::pair<iterator, bool> insert_equal(const Value& value) {
-    return emplace_equal(value);
-  }
-  std::pair<iterator, bool> insert(Value&& value) {
-    return emplace(false, std::move(value));
-  }
-  std::pair<iterator, bool> insert(bool unique, Value&& value) {
-    return emplace(unique, std::move(value));
-  }
-  std::pair<iterator, bool> insert_unique(Value&& value) {
-    return emplace_unique(std::move(value));
-  }
-  std::pair<iterator, bool> insert_equal(Value&& value) {
-    return emplace_equal(std::move(value));
-  }
-  std::pair<iterator, bool> insert(const_iterator hint, const Value& value) {
-    return emplace_hint(false, hint, value);
-  }
+  std::pair<iterator, bool> insert(const Value& value) { return emplace(false, value); }
+  std::pair<iterator, bool> insert(bool unique, const Value& value) { return emplace(unique, value); }
+  std::pair<iterator, bool> insert_unique(const Value& value) { return emplace_unique(value); }
+  std::pair<iterator, bool> insert_equal(const Value& value) { return emplace_equal(value); }
+  std::pair<iterator, bool> insert(Value&& value) { return emplace(false, std::move(value)); }
+  std::pair<iterator, bool> insert(bool unique, Value&& value) { return emplace(unique, std::move(value)); }
+  std::pair<iterator, bool> insert_unique(Value&& value) { return emplace_unique(std::move(value)); }
+  std::pair<iterator, bool> insert_equal(Value&& value) { return emplace_equal(std::move(value)); }
+  std::pair<iterator, bool> insert(const_iterator hint, const Value& value) { return emplace_hint(false, hint, value); }
   std::pair<iterator, bool> insert(const_iterator hint, Value&& value) {
     return emplace_hint(false, hint, std::move(value));
   }
@@ -208,12 +196,8 @@ class HashTable {
       emplace(unique, *it);
     }
   }
-  void insert(std::initializer_list<value_type> ilist) {
-    insert(false, ilist.begin(), ilist.end());
-  }
-  void insert(bool unique, std::initializer_list<value_type> ilist) {
-    insert(unique, ilist.begin(), ilist.end());
-  }
+  void insert(std::initializer_list<value_type> ilist) { insert(false, ilist.begin(), ilist.end()); }
+  void insert(bool unique, std::initializer_list<value_type> ilist) { insert(unique, ilist.begin(), ilist.end()); }
   template <typename... Args>
   std::pair<iterator, bool> emplace(Args&&... args) {
     return emplace_hint(false, const_iterator(), std::forward<Args>(args)...);
@@ -300,12 +284,8 @@ class HashTable {
   }
 
   // Lookup
-  iterator find(const key_type& key) {
-    return iterator(find_node(key).node);
-  }
-  const_iterator find(const key_type& key) const {
-    return const_iterator(find_node(key).node);
-  }
+  iterator find(const key_type& key) { return iterator(find_node(key).node); }
+  const_iterator find(const key_type& key) const { return const_iterator(find_node(key).node); }
   size_type count(const key_type& key) const { return count_equal(key); }
   size_type count_unique(const key_type& key) const { return count(true, key); }
   size_type count_equal(const key_type& key) const { return count(false, key); }
@@ -320,9 +300,7 @@ class HashTable {
     }
     return ret;
   }
-  bool contains(const key_type& key) const {
-    return find_node(key).node;
-  }
+  bool contains(const key_type& key) const { return find_node(key).node; }
   std::pair<iterator, iterator> equal_range(const key_type& key) { return equal_range(false, key); }
   std::pair<const_iterator, const_iterator> equal_range(const key_type& key) const { return equal_range(false, key); }
   std::pair<iterator, iterator> equal_range(bool unique, const key_type& key) {
@@ -447,7 +425,7 @@ class HashTable {
     buckets_ = alloc_buckets(min_bucket_size_);
     get_size() = 0;
   }
-  void release () {
+  void release() {
     SListNode* node = head_.next;
     while (node) {
       RemoveAfter(&head_, node);
@@ -531,7 +509,8 @@ class HashTable {
     const key_type& key = get_key(Node::Value(node));
     size_type bucket_idx = bucket(key);
     // 元素唯一的情况下，已找到元素直接结束插入
-    if (prev && (key_equal_(get_key(Node::Value(prev)), key) || (prev->next && key_equal_(get_key(Node::Value(prev->next)), key)))) {
+    if (prev && (key_equal_(get_key(Node::Value(prev)), key) ||
+                 (prev->next && key_equal_(get_key(Node::Value(prev->next)), key)))) {
       // hint或hint->next对应元素的key与新元素的key相同，使用hint作为插入位置
       if (unique) {
         DeleteNode(node);
@@ -557,12 +536,12 @@ class HashTable {
     // 1. 新分配桶数组
     BucketStorage new_buckets = alloc_buckets(new_bucket_count);
     SListNode old_head = head_;
-    buckets_.swap(new_buckets); // 与旧桶数组交换
+    buckets_.swap(new_buckets);  // 与旧桶数组交换
     head_.next = nullptr;
     get_size() = 0;
 
     printf("rehash new bucket count %zu %zu\n", bucket_count(), new_bucket_count);
-    SListNode* prev = &old_head; // 旧链表的伪头节点，便于实现
+    SListNode* prev = &old_head;  // 旧链表的伪头节点，便于实现
     SListNode* first = prev->next;
     // 2. 遍历所有元素的链表
     while (first) {
@@ -574,16 +553,16 @@ class HashTable {
       // 将(range_res.first.before, range_res.first.node]这些元素从链表中移除
       RemoveAfter(range_res.first.before, range_res.first.node);
       // 插入到新链表中并设置桶的所在元素的范围
-      insert_node(new_bucket_idx, buckets_[new_bucket_idx].node_before_begin ? buckets_[new_bucket_idx].node_before_begin : &head_, first, range_res.first.node, range_res.second);
+      insert_node(new_bucket_idx,
+                  buckets_[new_bucket_idx].node_before_begin ? buckets_[new_bucket_idx].node_before_begin : &head_,
+                  first, range_res.first.node, range_res.second);
       // 旧链表的新头节点
       first = prev->next;
     }
     printf("rehash done. new bucket count %zu\n", bucket_count());
     // 3. 旧桶数组在作用域结束时自动释放内存
   }
-  const key_type& get_key(const value_type& value) const {
-    return get_key_func_(value);
-  }
+  const key_type& get_key(const value_type& value) const { return get_key_func_(value); }
   void move_from(HashTable&& other) {
     max_load_factor_ = other.max_load_factor_;
     get_size() = other.size();
@@ -600,9 +579,7 @@ class HashTable {
     }
     return *this;
   }
-  HashTable& assign(std::initializer_list<value_type> ilist) {
-    return assign(false, ilist);
-  }
+  HashTable& assign(std::initializer_list<value_type> ilist) { return assign(false, ilist); }
   HashTable& assign(bool unique, std::initializer_list<value_type> ilist) {
     release();
     reserve(ilist.size());
@@ -626,17 +603,20 @@ class HashTable {
 };  // class HashTable
 
 template <typename Key, typename Value, typename ExtractKey, typename Hash, typename KeyEqual>
-constexpr typename HashTable<Key, Value, ExtractKey, Hash, KeyEqual>::size_type HashTable<Key, Value, ExtractKey, Hash, KeyEqual>::min_bucket_size_;
+constexpr typename HashTable<Key, Value, ExtractKey, Hash, KeyEqual>::size_type
+    HashTable<Key, Value, ExtractKey, Hash, KeyEqual>::min_bucket_size_;
 template <typename Key, typename Value, typename ExtractKey, typename Hash, typename KeyEqual>
 constexpr float HashTable<Key, Value, ExtractKey, Hash, KeyEqual>::default_max_load_factor_;
 
 template <typename Key, typename Value, typename ExtractKey, typename Hash, typename KeyEqual>
-bool operator==(const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& lhs, const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& rhs) {
+bool operator==(const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& lhs,
+                const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& rhs) {
   return lhs.equals(rhs);
 }
 
 template <typename Key, typename Value, typename ExtractKey, typename Hash, typename KeyEqual>
-bool operator!=(const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& lhs, const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& rhs) {
+bool operator!=(const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& lhs,
+                const HashTable<Key, Value, ExtractKey, Hash, KeyEqual>& rhs) {
   return !(lhs == rhs);
 }
 

@@ -9,9 +9,9 @@
 
 #pragma once
 
+#include "gtl/iterator.h"
 #include "gtl/memory_op.h"
 #include "gtl/seq_op.h"
-#include "gtl/iterator.h"
 
 namespace gtl {
 
@@ -155,7 +155,8 @@ class UStorage<T, 0> : public std::allocator<T> {
   // Capacity
   size_type capacity() const { return capacity_; }
   void allocate(size_type n) {
-    capacity_ = std::max(n, min_capacity_);;
+    capacity_ = std::max(n, min_capacity_);
+    ;
     data_ = allocator_type::allocate(capacity_);
   }
   void release() {
@@ -216,7 +217,10 @@ class Storage : public UStorage<T, fix_capacity> {
   Storage(const Storage& other) = delete;
   Storage& operator=(const Storage& other) = delete;
   Storage(Storage&& other) { assign(std::move(other)); }
-  Storage& operator=(Storage&& other) { assign(std::move(other)); return *this; }
+  Storage& operator=(Storage&& other) {
+    assign(std::move(other));
+    return *this;
+  }
   ~Storage() { release(); }
 
   void assign(Storage&& other) {

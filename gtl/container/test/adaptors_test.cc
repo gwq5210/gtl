@@ -11,14 +11,14 @@
 
 #include "gtest/gtest.h"
 
-#include "gtl/priority_queue.h"
 #include "gtl/list.h"
+#include "gtl/priority_queue.h"
 #include "gtl/queue.h"
 #include "gtl/stack.h"
 #include "gtl/vector.h"
 
-using gtl::PriorityQueue;
 using gtl::List;
+using gtl::PriorityQueue;
 using gtl::Queue;
 using gtl::Stack;
 using gtl::Vector;

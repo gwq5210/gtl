@@ -21,8 +21,8 @@
 #include "gtl/list.h"
 #include "gtl/slist.h"
 #include "gtl/stack.h"
-#include "gtl/vector.h"
 #include "gtl/test_class.h"
+#include "gtl/vector.h"
 
 using gtl::Array;
 using gtl::Deque;

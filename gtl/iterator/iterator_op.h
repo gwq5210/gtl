@@ -3,7 +3,7 @@
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 迭代器操作库
  * @date 2021-05-28
- * 
+ *
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
@@ -24,7 +24,8 @@ void do_advance(Iterator& it, typename std::iterator_traits<Iterator>::differenc
 }
 
 template <typename Iterator>
-void do_advance(Iterator& it, typename std::iterator_traits<Iterator>::difference_type n, std::bidirectional_iterator_tag) {
+void do_advance(Iterator& it, typename std::iterator_traits<Iterator>::difference_type n,
+                std::bidirectional_iterator_tag) {
   while (n > 0) {
     ++it;
     --n;
@@ -36,12 +37,14 @@ void do_advance(Iterator& it, typename std::iterator_traits<Iterator>::differenc
 }
 
 template <typename Iterator>
-void do_advance(Iterator& it, typename std::iterator_traits<Iterator>::difference_type n, std::random_access_iterator_tag) {
+void do_advance(Iterator& it, typename std::iterator_traits<Iterator>::difference_type n,
+                std::random_access_iterator_tag) {
   it += n;
 }
 
 template <typename Iterator>
-typename std::iterator_traits<Iterator>::difference_type do_distance(Iterator first, Iterator last, std::input_iterator_tag) {
+typename std::iterator_traits<Iterator>::difference_type do_distance(Iterator first, Iterator last,
+                                                                     std::input_iterator_tag) {
   typename std::iterator_traits<Iterator>::difference_type n = 0;
   while (first != last) {
     ++first;
@@ -51,11 +54,12 @@ typename std::iterator_traits<Iterator>::difference_type do_distance(Iterator fi
 }
 
 template <typename Iterator>
-typename std::iterator_traits<Iterator>::difference_type do_distance(Iterator first, Iterator last, std::random_access_iterator_tag) {
+typename std::iterator_traits<Iterator>::difference_type do_distance(Iterator first, Iterator last,
+                                                                     std::random_access_iterator_tag) {
   return last - first;
 }
 
-}
+}  // namespace detail
 
 template <typename InputIt, typename Distance>
 void advance(InputIt& it, Distance n) {

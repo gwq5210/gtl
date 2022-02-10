@@ -3,7 +3,7 @@
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 简单的copy on write字符串实现
  * @date 2021-11-06
- * 
+ *
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
@@ -23,7 +23,9 @@ class CowString {
 
   CowString(const char* str = nullptr) : size_(0), capacity_(0) { UnsafeInit(str); }
   CowString(const CowString& other) : size_(other.size_), capacity_(other.capacity_), str_(other.str_) {}
-  CowString(CowString&& other) : size_(other.size_), capacity_(other.capacity_), str_(std::move(other.str_)) { other.UnsafeInit(); }
+  CowString(CowString&& other) : size_(other.size_), capacity_(other.capacity_), str_(std::move(other.str_)) {
+    other.UnsafeInit();
+  }
   ~CowString() {}
 
   CowString& operator=(const CowString& other) {
@@ -41,7 +43,7 @@ class CowString {
   size_type capacity() const { return capacity_; }
   const char* cdata() const { return c_str(); }
   const char* data() const { return c_str(); }
-  char *data() { return c_str(); }
+  char* data() { return c_str(); }
   const char* cc_str() const { return str_.get(); }
   const char* c_str() const { return str_.get(); }
   char* c_str() { return MutableData(); }
@@ -75,6 +77,6 @@ class CowString {
   SharedPtr<char[]> str_;
 };
 
-} // namespace examples
+}  // namespace examples
 
 }  // namespace gtl

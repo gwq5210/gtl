@@ -58,7 +58,9 @@ class Vector {
     printf("%s il %zu\n", __FUNCTION__, il.size());
     d_.unsafe_append_copy(il.begin(), il.end(), il.size());
   }
-  Vector(const Vector& other) : d_(alloc_storage(other.size())) { d_.unsafe_append_copy(other.begin(), other.end(), other.size()); }
+  Vector(const Vector& other) : d_(alloc_storage(other.size())) {
+    d_.unsafe_append_copy(other.begin(), other.end(), other.size());
+  }
   Vector(Vector&& other) { d_.swap(other.d_); }
   ~Vector() { release(); }
   Vector& operator=(const Vector& other) {
@@ -212,9 +214,7 @@ class Vector {
     }
     replace(begin(), first, last);
   }
-  StorageType alloc_storage(size_type new_capacity) {
-    return StorageType(next2power(new_capacity));
-  }
+  StorageType alloc_storage(size_type new_capacity) { return StorageType(next2power(new_capacity)); }
   void grow(size_type new_capacity) {
     if (capacity() >= new_capacity) {
       return;
