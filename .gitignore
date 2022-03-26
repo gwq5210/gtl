@@ -32,8 +32,6 @@
 *.app
 
 .vscode
-build
-include
 lib
 bin
 *cmake
