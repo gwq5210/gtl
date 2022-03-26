@@ -2,7 +2,7 @@ ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 ALL_TARGETS := all base check test install package clean
 MAKE_FILE := Makefile
 
-DEFAULT_BUILD_DIR := build
+DEFAULT_BUILD_DIR := build.cmake
 DEFAULT_PREFIX := /usr/local
 BUILD_DIR := $(shell if [ -f $(MAKE_FILE) ]; then echo "."; else echo $(DEFAULT_BUILD_DIR); fi)
 CMAKE3 := $(shell if which cmake3>/dev/null ; then echo cmake3; else echo cmake; fi;)
@@ -44,12 +44,10 @@ endif
 	mv dist/*noarch.rpm ./
 
 clean:
-ifeq (build, $(wildcard build))
-	-make -C build clean
-endif
 	rm -rf $(DEFAULT_BUILD_DIR)
-	rm -rf include
-	rm -rf lib
 	rm -rf bin
-	rm -rf *-config.cmake
-	rm -f SRCINFO SRCNUMVER SRCVERSION
+	rm -rf lib
+	find . -name CMakeCache.txt | xargs rm -f
+	find . -name Makefile       | xargs rm -f
+	find . -name "*.cmake"      | xargs rm -f
+	find . -name CMakeFiles     | xargs rm -rf

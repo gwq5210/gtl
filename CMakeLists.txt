@@ -21,7 +21,7 @@ project(gtl VERSION 0.0.1)
 set(TEST_NAME ${PROJECT_NAME}_test)
 enable_testing()
 
-set(GTL_DIR ${PROJECT_SOURCE_DIR}/gtl)
+set(GTL_DIR ${PROJECT_SOURCE_DIR}/src/gtl)
 set(GTL_EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/examples)
 set(INC_DIR ${PROJECT_SOURCE_DIR}/ CACHE PATH "gtl inc")
 set(LIB_DIR ${PROJECT_SOURCE_DIR}/lib CACHE PATH "gtl lib")
@@ -35,33 +35,33 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
 
 set(INCLUDE_HEADERS
-  gtl/algorithm/algorithm.h
-  gtl/algorithm/heap_op.h
-  gtl/algorithm/seq_op.h
-  gtl/algorithm/memory_op.h
-  gtl/container/array.h
-  gtl/container/compressed_pair.h
-  gtl/container/deque.h
-  gtl/container/list.h
-  gtl/container/list_base.h
-  gtl/container/priority_queue.h
-  gtl/container/queue.h
-  gtl/container/slist.h
-  gtl/container/slist_base.h
-  gtl/container/stack.h
-  gtl/container/storage.h
-  gtl/container/vector.h
-  gtl/container/hash_table.h
-  gtl/container/lru_cache.h
-  gtl/iterator/iterator_op.h
-  gtl/iterator/iterator.h
-  gtl/iterator/reverse_iterator.h
-  gtl/memory/smart_pointers.h
-  gtl/strings/string.h
-  gtl/strings/string_view.h
-  gtl/test/test_class.h
-  gtl/test/cow_string.h
-  gtl/util/common.h
+  ${GTL_DIR}/algorithm/algorithm.h
+  ${GTL_DIR}/algorithm/heap_op.h
+  ${GTL_DIR}/algorithm/seq_op.h
+  ${GTL_DIR}/algorithm/memory_op.h
+  ${GTL_DIR}/container/array.h
+  ${GTL_DIR}/container/compressed_pair.h
+  ${GTL_DIR}/container/deque.h
+  ${GTL_DIR}/container/list.h
+  ${GTL_DIR}/container/list_base.h
+  ${GTL_DIR}/container/priority_queue.h
+  ${GTL_DIR}/container/queue.h
+  ${GTL_DIR}/container/slist.h
+  ${GTL_DIR}/container/slist_base.h
+  ${GTL_DIR}/container/stack.h
+  ${GTL_DIR}/container/storage.h
+  ${GTL_DIR}/container/vector.h
+  ${GTL_DIR}/container/hash_table.h
+  ${GTL_DIR}/container/lru_cache.h
+  ${GTL_DIR}/iterator/iterator_op.h
+  ${GTL_DIR}/iterator/iterator.h
+  ${GTL_DIR}/iterator/reverse_iterator.h
+  ${GTL_DIR}/memory/smart_pointers.h
+  ${GTL_DIR}/strings/string.h
+  ${GTL_DIR}/strings/string_view.h
+  ${GTL_DIR}/test/test_class.h
+  ${GTL_DIR}/test/cow_string.h
+  ${GTL_DIR}/util/common.h
 )
 aux_source_directory(${GTL_DIR}/container/test CONTAINER_TEST_SRCS)
 aux_source_directory(${GTL_DIR}/algorithm/test ALGORITHM_TEST_SRCS)
@@ -158,7 +158,7 @@ set(CPACK_RPM_PACKAGE_RELEASE_DIST ON)
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/lib64/cmake)
 
 install(
-  FILES ${INCLUDE_HEADERS}
+  DIRECTORY ${GTL_DIR}
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   COMPONENT devel
 )
