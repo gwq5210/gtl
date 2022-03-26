@@ -11,17 +11,17 @@
 
 #include <functional>
 
-#include "gtl/hash_table.h"
-#include "gtl/list.h"
+#include "gtl/container/hash_table.h"
+#include "gtl/container/list.h"
 
 namespace gtl {
 
-template <typename Key, typename Value, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
+template <typename Key, typename Value, typename ExtractKey, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
 class LRUCache {
  public:
   using KeyType = Key;
   using ValueType = Value;
-  using NodeValue = std::pair<Key, Value>;
+  using NodeValue = Value;
   using ListNodeT = doubly_list::ListNodeT<NodeValue>;
   using Iterator = gtl::ListIterator<NodeValue>;
   using ConstIterator = gtl::ListConstIterator<NodeValue>;
@@ -46,18 +46,19 @@ class LRUCache {
   ConstIterator end() const { return cend(); }
   ConstIterator cend() { return ConstIterator(&lru_); }
 
-  std::pair<Iterator, bool> Set(const Key& key, const Value& value) {
+  std::pair<Iterator, bool> Set(const Value& value) {
+    const Key& key = get_key_func_(value);
     auto* node = Find(key);
     if (node) {
-      ListNodeT::Value(node).second = value;
+      ListNodeT::Value(node) = value;
       return std::make_pair(Iterator(node), true);
     } else {
-      auto* new_node = ListNodeT::New(allocator_, std::make_pair(key, value));
+      auto* new_node = ListNodeT::New(allocator_, value);
       doubly_list::AddToHead(&lru_, new_node);
       ht_.emplace(key, new_node);
       if (Size() > Capacity()) {
         auto* tail = lru_.prev;
-        ht_.erase(ListNodeT::Value(tail).first);
+        ht_.erase(get_key_func_(ListNodeT::Value(tail)));
         doubly_list::Remove(tail);
         ListNodeT::Delete(allocator_, tail);
       }
@@ -101,14 +102,43 @@ class LRUCache {
     return ListNodeT::Value(node).second;
   }
 
+  ExtractKey get_key_func_;
   HashTableType ht_;
   doubly_list::ListHead lru_;
   Allocator allocator_;
   SizeType capacity_;
 };
 
-template <typename Key, typename Value, typename Hash, typename KeyEqual>
-constexpr typename LRUCache<Key, Value, Hash, KeyEqual>::SizeType
-    LRUCache<Key, Value, Hash, KeyEqual>::kLRUCacheMinBucketSize;
+template <typename Key, typename Value, typename ExtractKey, typename Hash, typename KeyEqual>
+constexpr typename LRUCache<Key, Value, ExtractKey, Hash, KeyEqual>::SizeType
+    LRUCache<Key, Value, ExtractKey, Hash, KeyEqual>::kLRUCacheMinBucketSize;
+
+template <typename Key, typename Value, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
+class LRUMap : public LRUCache<Key, std::pair<Key, Value>, MapKeyFunc<Key, Value>, Hash, KeyEqual> {
+ public:
+  using BaseType = LRUCache<Key, std::pair<Key, Value>, MapKeyFunc<Key, Value>, Hash, KeyEqual>;
+  using KeyType = Key;
+  using ValueType = Value;
+  using NodeValue = typename BaseType::NodeValue;
+  using Iterator = typename BaseType::Iterator;
+  using ConstIterator = typename BaseType::ConstIterator;
+  using SizeType = typename BaseType::SizeType;
+
+  LRUMap(SizeType capacity) : BaseType(capacity) {}
+  LRUMap(const LRUMap& other) = delete;
+  LRUMap(LRUMap&& other) = default;
+  ~LRUMap() {}
+
+  LRUMap& operator=(const LRUMap& other) = delete;
+  LRUMap& operator=(LRUMap&& other) = default;
+
+  std::pair<Iterator, bool> Set(const Key& key, const Value& value) {
+    return Set(std::make_pair(key, value));
+  }
+};
+
+
+template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
+using LRUSet = LRUCache<Key, Key, SetKeyFunc<Key, Key>, Hash, KeyEqual>;
 
 }  // namespace gtl

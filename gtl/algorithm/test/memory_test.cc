@@ -9,8 +9,8 @@
 
 #include "gtest/gtest.h"
 
-#include "gtl/memory_op.h"
-#include "gtl/vector.h"
+#include "gtl/algorithm/memory_op.h"
+#include "gtl/container/vector.h"
 
 using gtl::Vector;
 

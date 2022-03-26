@@ -14,9 +14,9 @@
 
 #include "gtest/gtest.h"
 
-#include "gtl/smart_pointers.h"
-#include "gtl/test_class.h"
-#include "gtl/vector.h"
+#include "gtl/container/vector.h"
+#include "gtl/memory/smart_pointers.h"
+#include "gtl/test/test_class.h"
 
 using gtl::test::Person;
 using gtl::test::Student;

@@ -13,11 +13,11 @@
 #include <iterator>
 #include <type_traits>
 
-#include "gtl/algorithm.h"
-#include "gtl/common.h"
-#include "gtl/compressed_pair.h"
-#include "gtl/memory_op.h"
-#include "gtl/slist_base.h"
+#include "gtl/algorithm/algorithm.h"
+#include "gtl/util/common.h"
+#include "gtl/container/compressed_pair.h"
+#include "gtl/algorithm/memory_op.h"
+#include "gtl/container/slist_base.h"
 
 namespace gtl {
 

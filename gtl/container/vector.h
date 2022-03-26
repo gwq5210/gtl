@@ -13,10 +13,9 @@
 #include <iterator>
 #include <type_traits>
 
-#include "gtl/algorithm.h"
-#include "gtl/common.h"
-#include "gtl/memory_op.h"
-#include "gtl/storage.h"
+#include "gtl/algorithm/algorithm.h"
+#include "gtl/util/common.h"
+#include "gtl/container/storage.h"
 
 namespace gtl {
 

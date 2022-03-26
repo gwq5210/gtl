@@ -7,7 +7,7 @@
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
-#include "gtl/hash_table.h"
+#include "gtl/container/hash_table.h"
 
 namespace gtl {
 
@@ -15,7 +15,8 @@ template <typename Key, typename T, typename Hash = std::hash<Key>, typename Key
 class UnorderedMap {
  public:
   using key_type = Key;
-  using mapped_type = T, using value_type = std::pair<const Key, T>;
+  using mapped_type = T;
+  using value_type = std::pair<const Key, T>;
   using MapHashTable = HashTable<key_type, value_type, MapKeyFunc, Hash, KeyEquel>;
   using size_type = typename MapHashTable::size_type;
   using difference_type = typename MapHashTable::difference_type;

@@ -13,9 +13,9 @@
 #include <iterator>
 #include <type_traits>
 
-#include "gtl/algorithm.h"
-#include "gtl/iterator.h"
-#include "gtl/memory_op.h"
+#include "gtl/algorithm/algorithm.h"
+#include "gtl/algorithm/memory_op.h"
+#include "gtl/iterator/iterator.h"
 
 namespace gtl {
 

@@ -9,25 +9,35 @@
 
 #include "gtest/gtest.h"
 
-#include "gtl/lru_cache.h"
-#include "gtl/vector.h"
+#include "gtl/container/lru_cache.h"
+#include "gtl/container/vector.h"
 
-using gtl::LRUCache;
+using gtl::LRUSet;
 
 TEST(lru_cache_test, lru_cache_test) {
   gtl::vector<int> arr = {4, 7, 0, 7, 1, 0, 1, 2, 1, 2, 6};
   gtl::vector<gtl::vector<int>> res = {
-      {4},          {7, 4},          {0, 7, 4},       {7, 0, 4},       {1, 7, 0, 4},    {0, 1, 7, 4},
-      {1, 0, 7, 4}, {2, 1, 0, 7, 4}, {1, 2, 0, 7, 4}, {2, 1, 0, 7, 4}, {6, 2, 1, 0, 7},
+    {4},
+    {7, 4},
+    {0, 7, 4},
+    {7, 0, 4},
+    {1, 7, 0, 4},
+    {0, 1, 7, 4},
+    {1, 0, 7, 4},
+    {2, 1, 0, 7, 4},
+    {1, 2, 0, 7, 4},
+    {2, 1, 0, 7, 4},
+    {6, 2, 1, 0, 7},
   };
+  ASSERT_EQ(res.size(), arr.size());
   {
     int capacity = 5;
-    LRUCache<int, int> lru_cache(capacity);
-    for (int v : arr) {
-      lru_cache.Set(v, v);
+    LRUSet<int> lru_set(capacity);
+    for (size_t i = 0; i < arr.size(); ++i) {
+      int v = arr[i];
+      lru_set.Set(v);
+      EXPECT_TRUE(std::equal(res[i].begin(), res[i].end(), lru_set.begin()));
     }
-    for (auto it = lru_cache.begin(); it != lru_cache.end(); ++it) {
-      printf("%d\n", it->first);
-    }
+    EXPECT_EQ(lru_set.Size(), capacity);
   }
 }

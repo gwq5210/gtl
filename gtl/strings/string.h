@@ -14,8 +14,8 @@
 
 #include <string>
 
-#include "gtl/iterator.h"
-#include "gtl/storage.h"
+#include "gtl/iterator/iterator.h"
+#include "gtl/container/storage.h"
 
 namespace gtl {
 

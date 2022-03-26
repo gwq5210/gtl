@@ -9,10 +9,10 @@
 
 #pragma once
 
-#include "gtl/algorithm.h"
-#include "gtl/iterator.h"
-#include "gtl/storage.h"
-#include "gtl/vector.h"
+#include "gtl/algorithm/algorithm.h"
+#include "gtl/iterator/iterator.h"
+#include "gtl/container/storage.h"
+#include "gtl/container/vector.h"
 
 namespace gtl {
 

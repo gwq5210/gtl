@@ -11,8 +11,8 @@
 
 #include <iterator>
 
-#include "gtl/algorithm.h"
-#include "gtl/iterator.h"
+#include "gtl/algorithm/algorithm.h"
+#include "gtl/iterator/iterator.h"
 
 namespace gtl {
 

@@ -7,5 +7,5 @@
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
-#include "gtl/heap_op.h"
-#include "gtl/seq_op.h"
+#include "gtl/algorithm/heap_op.h"
+#include "gtl/algorithm/seq_op.h"

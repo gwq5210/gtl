@@ -7,7 +7,7 @@
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
-#include "gtl/cow_string.h"
+#include "gtl/test/cow_string.h"
 
 #include <string>
 

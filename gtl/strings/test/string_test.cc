@@ -13,7 +13,7 @@
 
 #include "gtest/gtest.h"
 
-#include "gtl/string.h"
+#include "gtl/strings/string.h"
 
 using gtl::StringCore;
 

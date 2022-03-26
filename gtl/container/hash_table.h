@@ -16,11 +16,11 @@
 #include <memory>
 #include <utility>
 
-#include "gtl/common.h"
-#include "gtl/compressed_pair.h"
-#include "gtl/slist.h"
-#include "gtl/storage.h"
-#include "gtl/vector.h"
+#include "gtl/util/common.h"
+#include "gtl/container/compressed_pair.h"
+#include "gtl/container/slist.h"
+#include "gtl/container/storage.h"
+#include "gtl/container/vector.h"
 
 namespace gtl {
 

@@ -9,9 +9,8 @@
 
 #pragma once
 
-#include "gtl/iterator.h"
-#include "gtl/memory_op.h"
-#include "gtl/seq_op.h"
+#include "gtl/iterator/iterator.h"
+#include "gtl/algorithm/algorithm.h"
 
 namespace gtl {
 

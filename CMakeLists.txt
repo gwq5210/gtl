@@ -23,7 +23,7 @@ enable_testing()
 
 set(GTL_DIR ${PROJECT_SOURCE_DIR}/gtl)
 set(GTL_EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/examples)
-set(INC_DIR ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME} CACHE PATH "gtl inc")
+set(INC_DIR ${PROJECT_SOURCE_DIR}/ CACHE PATH "gtl inc")
 set(LIB_DIR ${PROJECT_SOURCE_DIR}/lib CACHE PATH "gtl lib")
 set(BIN_DIR ${PROJECT_SOURCE_DIR}/bin CACHE PATH "gtl bin")
 
@@ -35,13 +35,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
 
 set(INCLUDE_HEADERS
-  examples/cow_string.h
   gtl/algorithm/algorithm.h
   gtl/algorithm/heap_op.h
   gtl/algorithm/seq_op.h
   gtl/algorithm/memory_op.h
   gtl/container/array.h
-  gtl/container/common.h
   gtl/container/compressed_pair.h
   gtl/container/deque.h
   gtl/container/list.h
@@ -60,8 +58,10 @@ set(INCLUDE_HEADERS
   gtl/iterator/reverse_iterator.h
   gtl/memory/smart_pointers.h
   gtl/strings/string.h
-  gtl/srings/string_view.h
+  gtl/strings/string_view.h
   gtl/test/test_class.h
+  gtl/test/cow_string.h
+  gtl/util/common.h
 )
 aux_source_directory(${GTL_DIR}/container/test CONTAINER_TEST_SRCS)
 aux_source_directory(${GTL_DIR}/algorithm/test ALGORITHM_TEST_SRCS)
@@ -77,30 +77,15 @@ set(TEST_SRCS
 )
 
 add_custom_target(
-  LINK_HEADERS ALL
-  COMMENT "link headers..."
+  MKDIRS ALL
+  COMMENT "mkdir..."
 )
 
-macro(makeLink src dest target)
-  add_custom_command(
-    TARGET ${target} PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E ${LINK_COMMAND} ${src} ${dest}
-    DEPENDS ${dest}
-  )
-endmacro()
-
 add_custom_command(
-  TARGET LINK_HEADERS PRE_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${INC_DIR}
+  TARGET MKDIRS PRE_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${BIN_DIR}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${LIB_DIR}
 )
-
-foreach(header_file ${INCLUDE_HEADERS})
-  string(REPLACE "/" ";" arr ${header_file})
-  list(GET arr -1 file_name)
-  makeLink(${PROJECT_SOURCE_DIR}/${header_file} ${INC_DIR}/${file_name} LINK_HEADERS)
-endforeach()
 
 ####TEST
 
@@ -108,12 +93,12 @@ endforeach()
 # find_package(GTest REQUIRED)
 add_subdirectory(third_party/googletest)
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR})
 add_executable(${TEST_NAME} ${TEST_SRCS})
 
 target_link_libraries(${TEST_NAME} GTest::gtest_main)
 # target_link_libraries(${TEST_NAME} gtest gtest_main pthread)
-add_dependencies(${TEST_NAME} LINK_HEADERS)
+add_dependencies(${TEST_NAME} MKDIRS)
 add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 
 ####CONFIG
@@ -174,7 +159,7 @@ set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/lib64/cmake)
 
 install(
   FILES ${INCLUDE_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   COMPONENT devel
 )
 

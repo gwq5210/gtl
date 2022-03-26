@@ -7,5 +7,5 @@
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
-#include "gtl/iterator_op.h"
-#include "gtl/reverse_iterator.h"
+#include "gtl/iterator/iterator_op.h"
+#include "gtl/iterator/reverse_iterator.h"

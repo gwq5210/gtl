@@ -14,9 +14,9 @@
 
 #include "gtest/gtest.h"
 
-#include "gtl/array.h"
-#include "gtl/list.h"
-#include "gtl/vector.h"
+#include "gtl/container/array.h"
+#include "gtl/container/list.h"
+#include "gtl/container/vector.h"
 
 using gtl::Array;
 using gtl::List;
