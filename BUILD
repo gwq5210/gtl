@@ -3,7 +3,7 @@ package(
 )
 
 cc_library(
-  name = 'gtl_hdrs',
+  name = 'gtl',
   hdrs = glob(['src/**/*.h']),
   includes = ['src'],
   visibility = ["//visibility:public"],
@@ -20,6 +20,8 @@ cc_test(
   deps = [
       "@googletest//:gtest",
       "@googletest//:gtest_main",
-      ":gtl_hdrs"
+      ":gtl",
+      "@spdlog//:spdlog",
+      "@fmtlib//:fmtlib",
   ],
 )

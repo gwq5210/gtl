@@ -7,7 +7,9 @@
  * @copyright Copyright (c) 2021. All rights reserved.
  */
 
+#include "fmt/format.h"
 #include "gtest/gtest.h"
+#include "spdlog/spdlog.h"
 
 #include "gtl/container/lru_cache.h"
 #include "gtl/container/vector.h"
@@ -15,6 +17,7 @@
 using gtl::LRUSet;
 
 TEST(lru_cache_test, lru_cache_test) {
+  spdlog::set_level(spdlog::level::debug);
   gtl::vector<int> arr = {4, 7, 0, 7, 1, 0, 1, 2, 1, 2, 6};
   gtl::vector<gtl::vector<int>> res = {
     {4},
