@@ -2,3 +2,13 @@
 	path = third_party/googletest
 	url = https://github.com/google/googletest.git
 	ignore = dirty
+
+[submodule "third_party/spdlog"]
+	path = third_party/spdlog
+	url = https://github.com/gabime/spdlog.git
+	ignore = dirty
+
+[submodule "third_party/fmtlib"]
+	path = third_party/fmt
+	url = https://github.com/fmtlib/fmt.git
+	ignore = dirty

@@ -22,7 +22,7 @@ set(TEST_NAME ${PROJECT_NAME}_test)
 enable_testing()
 
 set(GTL_DIR ${PROJECT_SOURCE_DIR}/src/gtl)
-set(GTL_EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/examples)
+# set(GTL_EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/examples)
 set(INC_DIR ${PROJECT_SOURCE_DIR}/ CACHE PATH "gtl inc")
 set(LIB_DIR ${PROJECT_SOURCE_DIR}/lib CACHE PATH "gtl lib")
 set(BIN_DIR ${PROJECT_SOURCE_DIR}/bin CACHE PATH "gtl bin")
@@ -67,13 +67,13 @@ aux_source_directory(${GTL_DIR}/container/test CONTAINER_TEST_SRCS)
 aux_source_directory(${GTL_DIR}/algorithm/test ALGORITHM_TEST_SRCS)
 aux_source_directory(${GTL_DIR}/memory/test MEMORY_TEST_SRCS)
 aux_source_directory(${GTL_DIR}/strings/test STRINGS_TEST_SRCS)
-aux_source_directory(${GTL_EXAMPLES_DIR}/test EXAMPLES_TEST_SRCS)
+aux_source_directory(${GTL_DIR}/test OTHER_TEST_SRCS)
 set(TEST_SRCS
   ${CONTAINER_TEST_SRCS}
   ${ALGORITHM_TEST_SRCS}
   ${MEMORY_TEST_SRCS}
-  ${EXAMPLES_TEST_SRCS}
   ${STRINGS_TEST_SRCS}
+  ${OTHER_TEST_SRCS}
 )
 
 add_custom_target(
@@ -93,10 +93,16 @@ add_custom_command(
 # find_package(GTest REQUIRED)
 add_subdirectory(third_party/googletest)
 
-include_directories(${PROJECT_SOURCE_DIR})
+if(NOT TARGET spdlog)
+    # Stand-alone build
+    find_package(spdlog REQUIRED)
+endif()
+
+
+include_directories(${PROJECT_SOURCE_DIR}/src)
 add_executable(${TEST_NAME} ${TEST_SRCS})
 
-target_link_libraries(${TEST_NAME} GTest::gtest_main)
+target_link_libraries(${TEST_NAME} GTest::gtest_main spdlog::spdlog)
 # target_link_libraries(${TEST_NAME} gtest gtest_main pthread)
 add_dependencies(${TEST_NAME} MKDIRS)
 add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})

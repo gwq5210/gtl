@@ -47,7 +47,4 @@ clean:
 	rm -rf $(DEFAULT_BUILD_DIR)
 	rm -rf bin
 	rm -rf lib
-	find . -name CMakeCache.txt | xargs rm -f
-	find . -name Makefile       | xargs rm -f
-	find . -name "*.cmake"      | xargs rm -f
-	find . -name CMakeFiles     | xargs rm -rf
+	rm -rf gtl-config.cmake
