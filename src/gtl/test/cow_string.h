@@ -11,6 +11,8 @@
 
 #include <cstring>
 
+#include <algorithm>
+
 #include "gtl/memory/smart_pointers.h"
 
 namespace gtl {

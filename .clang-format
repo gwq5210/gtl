@@ -20,5 +20,5 @@ IncludeBlocks: Preserve
 #   #endif
 IndentPPDirectives: AfterHash
 
-不特殊看待 foreach 宏
+# 不特殊看待 foreach 宏
 ForEachMacros: ['']
