@@ -44,7 +44,10 @@ int ValidPort(int port);
 class SocketAddress {
  public:
   SocketAddress() { Clear(); }
-  SocketAddress(const std::string& address) { Parse(address); }
+  explicit SocketAddress(const char* address) { Parse(std::string(address)); }
+  explicit SocketAddress(const std::string& address) { Parse(address); }
+  SocketAddress(const struct sockaddr* addr, socklen_t socklen) { set_addr(addr, socklen); }
+  SocketAddress(const struct sockaddr_storage* addr, socklen_t socklen) { set_addr(addr, socklen); }
 
   struct sockaddr& addr() {
     return addr_;
@@ -82,12 +85,12 @@ class SocketAddress {
     addr_.sa_len = addrlen;
 #endif
   }
-  void set_addr(const struct sockaddr& addr, socklen_t addrlen) {
-    memcpy(&addr_, &addr, addrlen);
+  void set_addr(const struct sockaddr* addr, socklen_t addrlen) {
+    memcpy(&addr_, addr, addrlen);
     set_socklen(addrlen);
   }
-  void set_addr(const struct sockaddr_storage& addr, socklen_t addrlen) {
-    memcpy(&addr_, &addr, addrlen);
+  void set_addr(const struct sockaddr_storage* addr, socklen_t addrlen) {
+    memcpy(&addr_, addr, addrlen);
     set_socklen(addrlen);
   }
 

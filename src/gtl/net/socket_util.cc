@@ -26,7 +26,7 @@ int ClientConnect(const SocketAddress& socket_address, int type /* = SOCK_STREAM
   return sockfd;
 }
 
-int ServerListen(const SocketAddress socket_address, int type = SOCK_STREAM) {
+int ServerStart(const SocketAddress& socket_address, int type/* = SOCK_STREAM */) {
   if (socket_address.socklen() == 0) {
     GTL_ERROR("socket address is empty");
     return -1;
@@ -43,10 +43,12 @@ int ServerListen(const SocketAddress socket_address, int type = SOCK_STREAM) {
     return -1;
   }
 
-  if (listen(sockfd, 65535) != 0) {
-    GTL_ERROR("listen address({}) failed! errno:{}, errmsg:{}", socket_address.ToString(), errno, strerror(errno));
-    close(sockfd);
-    return -1;
+  if (type == SOCK_STREAM || type == SOCK_SEQPACKET) {
+    if (listen(sockfd, 65535) != 0) {
+      GTL_ERROR("listen address({}) failed! errno:{}, errmsg:{}", socket_address.ToString(), errno, strerror(errno));
+      close(sockfd);
+      return -1;
+    }
   }
 
   return sockfd;
@@ -82,20 +84,26 @@ std::string RecvMsg(int sockfd, size_t msg_size) {
 }
 
 ssize_t SendMsg(int sockfd, const SocketAddress& socket_address, const std::string& msg) {
-  return sendto(sockfd, msg.c_str(), msg.size(), 0, &socket_address.addr(), socket_address.socklen());
+  ssize_t ret = sendto(sockfd, msg.c_str(), msg.size(), 0, &socket_address.addr(), socket_address.socklen());
+  if (ret == -1) {
+    GTL_ERROR("sendto {} failed, errno:{}, errmsg:{}", socket_address.ToString(), errno, strerror(errno));
+    return -1;
+  }
+  return ret;
 }
 
-std::string RecvMsg(int sockfd, const SocketAddress& socket_address, size_t msg_size) {
+std::string RecvMsg(int sockfd, SocketAddress& socket_address, size_t msg_size) {
   std::string msg;
   msg.resize(msg_size);
   struct sockaddr_storage addr = socket_address.addr_storage();
-  socklen_t socklen = socket_address.socklen();
+  socklen_t socklen = socket_address.socklen() > 0 ? socket_address.socklen() : sizeof(addr);
   ssize_t real_size =
       recvfrom(sockfd, (void*)msg.data(), msg.size(), 0, reinterpret_cast<struct sockaddr*>(&addr), &socklen);
   if (real_size == -1) {
     return "";
   }
   msg.resize(real_size);
+  socket_address.set_addr(&addr, socklen);
   return msg;
 }
 
@@ -107,7 +115,7 @@ bool GetLocalAddr(int sockfd, SocketAddress& socket_address) {
     GTL_ERROR("getsockname failed! errno:{}, errmsg:{}", errno, strerror(errno));
     return false;
   }
-  socket_address.set_addr(addr, socklen);
+  socket_address.set_addr(&addr, socklen);
   return true;
 }
 
@@ -119,6 +127,6 @@ bool GetPeerAddr(int sockfd, SocketAddress& socket_address) {
     GTL_ERROR("getpeername failed! errno:{}, errmsg:{}", errno, strerror(errno));
     return false;
   }
-  socket_address.set_addr(addr, socklen);
+  socket_address.set_addr(&addr, socklen);
   return true;
 }

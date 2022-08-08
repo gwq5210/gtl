@@ -23,8 +23,8 @@ class Teacher;
 
 class Person {
  public:
-  Person(const std::string& name = "") : name_(name) { printf("person[%p] %s constructed\n", this, name_.c_str()); }
-  ~Person() { printf("person[%p] %s destroyed\n", this, name_.c_str()); }
+  Person(const std::string& name = "") : name_(name) { GTL_INFO("person[{}] {} constructed", fmt::ptr(this), name_.c_str()); }
+  ~Person() { GTL_INFO("person[{}] {} destroyed", fmt::ptr(this), name_.c_str()); }
 
   std::string& name() { return name_; }
   const std::string& name() const { return name_; }

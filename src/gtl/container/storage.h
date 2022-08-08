@@ -77,7 +77,6 @@ class UStorage : public std::allocator<T> {
   void allocate() { data_ = allocator_type::allocate(fixed_capacity); }
   void release() {
     if (begin()) {
-      // printf("deallocate %zu %p\n", capacity_, data_);
       allocator_type::deallocate(begin(), capacity());
       data_ = nullptr;
     }
@@ -111,7 +110,6 @@ class UStorage<T, 0> : public std::allocator<T> {
   UStorage() : data_(nullptr), capacity_(0) {}
   explicit UStorage(size_type n) {
     allocate(n);
-    printf("allocate %zu %zu %p\n", n, capacity(), begin());
   }
   UStorage(const UStorage& other) = delete;
   UStorage& operator=(const UStorage& other) = delete;
@@ -160,7 +158,6 @@ class UStorage<T, 0> : public std::allocator<T> {
   }
   void release() {
     if (begin()) {
-      printf("deallocate %zu %p\n", capacity(), data());
       allocator_type::deallocate(begin(), capacity());
       data_ = nullptr;
     }

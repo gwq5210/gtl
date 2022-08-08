@@ -281,7 +281,6 @@ class List {
       insert(end(), count - size(), v);
     } else if (count < size()) {
       auto it = end();
-      printf("size %zu %zu\n", size() - count, size());
       for (size_type i = size() - count; i > 0; --i) {
         it = erase(--it);
       }
@@ -362,7 +361,6 @@ class List {
     List left;
     List right;
     for (size_type i = 1; i < size(); i *= 2) {
-      printf("i = %zu\n", i);
       size_type c = 2 * i;
       auto it = begin();
       auto last = end();
@@ -370,27 +368,20 @@ class List {
       for (size_type j = 0; j < n; j += c) {
         last = gtl::next(it, i);
         left.splice(left.begin(), *this, it, last);
-        // print_range("left", left.begin(), left.end());
         it = last;
         last = gtl::next(last, i);
         right.splice(right.begin(), *this, it, last);
-        // print_range("right", right.begin(), right.end());
         left.merge(right);
         splice(last, left);
         it = last;
-        // print_range("this", begin(), end());
       }
       n = size() % c;
       if (n > i) {
-        // printf("process_end\n");
         last = gtl::next(it, i);
         left.splice(left.begin(), *this, it, last);
-        // print_range("left", left.begin(), left.end());
         right.splice(right.begin(), *this, last, end());
-        // print_range("right", right.begin(), right.end());
         left.merge(right);
         splice(end(), left);
-        // print_range("this", begin(), end());
       }
     }
   }

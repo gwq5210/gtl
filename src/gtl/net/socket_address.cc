@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <string>
 
+#include "gtl/logging.h"
+
 bool ValidIPv4(const std::string& ipv4_str) { return true; }
 
 bool ValidIPv6(const std::string& ipv6_str) { return true; }
@@ -117,15 +119,19 @@ std::string SocketAddress::ToString() const {
   } else if (family() == AF_INET) {
     char ipv4_buf[INET_ADDRSTRLEN];
     if (inet_ntop(AF_INET, &addr_in_.sin_addr, ipv4_buf, INET_ADDRSTRLEN) == NULL) {
+      GTL_ERROR("inet_ntop failed, errno:{}, errmsg:{}", errno, strerror(errno));
       return "";
     }
     address = std::string(ipv4_buf) + ":" + std::to_string(port());
   } else if (family() == AF_INET6) {
     char ipv6_buf[INET6_ADDRSTRLEN];
     if (inet_ntop(AF_INET6, &addr_in6_.sin6_addr, ipv6_buf, INET6_ADDRSTRLEN)) {
+      GTL_ERROR("inet_ntop failed, errno:{}, errmsg:{}", errno, strerror(errno));
       return "";
     }
     address = "[" + std::string(ipv6_buf) + "]:" + std::to_string(port());
+  } else {
+    GTL_ERROR("unsupported address family: {}", family());
   }
   return address;
 }

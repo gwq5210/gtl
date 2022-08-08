@@ -15,6 +15,7 @@
 
 class Socket {
  public:
+  Socket() = default;
   explicit Socket(int sockfd) { SetFd(sockfd); }
   void Clear() {
     if (sockfd_ >= 0) {

@@ -325,30 +325,22 @@ class SList {
     SList left;
     SList right;
     for (size_type i = 1; i < size(); i *= 2) {
-      // printf("i = %zu\n", i);
       size_type c = 2 * i;
       auto it = before_begin();
       size_type n = size() - size() % c;
       for (size_type j = 0; j < n; j += c) {
         left.splice_after(left.before_begin(), *this, it, gtl::next(it, i + 1));
         right.splice_after(right.before_begin(), *this, it, gtl::next(it, i + 1));
-        // print_range("left", left.begin(), left.end());
-        // print_range("right", right.begin(), right.end());
         left.merge(right);
         splice_after(it, left);
         it = gtl::next(it, c);
-        // print_range("this", begin(), end());
       }
       n = size() % c;
       if (n > i) {
-        // printf("process_end\n");
         left.splice_after(left.before_begin(), *this, it, gtl::next(it, i + 1));
         right.splice_after(right.before_begin(), *this, it, end());
-        // print_range("left", left.begin(), left.end());
-        // print_range("right", right.begin(), right.end());
         left.merge(right);
         splice_after(it, left);
-        // print_range("this", begin(), end());
       }
     }
   }

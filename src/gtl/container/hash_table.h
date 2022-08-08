@@ -21,6 +21,7 @@
 #include "gtl/container/slist.h"
 #include "gtl/container/storage.h"
 #include "gtl/container/vector.h"
+#include "gtl/logging.h"
 
 namespace gtl {
 
@@ -240,23 +241,19 @@ class HashTable {
     size_type bucket_idx = bucket(get_key(value));
     SListNode* before = PrevNode(buckets_[bucket_idx].node_before_begin, first.node);
     SListNode* prev = before;
-    // printf("erase range before key: %d\n", get_key(Node::Value(before)));
     // 遍历[first, last)的节点并删除
     while (prev->next != last.node) {
       HashNode& hnode = buckets_[bucket_idx];
       SListNode* node_end = hnode.node_finish->next;
-      // printf("erase begin\n");
       size_type count = 0;
       // 判断该桶内元素删除的范围
       while (prev->next != node_end && prev->next != last.node) {
-        // printf("erase range key: %d\n", Node::Value(prev->next));
         prev = prev->next;
         ++count;
       }
       // 执行元素的删除
       erase_node(bucket_idx, before, prev, count);
       prev = before;
-      // printf("bucket %zu size %zu\n", bucket_idx, hnode.size());
       // 已经删除完毕，break
       if (prev->next == last.node) {
         break;
@@ -540,7 +537,7 @@ class HashTable {
     head_.next = nullptr;
     get_size() = 0;
 
-    printf("rehash new bucket count %zu %zu\n", bucket_count(), new_bucket_count);
+    GTL_DEBUG("rehash new bucket count {} {}", bucket_count(), new_bucket_count);
     SListNode* prev = &old_head;  // 旧链表的伪头节点，便于实现
     SListNode* first = prev->next;
     // 2. 遍历所有元素的链表
@@ -559,7 +556,7 @@ class HashTable {
       // 旧链表的新头节点
       first = prev->next;
     }
-    printf("rehash done. new bucket count %zu\n", bucket_count());
+    GTL_DEBUG("rehash done. new bucket count {}", bucket_count());
     // 3. 旧桶数组在作用域结束时自动释放内存
   }
   const key_type& get_key(const value_type& value) const { return get_key_func_(value); }

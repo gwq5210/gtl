@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "gtl/container/compressed_pair.h"
+#include "gtl/logging.h"
 
 namespace gtl {
 
@@ -38,19 +39,19 @@ class AutoPtr {
   ~AutoPtr() { Destroy(); }
 
   AutoPtr& operator=(AutoPtr& other) {
-    printf("calling AutoPtr::operator=(AutoPtr& other)\n");
+    GTL_DEBUG("calling AutoPtr::operator=(AutoPtr& other)");
     reset(other.release());
     return *this;
   }
   template <typename Y>
   AutoPtr& operator=(AutoPtr<Y>& other) {
-    printf("calling AutoPtr::operator=(AutoPtr<Y>& other)\n");
+    GTL_DEBUG("calling AutoPtr::operator=(AutoPtr<Y>& other)");
     reset(other.release());
     return *this;
   }
   template <typename Y>
   AutoPtr& operator=(AutoPtrRef<Y> other) {
-    printf("calling AutoPtr::operator=(AutoPtrRef<Y> other)\n");
+    GTL_DEBUG("calling AutoPtr::operator=(AutoPtrRef<Y> other)\n");
     reset(other.ptr);
     return *this;
   }
@@ -283,7 +284,7 @@ class PtrBase {
 
   void DeleteData() {
     std::default_delete<T>()(data_);
-    printf("delete data %p\n", data_);
+    GTL_DEBUG("delete data {}", fmt::ptr(data_));
     data_ = nullptr;
   }
 

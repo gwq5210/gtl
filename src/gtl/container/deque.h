@@ -13,6 +13,7 @@
 #include "gtl/iterator/iterator.h"
 #include "gtl/container/storage.h"
 #include "gtl/container/vector.h"
+#include "gtl/logging.h"
 
 namespace gtl {
 
@@ -400,11 +401,8 @@ typename Deque<T>::iterator Deque<T>::insert_n(const_iterator before, size_type 
   if (count > 0) {
     if (before == begin()) {
       reserve_at_front(count);
-      // auto it = begin_;
       begin_ -= count;
-      // printf("insert_n %zd\n", it - begin_);
       gtl::uninitialized_fill_n(begin(), count, v);
-      // printf("insert_n end\n");
     } else if (before == end()) {
       reserve_at_front(count);
       gtl::uninitialized_fill_n(end(), count, v);
@@ -567,7 +565,7 @@ void Deque<T>::reserve_at_front(size_type count) {
     return;
   }
   n = front_capacity();
-  // printf("front_capacity %zu %zu\n", n, count);
+  GTL_DEBUG("front_capacity {} {}", n, count);
   size_type block_count = count / block_capacity_ + (count % block_capacity_ || empty() ? 1 : 0);
   if (count > n) {
     count -= n;
@@ -575,11 +573,11 @@ void Deque<T>::reserve_at_front(size_type count) {
     reallocate_block_storage(block_count, true);
   }
   auto it = begin_.block();
-  // printf("new block count %zu %zu %zu\n", size(), block_count, n);
+  GTL_DEBUG("new block count {} {} {}", size(), block_count, n);
   for (; block_count > 0; --block_count) {
     gtl::construct_at(--it, block_capacity_);
   }
-  // printf("reserve_at_front end\n");
+  GTL_DEBUG("reserve_at_front end");
 }
 
 template <typename T>
@@ -589,7 +587,7 @@ void Deque<T>::reserve_at_back(size_type count) {
     return;
   }
   n = back_capacity();
-  // printf("back_capacity %zu %zu\n", n, count);
+  GTL_DEBUG("back_capacity %zu %zu\n", n, count);
   size_type block_count = count / block_capacity_ + 1;
   if (count >= n) {
     count -= n;
@@ -600,7 +598,7 @@ void Deque<T>::reserve_at_back(size_type count) {
     --block_count;
   }
   auto it = end_.block();
-  // printf("new block count %zu %zu %zu\n", size(), block_count, n);
+  GTL_DEBUG("new block count {} {} {}", size(), block_count, n);
   for (; block_count > 0; --block_count) {
     gtl::construct_at(++it, block_capacity_);
   }
@@ -624,7 +622,7 @@ void Deque<T>::reallocate_block_storage(size_type block_count, bool add_at_front
   begin_.set_block(new_block_storage.begin() + begin_block_offset);
   end_.set_block(new_block_storage.begin() + end_block_offset);
   d_.swap(new_block_storage);
-  // printf("offset %zu %zu %zu %zu\n", block_count, begin_block_offset, end_block_offset, d_.capacity());
+  GTL_DEBUG("offset {} {} {} {}", block_count, begin_block_offset, end_block_offset, d_.capacity());
 }
 
 template <typename T>

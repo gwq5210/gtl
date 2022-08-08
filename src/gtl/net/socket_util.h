@@ -18,10 +18,10 @@
 #include "gtl/net/socket_address.h"
 
 int ClientConnect(const SocketAddress& socket_address, int type = SOCK_STREAM);
-int ServerListen(const SocketAddress& socket_address, int type = SOCK_STREAM);
+int ServerStart(const SocketAddress& socket_address, int type = SOCK_STREAM);
 ssize_t SendMsg(int sockfd, const std::string& msg);
 std::string RecvMsg(int sockfd, size_t msg_size);
 ssize_t SendMsg(int sockfd, const SocketAddress& socket_address, const std::string& msg);
-std::string RecvMsg(int sockfd, const SocketAddress& socket_address, size_t msg_size);
+std::string RecvMsg(int sockfd, SocketAddress& socket_address, size_t msg_size);
 bool GetLocalAddr(int sockfd, SocketAddress& socket_address);
 bool GetPeerAddr(int sockfd, SocketAddress& socket_address);

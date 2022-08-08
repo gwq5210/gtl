@@ -31,12 +31,12 @@ class CowString {
   ~CowString() {}
 
   CowString& operator=(const CowString& other) {
-    printf("&= %zu %zu %s\n", other.size_, other.capacity_, other.cc_str());
+    GTL_DEBUG("&= {} {} {}", other.size_, other.capacity_, other.cc_str());
     CowString(other).swap(*this);
     return *this;
   }
   CowString& operator=(CowString&& other) {
-    printf("&&= %zu %zu %s\n", other.size_, other.capacity_, other.cc_str());
+    GTL_DEBUG("&&= {} {} {}", other.size_, other.capacity_, other.cc_str());
     CowString(std::move(other)).swap(*this);
     return *this;
   }

@@ -16,6 +16,7 @@
 #include "gtl/algorithm/algorithm.h"
 #include "gtl/util/common.h"
 #include "gtl/container/storage.h"
+#include "gtl/logging.h"
 
 namespace gtl {
 
@@ -39,22 +40,18 @@ class Vector {
   // constructor
   Vector() = default;
   explicit Vector(size_type size) : d_(alloc_storage(size)) {
-    printf("%s\n", __FUNCTION__);
     d_.unsafe_append_value_construct(size);
   }
   Vector(size_type size, const T& v) : d_(alloc_storage(size)) {
-    printf("%s\n", __FUNCTION__);
     d_.unsafe_append_fill(size, v);
   }
   template <typename InputIt, typename Category = typename std::iterator_traits<InputIt>::iterator_category>
   Vector(InputIt first, InputIt last) {
-    printf("%s range\n", __FUNCTION__);
     size_type count = std::distance(first, last);
     d_ = alloc_storage(count);
     d_.unsafe_append_copy(first, last, count);
   }
   Vector(std::initializer_list<T> il) : d_(alloc_storage(il.size())) {
-    printf("%s il %zu\n", __FUNCTION__, il.size());
     d_.unsafe_append_copy(il.begin(), il.end(), il.size());
   }
   Vector(const Vector& other) : d_(alloc_storage(other.size())) {
@@ -75,23 +72,19 @@ class Vector {
     return *this;
   }
   void assign(const Vector& other) {
-    printf("%s\n", __FUNCTION__);
     if (this != &other) {
       assign_range(other.size(), other.begin(), other.end());
     }
   }
   void assign(Vector&& other) {
-    printf("%s move\n", __FUNCTION__);
     d_.release();
     d_.swap(other.d_);
   }
   void assign(std::initializer_list<T> il) {
-    printf("%s il\n", __FUNCTION__);
     assign_range(il.size(), il.begin(), il.end());
   }
   template <typename InputIt>
   void assign(InputIt first, InputIt last) {
-    printf("%s range\n", __FUNCTION__);
     assign_range(std::distance(first, last), first, last);
   }
 
@@ -220,8 +213,8 @@ class Vector {
     }
     StorageType new_storage = alloc_storage(new_capacity);
     new_storage.unsafe_append_move(begin(), end());
-    printf("grow capacity new capacity: %zu/%zu, ptr: %p/%p\n", capacity(), new_storage.capacity(), new_storage.begin(),
-           d_.begin());
+    GTL_DEBUG("grow capacity new capacity: {}/{}, ptr: {}/{}", capacity(), new_storage.capacity(), fmt::ptr(new_storage.begin()),
+           fmt::ptr(d_.begin()));
     d_.swap(new_storage);
   }
   void release() {
