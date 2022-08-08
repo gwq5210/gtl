@@ -1,14 +1,32 @@
+/**
+ * @file socket_address.h
+ * @author gwq5210 (gwq5210@qq.com)
+ * @brief 网络地址类，支持ipv4、ipv6、unix domain socket
+ * @date 2022-08-08
+ * 
+ * @copyright Copyright (c) 2022. All rights reserved.
+ */
+
 #pragma once
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/un.h>
 
+#include <cstdlib>
+#include <cstring>
+#include <string>
+
+static const size_t UDS_PATH_SIZE = sizeof(sockaddr_un::sun_path);
+
 bool ValidIPv4(const std::string& ipv4_str);
 bool ValidIPv6(const std::string& ipv6_str);
+bool ValidUDS(const std::string& uds_str);
+int ValidPort(const std::string& port_str);
+int ValidPort(int port);
 
 // IPv4: ipv4:port, e.g. 127.0.0.1:8080
-// IPv6: ipv6:port, e.g. 2001:0db8:3c4d:0015:0000:0000:1a2f:1a2b:8080
+// IPv6: [ipv6]:port, e.g. [2001:0db8:3c4d:0015:0000:0000:1a2f:1a2b]:8080
 // IPv6 地址的大小和格式使得寻址功能大为增强。
 // IPv6 地址大小为 128 位。首选 IPv6 地址表示法为 x:x:x:x:x:x:x:x，其中每个 x 是地址的 8 个 16 位部分的十六进制值。IPv6
 // 地址范围从 0000:0000:0000:0000:0000:0000:0000:0000 至 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff。
@@ -25,6 +43,9 @@ bool ValidIPv6(const std::string& ipv6_str);
 // relative path: unix:path/to/file.sock
 class SocketAddress {
  public:
+  SocketAddress() { Clear(); }
+  SocketAddress(const std::string& address) { Parse(address); }
+
   struct sockaddr& addr() {
     return addr_;
   }
@@ -41,13 +62,47 @@ class SocketAddress {
     return addr_un_;
   }
   const struct sockaddr_un& addr_un() const { return addr_un_; }
+  const struct sockaddr_storage& addr_storage() const { return addr_storage_; }
   sa_family_t family() const { return addr_.sa_family; }
+  void set_family(sa_family_t family) { addr_.sa_family = family; }
+  int port() const {
+    if (family() == AF_INET) {
+      return ntohs(addr_in_.sin_port);
+    } else if (family() == AF_INET6) {
+      return ntohs(addr_in6_.sin6_port);
+    }
+    return -1;
+  }
+  bool set_port(const std::string& port_str);
+  bool set_port(int port);
+  socklen_t socklen() const { return socklen_; }
+  void set_socklen(socklen_t addrlen) {
+    socklen_ = addrlen;
+#if defined(__APPLE__)
+    addr_.sa_len = addrlen;
+#endif
+  }
+  void set_addr(const struct sockaddr& addr, socklen_t addrlen) {
+    memcpy(&addr_, &addr, addrlen);
+    set_socklen(addrlen);
+  }
+  void set_addr(const struct sockaddr_storage& addr, socklen_t addrlen) {
+    memcpy(&addr_, &addr, addrlen);
+    set_socklen(addrlen);
+  }
 
-  void Clear();
-  bool Parse(const std::string& str);
-  bool To(std::string& str);
+  void Clear() {
+    socklen_ = 0;
+    memset(&addr_storage_, 0, sizeof(addr_storage_));
+  }
+  bool Parse(const std::string& address);
+  bool ParseIPv4(const std::string& address);
+  bool ParseIPv6(const std::string& address);
+  bool ParseUDS(const std::string& address);
+  std::string ToString() const;
 
  private:
+  socklen_t socklen_ = 0;  // valid data length of sockaddr
   union {
     struct sockaddr addr_;
     struct sockaddr_in addr_in_;    // IPv4 address

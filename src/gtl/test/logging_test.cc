@@ -12,7 +12,7 @@
 #include "gtl/logging.h"
 
 
-TEST(logging_test, logging_test) {
+TEST(LoggingTest, LoggingTest) {
   std::string name = "gwq5210";
   int val = 1000;
   int max_val = 100;
