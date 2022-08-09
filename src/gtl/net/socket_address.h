@@ -3,7 +3,7 @@
  * @author gwq5210 (gwq5210@qq.com)
  * @brief 网络地址类，支持ipv4、ipv6、unix domain socket
  * @date 2022-08-08
- * 
+ *
  * @copyright Copyright (c) 2022. All rights reserved.
  */
 
@@ -17,7 +17,8 @@
 #include <cstring>
 #include <string>
 
-static const size_t UDS_PATH_SIZE = sizeof(sockaddr_un::sun_path);
+static const int kMaxUDSPathSize = sizeof(sockaddr_un::sun_path);
+static const int kMaxAddressSize = sizeof(struct sockaddr_storage);
 
 bool ValidIPv4(const std::string& ipv4_str);
 bool ValidIPv6(const std::string& ipv6_str);
@@ -78,6 +79,7 @@ class SocketAddress {
   }
   bool set_port(const std::string& port_str);
   bool set_port(int port);
+  socklen_t& socklen() { return socklen_; }
   socklen_t socklen() const { return socklen_; }
   void set_socklen(socklen_t addrlen) {
     socklen_ = addrlen;
@@ -95,7 +97,7 @@ class SocketAddress {
   }
 
   void Clear() {
-    socklen_ = 0;
+    socklen_ = kMaxAddressSize;
     memset(&addr_storage_, 0, sizeof(addr_storage_));
   }
   bool Parse(const std::string& address);
@@ -105,7 +107,7 @@ class SocketAddress {
   std::string ToString() const;
 
  private:
-  socklen_t socklen_ = 0;  // valid data length of sockaddr
+  socklen_t socklen_ = kMaxAddressSize;  // valid data length of sockaddr
   union {
     struct sockaddr addr_;
     struct sockaddr_in addr_in_;    // IPv4 address

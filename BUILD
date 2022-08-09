@@ -30,9 +30,9 @@ cc_test(
 )
 
 cc_test(
-  name = "client",
+  name = "udp_client",
   srcs = glob([
-      "examples/net/client.cc",
+      "examples/net/udp_client.cc",
   ]),
   visibility = [
       "//visibility:public",
@@ -45,9 +45,39 @@ cc_test(
 )
 
 cc_test(
-  name = "server",
+  name = "udp_server",
   srcs = glob([
-      "examples/net/server.cc",
+      "examples/net/udp_server.cc",
+  ]),
+  visibility = [
+      "//visibility:public",
+  ],
+  deps = [
+      "@googletest//:gtest",
+      "@googletest//:gtest_main",
+      ":gtl",
+  ],
+)
+
+cc_test(
+  name = "tcp_client",
+  srcs = glob([
+      "examples/net/tcp_client.cc",
+  ]),
+  visibility = [
+      "//visibility:public",
+  ],
+  deps = [
+      "@googletest//:gtest",
+      "@googletest//:gtest_main",
+      ":gtl",
+  ],
+)
+
+cc_test(
+  name = "tcp_server",
+  srcs = glob([
+      "examples/net/tcp_server.cc",
   ]),
   visibility = [
       "//visibility:public",

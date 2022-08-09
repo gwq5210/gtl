@@ -9,7 +9,7 @@ bool ValidIPv4(const std::string& ipv4_str) { return true; }
 
 bool ValidIPv6(const std::string& ipv6_str) { return true; }
 
-bool ValidUDS(const std::string& uds_str) { return uds_str.size() < UDS_PATH_SIZE; }
+bool ValidUDS(const std::string& uds_str) { return uds_str.size() < kMaxUDSPathSize; }
 
 int ValidPort(const std::string& port_str) {
   if (port_str.size() > 5) {

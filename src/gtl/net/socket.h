@@ -28,6 +28,8 @@ class Socket {
   bool SetFd(int sockfd);
   ssize_t SendMsg(const std::string& msg);
   std::string RecvMsg(size_t msg_size);
+  const SocketAddress& local_address() const { return local_address_; }
+  const SocketAddress& peer_address() const { return peer_address_; }
 
  private:
   int sockfd_ = -1;

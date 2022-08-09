@@ -23,5 +23,6 @@ ssize_t SendMsg(int sockfd, const std::string& msg);
 std::string RecvMsg(int sockfd, size_t msg_size);
 ssize_t SendMsg(int sockfd, const SocketAddress& socket_address, const std::string& msg);
 std::string RecvMsg(int sockfd, SocketAddress& socket_address, size_t msg_size);
+int Accept(int server_fd, SocketAddress& peer_address);
 bool GetLocalAddr(int sockfd, SocketAddress& socket_address);
 bool GetPeerAddr(int sockfd, SocketAddress& socket_address);

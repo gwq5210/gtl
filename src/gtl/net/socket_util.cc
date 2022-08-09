@@ -26,7 +26,7 @@ int ClientConnect(const SocketAddress& socket_address, int type /* = SOCK_STREAM
   return sockfd;
 }
 
-int ServerStart(const SocketAddress& socket_address, int type/* = SOCK_STREAM */) {
+int ServerStart(const SocketAddress& socket_address, int type /* = SOCK_STREAM */) {
   if (socket_address.socklen() == 0) {
     GTL_ERROR("socket address is empty");
     return -1;
@@ -93,40 +93,41 @@ ssize_t SendMsg(int sockfd, const SocketAddress& socket_address, const std::stri
 }
 
 std::string RecvMsg(int sockfd, SocketAddress& socket_address, size_t msg_size) {
-  std::string msg;
-  msg.resize(msg_size);
-  struct sockaddr_storage addr = socket_address.addr_storage();
-  socklen_t socklen = socket_address.socklen() > 0 ? socket_address.socklen() : sizeof(addr);
+  std::string msg(msg_size, '\0');
+  socket_address.Clear();
   ssize_t real_size =
-      recvfrom(sockfd, (void*)msg.data(), msg.size(), 0, reinterpret_cast<struct sockaddr*>(&addr), &socklen);
+      recvfrom(sockfd, (void*)msg.data(), msg.size(), 0, &socket_address.addr(), &socket_address.socklen());
   if (real_size == -1) {
     return "";
   }
   msg.resize(real_size);
-  socket_address.set_addr(&addr, socklen);
   return msg;
 }
 
+int Accept(int server_fd, SocketAddress& peer_address) {
+  int client_fd = accept(server_fd, &peer_address.addr(), &peer_address.socklen());
+  if (client_fd == -1) {
+    GTL_ERROR("accept failed: errno:{}, errmsg:{}", errno, strerror(errno));
+    return -1;
+  }
+  GTL_INFO("new connection from address {}", peer_address.ToString());
+  return client_fd;
+}
+
 bool GetLocalAddr(int sockfd, SocketAddress& socket_address) {
-  struct sockaddr_storage addr;
-  socklen_t socklen = sizeof(addr);
   socket_address.Clear();
-  if (getsockname(sockfd, reinterpret_cast<struct sockaddr*>(&addr), &socklen) != 0) {
+  if (getsockname(sockfd, &socket_address.addr(), &socket_address.socklen()) != 0) {
     GTL_ERROR("getsockname failed! errno:{}, errmsg:{}", errno, strerror(errno));
     return false;
   }
-  socket_address.set_addr(&addr, socklen);
   return true;
 }
 
 bool GetPeerAddr(int sockfd, SocketAddress& socket_address) {
-  struct sockaddr_storage addr;
-  socklen_t socklen = sizeof(addr);
   socket_address.Clear();
-  if (getpeername(sockfd, reinterpret_cast<struct sockaddr*>(&addr), &socklen) != 0) {
+  if (getpeername(sockfd, &socket_address.addr(), &socket_address.socklen()) != 0) {
     GTL_ERROR("getpeername failed! errno:{}, errmsg:{}", errno, strerror(errno));
     return false;
   }
-  socket_address.set_addr(&addr, socklen);
   return true;
 }
