@@ -5,11 +5,15 @@
 
 #include "gtl/logging.h"
 
+namespace gtl {
+
+namespace net {
+
 bool ValidIPv4(const std::string& ipv4_str) { return true; }
 
 bool ValidIPv6(const std::string& ipv6_str) { return true; }
 
-bool ValidUDS(const std::string& uds_str) { return uds_str.size() < kMaxUDSPathSize; }
+bool ValidUDSPath(const std::string& uds_path) { return uds_path.size() < kMaxUDSPathSize; }
 
 int ValidPort(const std::string& port_str) {
   if (port_str.size() > 5) {
@@ -103,7 +107,7 @@ bool SocketAddress::ParseIPv6(const std::string& address) {
 bool SocketAddress::ParseUDS(const std::string& address) {
   set_family(AF_UNIX);
   std::string uds_path = address.substr(5);  // unix:
-  if (!ValidUDS(uds_path)) {
+  if (!ValidUDSPath(uds_path)) {
     return false;
   }
   memcpy(addr_un_.sun_path, uds_path.c_str(), uds_path.size());
@@ -118,14 +122,14 @@ std::string SocketAddress::ToString() const {
     address = std::string("unix:") + addr_un_.sun_path;
   } else if (family() == AF_INET) {
     char ipv4_buf[INET_ADDRSTRLEN];
-    if (inet_ntop(AF_INET, &addr_in_.sin_addr, ipv4_buf, INET_ADDRSTRLEN) == NULL) {
+    if (inet_ntop(AF_INET, &addr_in_.sin_addr, ipv4_buf, INET_ADDRSTRLEN) == nullptr) {
       GTL_ERROR("inet_ntop failed, errno:{}, errmsg:{}", errno, strerror(errno));
       return "";
     }
     address = std::string(ipv4_buf) + ":" + std::to_string(port());
   } else if (family() == AF_INET6) {
     char ipv6_buf[INET6_ADDRSTRLEN];
-    if (inet_ntop(AF_INET6, &addr_in6_.sin6_addr, ipv6_buf, INET6_ADDRSTRLEN)) {
+    if (inet_ntop(AF_INET6, &addr_in6_.sin6_addr, ipv6_buf, INET6_ADDRSTRLEN) == nullptr) {
       GTL_ERROR("inet_ntop failed, errno:{}, errmsg:{}", errno, strerror(errno));
       return "";
     }
@@ -135,3 +139,7 @@ std::string SocketAddress::ToString() const {
   }
   return address;
 }
+
+}  // namespace net
+
+}  // namespace gtl

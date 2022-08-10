@@ -14,7 +14,7 @@
 TEST(SocketAddressTest, SocketAddressTest) {
   {
     std::string address = "127.0.0.1:8080";
-    SocketAddress socket_address;
+    gtl::net::SocketAddress socket_address;
     bool ret = socket_address.Parse(address);
     EXPECT_EQ(ret, true);
     EXPECT_EQ(socket_address.port(), 8080);

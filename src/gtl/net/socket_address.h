@@ -17,12 +17,16 @@
 #include <cstring>
 #include <string>
 
+namespace gtl {
+
+namespace net {
+
 static const int kMaxUDSPathSize = sizeof(sockaddr_un::sun_path);
 static const int kMaxAddressSize = sizeof(struct sockaddr_storage);
 
 bool ValidIPv4(const std::string& ipv4_str);
 bool ValidIPv6(const std::string& ipv6_str);
-bool ValidUDS(const std::string& uds_str);
+bool ValidUDSPath(const std::string& uds_path);
 int ValidPort(const std::string& port_str);
 int ValidPort(int port);
 
@@ -116,3 +120,7 @@ class SocketAddress {
     struct sockaddr_storage addr_storage_;
   };
 };
+
+}  // namespace net
+
+}  // namespace gtl
