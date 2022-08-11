@@ -69,6 +69,9 @@ bool Socket::Connect(const SocketAddress& peer_address) {
     Close();
     return false;
   }
+  set_is_connected(true);
+  GetPeerAddr(peer_address_);
+  GetLocalAddr(local_address_);
   return true;
 }
 
@@ -83,22 +86,26 @@ Socket Socket::Accept(SocketAddress* peer_address /* = nullptr*/) {
   if (peer_address) {
     *peer_address = address;
   }
-  return Socket(client_fd, domain_, type_);
+  Socket client_socket = Socket(client_fd, domain_, type_);
+  client_socket.set_is_connected(true);
+  client_socket.GetPeerAddr(client_socket.peer_address_);
+  client_socket.GetLocalAddr(client_socket.local_address_);
+  return client_socket;
 }
 
 bool Socket::GetLocalAddr(SocketAddress& local_address) {
-  local_address.Clear();
   if (::getsockname(sockfd_, &local_address.addr(), &local_address.socklen()) != 0) {
     GTL_ERROR("getsockname failed! errno:{}, errmsg:{}", errno, strerror(errno));
+    local_address.Clear();
     return false;
   }
   return true;
 }
 
 bool Socket::GetPeerAddr(SocketAddress& peer_address) {
-  peer_address.Clear();
   if (::getpeername(sockfd_, &peer_address.addr(), &peer_address.socklen()) != 0) {
     GTL_ERROR("getpeername failed! errno:{}, errmsg:{}", errno, strerror(errno));
+    peer_address.Clear();
     return false;
   }
   return true;

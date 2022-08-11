@@ -29,10 +29,16 @@ class Socket {
   void Close() {
     if (sockfd_ >= 0) {
       ::close(sockfd_);
-      sockfd_ = -1;
     }
+    Clear();
+  }
+  void Clear() {
+    sockfd_ = -1;
     domain_ = AF_UNSPEC;
     type_ = SOCK_STREAM;
+    is_connected_ = false;
+    peer_address_.Clear();
+    local_address_.Clear();
   }
 
   operator int() const { return sockfd_; }
@@ -40,6 +46,12 @@ class Socket {
   void set_sockfd(int fd) { sockfd_ = fd; }
   int sockfd() const { return sockfd_; }
   bool IsValid() const { return sockfd_ >= 0; }
+  const SocketAddress& local_address() const { return local_address_; }
+  void set_local_address(const SocketAddress& local_address) { local_address_ = local_address; }
+  const SocketAddress& peer_address() const { return peer_address_; }
+  void set_peer_address(const SocketAddress& peer_address) { peer_address_ = peer_address; }
+  bool is_connected() const { return is_connected_; }
+  void set_is_connected(bool is_connected) { is_connected_ = is_connected; }
 
   bool Bind(const SocketAddress& address);
   bool Listen(int backlog = 65535);
@@ -84,6 +96,9 @@ class Socket {
   int sockfd_ = -1;
   int domain_ = AF_UNSPEC;
   int type_ = SOCK_STREAM;
+  bool is_connected_ = false;
+  SocketAddress peer_address_;
+  SocketAddress local_address_;
 };
 
 }  // namespace net

@@ -21,4 +21,13 @@ TEST(SocketAddressTest, SocketAddressTest) {
     EXPECT_EQ(socket_address.family(), AF_INET);
     EXPECT_EQ(socket_address.ToString(), address);
   }
+  {
+    std::string address = "unix:uds.sock";
+    gtl::net::SocketAddress socket_address;
+    bool ret = socket_address.Parse(address);
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(socket_address.port(), -1);
+    EXPECT_EQ(socket_address.family(), AF_UNIX);
+    EXPECT_EQ(socket_address.ToString(), address);
+  }
 }

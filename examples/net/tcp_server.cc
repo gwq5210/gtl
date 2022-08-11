@@ -14,7 +14,9 @@ int main(int argc, char* argv[]) {
       continue;
     }
     std::string in_msg = client_socket.RecvAll(13);
-    GTL_INFO("in msg: {} from {}, recv size: {}", in_msg, peer_address.ToString(), in_msg.size());
+    GTL_INFO("in msg: {} from {}, recv size: {}, local address: {}, socket peer address: {}", in_msg,
+             peer_address.ToString(), in_msg.size(), client_socket.local_address().ToString(),
+             client_socket.peer_address().ToString());
     ssize_t ret = client_socket.SendAll(in_msg);
     GTL_INFO("send msg ret {}", ret);
     ret = client_socket.SendAll(in_msg);

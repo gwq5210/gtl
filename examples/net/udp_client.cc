@@ -18,5 +18,13 @@ int main(int argc, char* argv[]) {
   peer_address.Clear();
   in_msg = socket.RecvFrom(out_msg.size(), &peer_address);
   GTL_INFO("server address: {}, in msg: {}, recv size: {}", peer_address.ToString(), in_msg, in_msg.size());
+
+  gtl::net::SocketAddress local_address;
+  socket.GetLocalAddr(local_address);
+  GTL_INFO("local address: {}", local_address.ToString());
+
+  peer_address.Clear();
+  socket.GetPeerAddr(local_address);
+  GTL_INFO("peer address: {}", local_address.ToString());
   return 0;
 }
