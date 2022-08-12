@@ -4,8 +4,8 @@
 
 #include <mutex>
 
-#include "gtl/time/util.h"
 #include "gtl/logging.h"
+#include "gtl/time/util.h"
 
 namespace gtl {
 
@@ -21,6 +21,7 @@ class Mutex {
     Type type = Type::kDefault;
   };
 
+  using Handle = pthread_mutex_t;
   using Attr = pthread_mutexattr_t;
 
   static Attr* NewAttr(const Options& options);
@@ -31,6 +32,9 @@ class Mutex {
   Mutex() { Init(); }
   Mutex(const Options* options) { Init(options); }
   ~Mutex() { Destroy(); }
+
+  Handle& NativeHandle() { return lock_; }
+  const Handle& NativeHandle() const { return lock_; }
 
   bool Lock() { return !pthread_mutex_lock(&lock_); }
   bool TryLock() { return !pthread_mutex_trylock(&lock_); }
@@ -47,15 +51,54 @@ class Mutex {
 #endif
 
  private:
+  Mutex(const Mutex& other) = delete;
+  Mutex& operator=(const Mutex& other) = delete;
   bool Init(const Options* options = nullptr);
   bool Destroy();
 
-  pthread_mutex_t lock_;
+  Handle lock_;
 };
 
 class RWMutex {
+ public:
+  using Handle = pthread_rwlock_t;
+
+  RWMutex() { Init(); }
+  ~RWMutex() { Destroy(); }
+
+  Handle& NativeHandle() { return rwlock_; }
+  const Handle& NativeHandle() const { return rwlock_; }
+
+  bool RdLock() { return !pthread_rwlock_rdlock(&rwlock_); }
+  bool WrLock() { return !pthread_rwlock_wrlock(&rwlock_); }
+  bool TryRdLock() { return !pthread_rwlock_tryrdlock(&rwlock_); }
+  bool TryWrLock() { return !pthread_rwlock_trywrlock(&rwlock_); }
+  bool Unlock() { !pthread_rwlock_unlock(&rwlock_); }
+
+#if !defined(__APPLE__)
+  bool TimedRdLock(time_t timeout_ms) {
+    if (timeout_ms >= 0) {
+      struct timespec ts = ToAbsTimeSpec(timeout_ms);
+      return !pthread_rwlock_timedrdlock(&rwlock_);
+    }
+    return RdLock();
+  }
+  bool TimedWrLock(time_t timeout_ms) {
+    if (timeout_ms >= 0) {
+      struct timespec ts = ToAbsTimeSpec(timeout_ms);
+      return !pthread_rwlock_timedwrlock(&rwlock_);
+    }
+    return WrLock();
+  }
+#endif
+
  private:
-  pthread_rwlock_t rwlock_;
+  RWMutex(const RWMutex& other) = delete;
+  RWMutex& operator=(const RWMutex& other) = delete;
+  bool Init();
+  bool Destroy();
+
+  Handle rwlock_;
 };
 
 }  // namespace gtl

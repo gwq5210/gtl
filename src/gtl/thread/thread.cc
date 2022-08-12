@@ -158,4 +158,17 @@ bool Thread::Start(std::function<void*(void*)>&& routine, void* data /* = nullpt
   return true;
 }
 
+bool Thread::Kill(int signo) {
+  if (!valid_) {
+    return false;
+  }
+
+  int ret = pthread_kill(tid_, signo);
+  if (ret != 0) {
+    GTL_ERROR("pthread_kill failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    return false;
+  }
+  return true;
+}
+
 }  // namespace gtl

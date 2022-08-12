@@ -8,7 +8,7 @@
 #include <functional>
 
 #include "gtl/logging.h"
-
+#include <thread>
 namespace gtl {
 
 class Thread {
@@ -21,6 +21,8 @@ class Thread {
 
   using Attr = pthread_attr_t;
 
+  static Id SelfId() { return pthread_self(); }
+  static void Exit(void* retval = nullptr) { pthread_exit(retval); }
   static void* Routine(void* arg);
   static Attr* NewAttr(const Options& options);
   static void DeleteAttr(Attr* attr);
@@ -36,16 +38,25 @@ class Thread {
 
     other.Clear();
   }
+  Thread& operator=(Thread&& other) {
+    if (valid_) {
+      GTL_INFO("thread valid");
+      std::terminate();
+    }
+
+    valid_ = other.valid_;
+    tid_ = other.tid_;
+
+    other.Clear();
+    return *this;
+  }
   template <typename Function, typename... Args>
   explicit Thread(Function&& func, Args&&... args) {
-    auto routine = std::bind(std::move(func), std::forward<Args>(args)...);
-    Start([routine](void*) -> void* {
-      routine();
-      return nullptr;
-    });
+    Start(std::bind(std::move(func), std::forward<Args>(args)...));
   }
   ~Thread() {
     if (valid_) {
+      GTL_INFO("thread valid");
       std::terminate();
     }
   }
@@ -54,6 +65,13 @@ class Thread {
   bool Join(void** retval = nullptr);
   bool Cancel();
   bool Start(std::function<void*(void*)>&& routine, void* data = nullptr, const Options* options = nullptr);
+  bool Start(std::function<void(void)>&& routine, const Options* options = nullptr) {
+    Start([routine](void*) -> void* {
+      routine();
+      return nullptr;
+    });
+  }
+  bool Kill(int signo);
 
  private:
   struct RoutineArg {

@@ -6,10 +6,10 @@
 
 namespace gtl {
 
-struct timespec ToAbsTimeSpec(time_t timeout_ms) {
+inline struct timespec ToAbsTimeSpec(time_t timeout_ms) {
   struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
-	ts.tv_nsec += timeout_ms * 1000;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  ts.tv_nsec += timeout_ms * 1000;
   return ts;
 }
 

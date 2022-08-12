@@ -73,4 +73,22 @@ bool Mutex::Destroy() {
   return true;
 }
 
+bool RWMutex::Init() {
+  int ret = pthread_rwlock_init(&rwlock_, nullptr);
+  if (ret != 0) {
+    GTL_ERROR("pthread_rwlock_init failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    return false;
+  }
+  return true;
+}
+
+bool RWMutex::Destroy() {
+  int ret = pthread_rwlock_destroy(&rwlock_);
+  if (ret != 0) {
+    GTL_ERROR("pthread_rwlock_destroy failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    return false;
+  }
+  return true;
+}
+
 }  // namespace gtl
