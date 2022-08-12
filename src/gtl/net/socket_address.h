@@ -19,8 +19,6 @@
 
 namespace gtl {
 
-namespace net {
-
 static const int kMaxUDSPathSize = sizeof(sockaddr_un::sun_path);
 static const int kMaxAddressSize = sizeof(struct sockaddr_storage);
 
@@ -120,7 +118,5 @@ class SocketAddress {
     struct sockaddr_storage addr_storage_;
   };
 };
-
-}  // namespace net
 
 }  // namespace gtl

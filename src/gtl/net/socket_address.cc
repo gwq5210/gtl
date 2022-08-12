@@ -7,8 +7,6 @@
 
 namespace gtl {
 
-namespace net {
-
 bool ValidIPv4(const std::string& ipv4_str) { return true; }
 
 bool ValidIPv6(const std::string& ipv6_str) { return true; }
@@ -139,7 +137,5 @@ std::string SocketAddress::ToString() const {
   }
   return address;
 }
-
-}  // namespace net
 
 }  // namespace gtl

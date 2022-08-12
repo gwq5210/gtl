@@ -14,7 +14,7 @@
 TEST(SocketAddressTest, SocketAddressTest) {
   {
     std::string address = "127.0.0.1:8080";
-    gtl::net::SocketAddress socket_address;
+    gtl::SocketAddress socket_address;
     bool ret = socket_address.Parse(address);
     EXPECT_EQ(ret, true);
     EXPECT_EQ(socket_address.port(), 8080);
@@ -23,7 +23,7 @@ TEST(SocketAddressTest, SocketAddressTest) {
   }
   {
     std::string address = "unix:uds.sock";
-    gtl::net::SocketAddress socket_address;
+    gtl::SocketAddress socket_address;
     bool ret = socket_address.Parse(address);
     EXPECT_EQ(ret, true);
     EXPECT_EQ(socket_address.port(), -1);

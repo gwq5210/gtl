@@ -2,8 +2,8 @@
 
 int main(int argc, char* argv[]) {
   const char* address_str = "[::1]:9999";
-  gtl::net::SocketAddress server_address(address_str);
-  gtl::net::Socket socket = gtl::net::Socket::ConnectTo(server_address);
+  gtl::SocketAddress server_address(address_str);
+  gtl::Socket socket = gtl::Socket::ConnectTo(server_address);
   if (socket < 0) {
     return 0;
   }

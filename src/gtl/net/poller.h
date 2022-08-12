@@ -13,8 +13,6 @@
 
 namespace gtl {
 
-namespace net {
-
 enum class PollerEvent {
   kReadable,
   kWritable,
@@ -42,7 +40,5 @@ class IPoller {
   virtual bool Mod(int fd, PollerEvent event) = 0;
   virtual bool Wait(std::vector<EventResult>& results, int timeout_ms = -1) = 0;
 };
-
-}  // namespace net
 
 }  // namespace gtl

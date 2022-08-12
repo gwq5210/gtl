@@ -2,14 +2,14 @@
 
 int main(int argc, char* argv[]) {
   const char* address_str = "[::]:9999";
-  gtl::net::SocketAddress server_address(address_str);
-  gtl::net::Socket socket = gtl::net::Socket::ServerStart(server_address);
+  gtl::SocketAddress server_address(address_str);
+  gtl::Socket socket = gtl::Socket::ServerStart(server_address);
   if (socket < 0) {
     return 0;
   }
   while (true) {
-    gtl::net::SocketAddress peer_address;
-    gtl::net::Socket client_socket = socket.Accept(&peer_address);
+    gtl::SocketAddress peer_address;
+    gtl::Socket client_socket = socket.Accept(&peer_address);
     if (client_socket < 0) {
       continue;
     }

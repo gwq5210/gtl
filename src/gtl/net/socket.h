@@ -14,8 +14,6 @@
 
 namespace gtl {
 
-namespace net {
-
 class Socket {
  public:
   static const int kNetBufferSize = 256 * 1024;
@@ -100,7 +98,5 @@ class Socket {
   SocketAddress peer_address_;
   SocketAddress local_address_;
 };
-
-}  // namespace net
 
 }  // namespace gtl

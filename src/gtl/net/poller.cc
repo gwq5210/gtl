@@ -2,8 +2,4 @@
 
 namespace gtl {
 
-namespace net {
-
-}  // namespace net
-
 }  // namespace gtl

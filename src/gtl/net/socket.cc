@@ -2,8 +2,6 @@
 
 namespace gtl {
 
-namespace net {
-
 Socket Socket::Create(int domain, int type /* = SOCK_STREAM */) {
   int fd = ::socket(domain, type, 0);
   if (fd < 0) {
@@ -218,7 +216,5 @@ ssize_t Socket::RecvFrom(void* buf, size_t buf_len, SocketAddress* peer_address,
   }
   return recv_size;
 }
-
-}  // namespace net
 
 }  // namespace gtl

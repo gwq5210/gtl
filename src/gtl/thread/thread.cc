@@ -1,0 +1,161 @@
+#include "gtl/thread/thread.h"
+
+#include <thread>
+
+#include "gtl/util/defer.h"
+
+namespace gtl {
+
+void* Thread::Routine(void* arg) {
+  RoutineArg* routine_arg = reinterpret_cast<RoutineArg*>(arg);
+  if (routine_arg == nullptr) {
+    return nullptr;
+  }
+  auto routine = std::move(routine_arg->routine);
+  void* data = routine_arg->data;
+  delete routine_arg;
+  return routine(data);
+}
+
+Thread::Attr* Thread::NewAttr(const Options& options) {
+  if (options.joinable && options.stack_min_size == 0) {
+    return nullptr;
+  }
+
+  Attr* attr = new Attr();
+  int ret = pthread_attr_init(attr);
+  if (ret != 0) {
+    GTL_ERROR("pthread_attr_init failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    delete attr;
+    return nullptr;
+  }
+  SetDetachState(attr, options.joinable ? PTHREAD_CREATE_JOINABLE : PTHREAD_CREATE_DETACHED);
+  if (options.stack_min_size > 0) {
+    SetStackMinSize(attr, options.stack_min_size);
+  }
+  return attr;
+}
+
+void Thread::DeleteAttr(Attr* attr) {
+  if (attr == nullptr) {
+    return;
+  }
+  int ret = pthread_attr_destroy(attr);
+  if (ret != 0) {
+    GTL_ERROR("pthread_attr_destroy failed, errno:{}, errmsg:{}", errno, strerror(errno));
+  }
+  delete attr;
+}
+
+bool Thread::GetDetachState(Attr* attr, int& detach_state) {
+  int ret = pthread_attr_getdetachstate(attr, &detach_state);
+  if (ret != 0) {
+    GTL_ERROR("pthread_attr_getdetachstate failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    return false;
+  }
+  return true;
+}
+
+bool Thread::SetDetachState(Attr* attr, int detach_state) {
+  int ret = pthread_attr_setdetachstate(attr, detach_state);
+  if (ret != 0) {
+    GTL_ERROR("pthread_attr_setdetachstate failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    return false;
+  }
+  return true;
+}
+
+bool Thread::GetStackMinSize(Attr* attr, size_t& stack_min_size) {
+  int ret = pthread_attr_getstacksize(attr, &stack_min_size);
+  if (ret != 0) {
+    GTL_ERROR("pthread_attr_getstacksize failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    return false;
+  }
+  return true;
+}
+
+bool Thread::SetStackMinSize(Attr* attr, size_t stack_min_size) {
+  stack_min_size = stack_min_size < PTHREAD_STACK_MIN ? PTHREAD_STACK_MIN : stack_min_size;
+  int ret = pthread_attr_setstacksize(attr, stack_min_size);
+  if (ret != 0) {
+    GTL_ERROR("pthread_attr_setstacksize failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    return false;
+  }
+  return true;
+}
+
+bool Thread::Detach() {
+  if (!valid_) {
+    return false;
+  }
+
+  int ret = pthread_detach(tid_);
+  if (ret != 0) {
+    GTL_ERROR("pthread_detach failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    return false;
+  }
+  Clear();
+  return true;
+}
+
+bool Thread::Join(void** retval /* = nullptr*/) {
+  if (!valid_) {
+    return false;
+  }
+
+  void* join_retval = nullptr;
+  int ret = pthread_join(tid_, &join_retval);
+  if (ret != 0) {
+    GTL_ERROR("pthread_join failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    return false;
+  }
+  if (join_retval == PTHREAD_CANCELED) {
+    GTL_INFO("thread canceled");
+  }
+  if (retval) {
+    *retval = join_retval;
+  }
+
+  Clear();
+  return true;
+}
+
+bool Thread::Cancel() {
+  if (!valid_) {
+    return false;
+  }
+
+  int ret = pthread_cancel(tid_);
+  if (ret != 0) {
+    GTL_ERROR("pthread_cancel failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    return false;
+  }
+  return true;
+}
+
+bool Thread::Start(std::function<void*(void*)>&& routine, void* data /* = nullptr*/,
+                   const Options* options /* = nullptr*/) {
+  if (valid_) {
+    return false;
+  }
+
+  Attr* attr = options ? NewAttr(*options) : nullptr;
+  Defer defer([attr]() { DeleteAttr(attr); });
+
+  RoutineArg* routine_arg = new RoutineArg();
+  routine_arg->routine = std::move(routine);
+  routine_arg->data = data;
+  int ret = pthread_create(&tid_, attr, Routine, routine_arg);
+  if (ret != 0) {
+    GTL_ERROR("pthread_create failed, errno:{}, errmsg:{}", errno, strerror(errno));
+    return false;
+  }
+  if (options == nullptr || options->joinable) {
+    valid_ = true;
+  } else {
+    Clear();
+  }
+  return true;
+}
+
+}  // namespace gtl

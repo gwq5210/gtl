@@ -2,8 +2,8 @@
 
 int main(int argc, char* argv[]) {
   const char* address_str = "127.0.0.1:9999";
-  gtl::net::SocketAddress server_address(address_str);
-  gtl::net::Socket socket = gtl::net::Socket::Create(server_address.family(), SOCK_DGRAM);
+  gtl::SocketAddress server_address(address_str);
+  gtl::Socket socket = gtl::Socket::Create(server_address.family(), SOCK_DGRAM);
   if (socket < 0) {
     return 0;
   }
@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
   ssize_t ret = socket.SendTo(out_msg, server_address);
   GTL_INFO("server address: {}, send size: {}", server_address.ToString(), ret);
 
-  gtl::net::SocketAddress peer_address;
+  gtl::SocketAddress peer_address;
   std::string in_msg = socket.RecvFrom(out_msg.size(), &peer_address);
   GTL_INFO("server address: {}, in msg: {}, recv size: {}", peer_address.ToString(), in_msg, in_msg.size());
 
@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
   in_msg = socket.RecvFrom(out_msg.size(), &peer_address);
   GTL_INFO("server address: {}, in msg: {}, recv size: {}", peer_address.ToString(), in_msg, in_msg.size());
 
-  gtl::net::SocketAddress local_address;
+  gtl::SocketAddress local_address;
   socket.GetLocalAddr(local_address);
   GTL_INFO("local address: {}", local_address.ToString());
 

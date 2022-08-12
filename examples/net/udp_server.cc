@@ -2,17 +2,17 @@
 
 int main(int argc, char* argv[]) {
   const char* address_str = "[::]:9999";
-  gtl::net::SocketAddress server_address(address_str);
-  gtl::net::Socket socket = gtl::net::Socket::ServerStart(server_address, SOCK_DGRAM);
+  gtl::SocketAddress server_address(address_str);
+  gtl::Socket socket = gtl::Socket::ServerStart(server_address, SOCK_DGRAM);
   if (socket < 0) {
     return 0;
   }
 
-  gtl::net::SocketAddress local_address;
+  gtl::SocketAddress local_address;
   socket.GetLocalAddr(local_address);
   GTL_INFO("local address: {}", local_address.ToString());
 
-  gtl::net::SocketAddress peer_address;
+  gtl::SocketAddress peer_address;
   socket.GetPeerAddr(peer_address);
   GTL_INFO("peer address: {}", peer_address.ToString());
 
