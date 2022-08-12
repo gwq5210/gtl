@@ -151,7 +151,7 @@ class Vector {
   iterator erase(const_iterator pos) { return erase(pos, pos + 1); }
   iterator erase(const_iterator first, const_iterator last) {
     if (first != last) {
-      gtl::destroy(gtl::move(last, cend(), iterator(first)), end());
+      gtl::destroy(gtl::move(iterator(last), end(), iterator(first)), end());
       d_.incr_size(-gtl::distance(first, last));
     }
     return iterator(first);

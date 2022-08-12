@@ -21,21 +21,17 @@ int main(int argc, char* argv[]) {
   gtl::Thread thread_cancel(Print, std::string("123cancel"));
   thread_cancel.Cancel();
   thread_cancel.Join();
-  Print("1234");
 
   int count = 5;
-  std::vector<gtl::Thread> threads;
-  Print("1234");
+  gtl::vector<gtl::Thread> threads;
   for (int i = 0; i < count; ++i) {
-    threads[i].Start([i]() {
+    threads.emplace_back([i]() {
       gtl::CallOnce(once_flag, PrintOnce);
       GTL_INFO("thread {} done", i);
     });
   }
-  Print("1234");
-  for (int i = 0; i < count; ++i) {
+  for (int i = 0; i < threads.size(); ++i) {
     threads[i].Join();
   }
-  Print("1234");
   return 0;
 }
