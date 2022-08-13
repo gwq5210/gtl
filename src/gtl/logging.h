@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdlib>
+
 #include "spdlog/spdlog.h"
 
 #define GTL_LEVEL_TRACE SPDLOG_LEVEL_TRACE
@@ -26,6 +28,11 @@
 #define GTL_WARN_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kLogLevelWarn, __VA_ARGS__)
 #define GTL_ERROR_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kLogLevelError, __VA_ARGS__)
 #define GTL_CRITICAL_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kLogLevelCritical, __VA_ARGS__)
+#define GTL_CHECK(CONDITION, ...)               \
+  do {                                          \
+    GTL_CRITICAL_IF(!(CONDITION), __VA_ARGS__); \
+    std::abort();                               \
+  } while (false)
 
 namespace gtl {
 
@@ -40,4 +47,4 @@ enum LogLevel : int {
   kLogLevelCount,
 };
 
-} // namespace gtl
+}  // namespace gtl
