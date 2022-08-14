@@ -5,14 +5,14 @@ package(
 cc_library(
     name = "gtl",
     srcs = glob([
-        # "src/gtl/net/*.cc",
+        "src/gtl/net/*.cc",
         "src/gtl/thread/*.cc",
     ]),
     hdrs = glob(["src/**/*.h"]),
     includes = ["src"],
     visibility = ["//visibility:public"],
     copts = ["-Wall"],
-    linkopts = [],
+    linkopts = ["-pthread"],
     deps = [
         "@fmtlib",
         "@spdlog",

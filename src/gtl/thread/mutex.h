@@ -44,7 +44,7 @@ class Mutex {
   bool TimedLock(time_t timeout_ms) {
     if (timeout_ms >= 0) {
       struct timespec ts = ToAbsTimeSpec(timeout_ms);
-      return !pthread_mutex_timedlock(&lock_);
+      return !pthread_mutex_timedlock(&lock_, &ts);
     }
     return Lock();
   }
@@ -79,14 +79,14 @@ class RWMutex {
   bool TimedRdLock(time_t timeout_ms) {
     if (timeout_ms >= 0) {
       struct timespec ts = ToAbsTimeSpec(timeout_ms);
-      return !pthread_rwlock_timedrdlock(&rwlock_);
+      return !pthread_rwlock_timedrdlock(&rwlock_, &ts);
     }
     return RdLock();
   }
   bool TimedWrLock(time_t timeout_ms) {
     if (timeout_ms >= 0) {
       struct timespec ts = ToAbsTimeSpec(timeout_ms);
-      return !pthread_rwlock_timedwrlock(&rwlock_);
+      return !pthread_rwlock_timedwrlock(&rwlock_, &ts);
     }
     return WrLock();
   }

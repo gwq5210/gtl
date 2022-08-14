@@ -1,6 +1,6 @@
 #include "gtl/thread/thread.h"
 
-#include <thread>
+#include <signal.h>
 
 #include "gtl/util/defer.h"
 
