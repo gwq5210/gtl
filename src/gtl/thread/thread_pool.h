@@ -1,8 +1,8 @@
 #pragma once
 
-#include <vector>
 #include <atomic>
 #include <functional>
+#include <vector>
 
 #include "gtl/container/queue.h"
 #include "gtl/container/vector.h"

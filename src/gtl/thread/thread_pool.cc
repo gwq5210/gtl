@@ -30,9 +30,9 @@ void ThreadPool::Routine() {
       mutex_.Unlock();
       break;
     }
-    GTL_DEBUG("tasks size: {}", tasks_.size());
+    GTL_DEBUG("stop: {}, tasks size: {}", stop_, tasks_.size());
     std::function<void(void)> func = std::move(tasks_.front());
-    GTL_DEBUG("tasks size: {}", tasks_.size());
+    GTL_DEBUG("stop: {}, tasks size: {}", stop_, tasks_.size());
     tasks_.pop();
     mutex_.Unlock();
     func();
