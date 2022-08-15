@@ -67,7 +67,7 @@ class Queue {
   Container c_;
 };  // class Queue
 
-template <typename T, typename Container = List<T>>
+template <typename T, typename Container = Deque<T>>
 using queue = Queue<T, Container>;
 
 template <typename T, typename Container>

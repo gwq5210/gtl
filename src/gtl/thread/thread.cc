@@ -118,6 +118,7 @@ bool Thread::Join(void** retval /* = nullptr*/) {
     GTL_ERROR("pthread_join failed, errno:{}, errmsg:{}", errno, strerror(errno));
     return false;
   }
+  GTL_INFO("thread join");
   if (join_retval == PTHREAD_CANCELED) {
     GTL_INFO("thread canceled");
   }
@@ -125,7 +126,7 @@ bool Thread::Join(void** retval /* = nullptr*/) {
     *retval = join_retval;
   }
 
-  Clear();
+  set_detached(true);
   return true;
 }
 

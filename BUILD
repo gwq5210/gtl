@@ -98,3 +98,16 @@ cc_test(
         ":gtl",
     ],
 )
+
+cc_test(
+    name = "thread_pool",
+    srcs = [
+        "examples/thread/thread_pool.cc",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":gtl",
+    ],
+)
