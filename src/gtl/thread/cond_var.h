@@ -21,7 +21,7 @@ class CondVar {
   bool Wait(Mutex& lock) { return !pthread_cond_wait(&cond_var_, &lock.NativeHandle()); }
   bool TimedWait(Mutex& lock, time_t timeout_ms) {
     if (timeout_ms >= 0) {
-      struct timespec ts = ToAbsTimeSpec(timeout_ms);
+      struct timespec ts = MsToAbsTimeSpec(timeout_ms);
       return !pthread_cond_timedwait(&cond_var_, &lock.NativeHandle(), &ts);
     }
     return Wait(lock);
