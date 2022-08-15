@@ -5,10 +5,11 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <functional>
 
 #include "gtl/logging.h"
-#include <thread>
+
 namespace gtl {
 
 class Thread {
@@ -21,6 +22,8 @@ class Thread {
 
   using Attr = pthread_attr_t;
 
+  static std::atomic_int thread_index;
+  static int GetThreadIndex();
   static Id SelfId() { return pthread_self(); }
   static void Exit(void* retval = nullptr) { pthread_exit(retval); }
   static void* Routine(void* arg);
@@ -35,6 +38,8 @@ class Thread {
   Thread(Thread&& other) {
     valid_ = other.valid_;
     tid_ = other.tid_;
+    detached_ = other.detached_;
+    name_ = other.name_;
 
     other.Clear();
   }
@@ -46,6 +51,8 @@ class Thread {
 
     valid_ = other.valid_;
     tid_ = other.tid_;
+    detached_ = other.detached_;
+    name_ = other.name_;
 
     other.Clear();
     return *this;
@@ -55,21 +62,28 @@ class Thread {
     Start(std::bind(std::move(func), std::forward<Args>(args)...));
   }
   ~Thread() {
-    if (valid_) {
-      GTL_INFO("thread valid");
-      std::terminate();
+    if (valid_ && !detached_) {
+      GTL_WARN("thread {} valid, but not detached", name());
     }
   }
+
+  bool detached() const { return detached_; }
+  void set_detached(bool detached) { detached_ = detached; }
+  const std::string& name() const { return name_; }
+  void set_name(const std::string& name) { name_ = name; }
 
   bool Detach();
   bool Join(void** retval = nullptr);
   bool Cancel();
-  bool Start(std::function<void*(void*)>&& routine, void* data = nullptr, const Options* options = nullptr);
-  bool Start(std::function<void(void)>&& routine, const Options* options = nullptr) {
-    Start([routine](void*) -> void* {
-      routine();
-      return nullptr;
-    });
+  bool Start(std::function<void*(void*)>&& routine, const std::string& name = "", void* data = nullptr,
+             const Options* options = nullptr);
+  bool Start(std::function<void(void)>&& routine, const std::string& name = "", const Options* options = nullptr) {
+    Start(
+        [routine](void*) -> void* {
+          routine();
+          return nullptr;
+        },
+        name, nullptr, options);
   }
   bool Kill(int signo);
 
@@ -82,13 +96,19 @@ class Thread {
   Thread(const Thread& other) = delete;
   Thread& operator=(const Thread& other) = delete;
 
+  void GenerateName();
+
   void Clear() {
     valid_ = false;
     tid_ = {};
+    detached_ = false;
+    name_ = "";
   }
 
   bool valid_ = false;
   Id tid_{};
+  bool detached_ = false;
+  std::string name_;
 };
 
 }  // namespace gtl

@@ -16,6 +16,7 @@ void PrintOnce() { GTL_INFO("print once"); }
 gtl::OnceFlag once_flag;
 
 int main(int argc, char* argv[]) {
+  spdlog::set_level(spdlog::level::debug);
   gtl::Thread thread(Print, std::string("123"));
   thread.Join();
   gtl::Thread thread_cancel(Print, std::string("123cancel"));

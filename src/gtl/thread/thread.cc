@@ -6,6 +6,10 @@
 
 namespace gtl {
 
+std::atomic_int Thread::thread_index(0);
+
+int Thread::GetThreadIndex() { return thread_index++; }
+
 void* Thread::Routine(void* arg) {
   RoutineArg* routine_arg = reinterpret_cast<RoutineArg*>(arg);
   if (routine_arg == nullptr) {
@@ -94,12 +98,17 @@ bool Thread::Detach() {
     GTL_ERROR("pthread_detach failed, errno:{}, errmsg:{}", errno, strerror(errno));
     return false;
   }
-  Clear();
+  set_detached(true);
   return true;
 }
 
 bool Thread::Join(void** retval /* = nullptr*/) {
   if (!valid_) {
+    return false;
+  }
+
+  if (detached()) {
+    GTL_ERROR("thread already detached");
     return false;
   }
 
@@ -133,9 +142,10 @@ bool Thread::Cancel() {
   return true;
 }
 
-bool Thread::Start(std::function<void*(void*)>&& routine, void* data /* = nullptr*/,
+bool Thread::Start(std::function<void*(void*)>&& routine, const std::string& name /* = ""*/, void* data /* = nullptr*/,
                    const Options* options /* = nullptr*/) {
   if (valid_) {
+    GTL_ERROR("thread already created");
     return false;
   }
 
@@ -150,11 +160,16 @@ bool Thread::Start(std::function<void*(void*)>&& routine, void* data /* = nullpt
     GTL_ERROR("pthread_create failed, errno:{}, errmsg:{}", errno, strerror(errno));
     return false;
   }
-  if (options == nullptr || options->joinable) {
-    valid_ = true;
+  if (name.empty()) {
+    GenerateName();
   } else {
-    Clear();
+    set_name(name);
   }
+  valid_ = true;
+  if (options && !options->joinable) {
+    set_detached(true);
+  }
+  GTL_DEBUG("thread {} created", name_);
   return true;
 }
 
@@ -169,6 +184,11 @@ bool Thread::Kill(int signo) {
     return false;
   }
   return true;
+}
+
+void Thread::GenerateName() {
+  int thread_index = GetThreadIndex();
+  set_name("thread_" + std::to_string(thread_index));
 }
 
 }  // namespace gtl
