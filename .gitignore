@@ -38,3 +38,5 @@ bin
 .DS_Store
 
 bazel-*
+
+*.log

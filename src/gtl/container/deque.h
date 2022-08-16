@@ -587,7 +587,7 @@ void Deque<T>::reserve_at_back(size_type count) {
     return;
   }
   n = back_capacity();
-  GTL_DEBUG("back_capacity {} {}\n", n, count);
+  GTL_DEBUG("back_capacity {} {}", n, count);
   size_type block_count = count / block_capacity_ + 1;
   if (count >= n) {
     count -= n;

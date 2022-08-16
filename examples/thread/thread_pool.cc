@@ -11,8 +11,8 @@ int Print(const std::string& msg) {
 
 int main(int argc, char* argv[]) {
   spdlog::set_level(spdlog::level::debug);
-  int task_count = 10;
-  int thread_count = 2;
+  int task_count = 100;
+  int thread_count = 200;
   gtl::ThreadPool thread_pool(thread_count);
   GTL_DEBUG("add task begin");
   for (int i = 0; i < task_count * thread_count; ++i) {
