@@ -2,11 +2,11 @@
 
 namespace gtl {
 
-bool ThreadPool::Start(size_t thread_count, const std::string& name /* = "ThreadPool" */) {
-  set_name(name);
+bool ThreadPool::Start(size_t thread_count) {
   for (size_t i = 0; i < thread_count; ++i) {
     threads_.emplace_back([this]() { this->Run(); });
   }
+  stop_ = false;
   return true;
 }
 

@@ -12,17 +12,31 @@
 
 namespace gtl {
 
-class ThreadPool {
+class IThreadPool {
  public:
-  explicit ThreadPool(size_t thread_count, const std::string& name = "ThreadPool") { Start(thread_count, name); }
+  IThreadPool() {}
+  virtual ~IThreadPool() { Stop(); }
+  virtual bool Start(size_t thread_count) = 0;
+  virtual bool AddTask(std::function<void(void)>&& task) = 0;
+  virtual void Stop() = 0;
+  virtual bool IsStop() const = 0;
+
+ private:
+  IThreadPool(const IThreadPool& other) = delete;
+  IThreadPool& operator=(const IThreadPool& other) = delete;
+};
+
+class ThreadPool : public IThreadPool {
+ public:
+  ThreadPool() {}
   ~ThreadPool() { Stop(); }
 
-  const std::string& name() const { return name_; }
-  void set_name(const std::string& name) { name_ = name; }
-
-  bool Start(size_t thread_count, const std::string& name = "ThreadPool");
-  bool AddTask(std::function<void(void)>&& task);
-  bool Stop() {
+  bool Start(size_t thread_count) override;
+  bool AddTask(std::function<void(void)>&& task) override;
+  void Stop() override {
+    if (stop_) {
+      return;
+    }
     stop_ = true;
     cond_var_.Broadcast();
     for (auto& thread : threads_) {
@@ -30,6 +44,7 @@ class ThreadPool {
     }
     threads_.clear();
   }
+  bool IsStop() const override { return stop_; }
 
  private:
   ThreadPool(const ThreadPool& other) = delete;
@@ -37,8 +52,7 @@ class ThreadPool {
 
   void Run();
 
-  std::string name_ = "ThreadPool";
-  std::atomic_bool stop_{false};
+  std::atomic_bool stop_{true};
   Mutex mutex_;
   CondVar cond_var_;
   Vector<Thread> threads_;
