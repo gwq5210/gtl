@@ -10,7 +10,7 @@ int Print(const std::string& msg) {
 }
 
 int main(int argc, char* argv[]) {
-  spdlog::set_level(spdlog::level::debug);
+  GTL_SET_LEVEL(gtl::LogLevel::kDebug);
   int task_count = 100;
   int thread_count = 200;
   gtl::ThreadPool thread_pool(thread_count);
@@ -21,6 +21,7 @@ int main(int argc, char* argv[]) {
   sleep(5);
   GTL_DEBUG("add task done");
   thread_pool.Stop();
-  GTL_DEBUG("stop done");
+  bool ret = thread_pool.AddTask(std::bind(Print, std::string("stoped task")));
+  GTL_DEBUG("stop done {}", ret);
   return 0;
 }

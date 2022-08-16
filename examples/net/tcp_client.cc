@@ -1,6 +1,7 @@
 #include "gtl/net/socket.h"
 
 int main(int argc, char* argv[]) {
+  GTL_SET_LEVEL(gtl::LogLevel::kDebug);
   const char* address_str = "[::1]:9999";
   gtl::SocketAddress server_address(address_str);
   gtl::Socket socket = gtl::Socket::ConnectTo(server_address);

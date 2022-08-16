@@ -19,6 +19,12 @@ class CondVar {
   bool Signal() { return !pthread_cond_signal(&cond_var_); }
   bool Broadcast() { return !pthread_cond_broadcast(&cond_var_); }
   bool Wait(Mutex& lock) { return !pthread_cond_wait(&cond_var_, &lock.NativeHandle()); }
+  template <typename Predicate>
+  void Wait(Mutex& lock, Predicate pred) {
+    while (!pred()) {
+      Wait(lock);
+    }
+  }
   bool TimedWait(Mutex& lock, time_t timeout_ms) {
     if (timeout_ms >= 0) {
       struct timespec ts = MsToAbsTimeSpec(timeout_ms);

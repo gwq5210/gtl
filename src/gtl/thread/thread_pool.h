@@ -35,7 +35,7 @@ class ThreadPool {
   ThreadPool(const ThreadPool& other) = delete;
   ThreadPool& operator=(const ThreadPool& other) = delete;
 
-  void Routine();
+  void Run();
 
   std::string name_ = "ThreadPool";
   std::atomic_bool stop_{false};
