@@ -15,7 +15,6 @@ namespace gtl {
 class IThreadPool {
  public:
   IThreadPool() {}
-  virtual ~IThreadPool() { Stop(); }
   virtual bool Start(size_t thread_count) = 0;
   virtual bool AddTask(std::function<void(void)>&& task) = 0;
   virtual void Stop() = 0;
