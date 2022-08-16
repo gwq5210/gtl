@@ -6,12 +6,11 @@ bool ThreadPool::Start(size_t thread_count) {
   for (size_t i = 0; i < thread_count; ++i) {
     threads_.emplace_back([this]() { this->Run(); });
   }
-  stop_ = false;
   return true;
 }
 
 bool ThreadPool::AddTask(std::function<void(void)>&& task) {
-  if (stop_) {
+  if (threads_.empty()) {
     return false;
   }
   mutex_.Lock();

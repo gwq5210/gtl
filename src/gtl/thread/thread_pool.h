@@ -52,7 +52,7 @@ class ThreadPool : public IThreadPool {
 
   void Run();
 
-  std::atomic_bool stop_{true};
+  std::atomic_bool stop_{false};
   Mutex mutex_;
   CondVar cond_var_;
   Vector<Thread> threads_;
