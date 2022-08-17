@@ -24,6 +24,24 @@ class Socket {
 
   Socket() = default;
   Socket(int sockfd, int domain, int type = SOCK_STREAM) : sockfd_(sockfd), domain_(domain), type_(type) {}
+  Socket(Socket&& other) {
+    sockfd_ = other.sockfd_;
+    domain_ = other.domain_;
+    type_ = other.type_;
+
+    other.Clear();
+  }
+  Socket& operator=(Socket&& other) {
+    Close();
+
+    sockfd_ = other.sockfd_;
+    domain_ = other.domain_;
+    type_ = other.type_;
+
+    other.Clear();
+  }
+  ~Socket() { Close(); }
+
   void Close() {
     if (sockfd_ >= 0) {
       ::close(sockfd_);
@@ -34,22 +52,17 @@ class Socket {
     sockfd_ = -1;
     domain_ = AF_UNSPEC;
     type_ = SOCK_STREAM;
-    is_connected_ = false;
-    peer_address_.Clear();
-    local_address_.Clear();
   }
 
   operator int() const { return sockfd_; }
 
   void set_sockfd(int fd) { sockfd_ = fd; }
   int sockfd() const { return sockfd_; }
+  void set_domain(int domain) { domain_ = domain; }
+  int domain() const { return domain_; }
+  int set_type(int type) { type_ = type; }
+  int type() const { return type_; }
   bool IsValid() const { return sockfd_ >= 0; }
-  const SocketAddress& local_address() const { return local_address_; }
-  void set_local_address(const SocketAddress& local_address) { local_address_ = local_address; }
-  const SocketAddress& peer_address() const { return peer_address_; }
-  void set_peer_address(const SocketAddress& peer_address) { peer_address_ = peer_address; }
-  bool is_connected() const { return is_connected_; }
-  void set_is_connected(bool is_connected) { is_connected_ = is_connected; }
 
   bool Bind(const SocketAddress& address);
   bool Listen(int backlog = 65535);
@@ -57,6 +70,16 @@ class Socket {
   Socket Accept(SocketAddress* peer_address = nullptr);
   bool GetPeerAddr(SocketAddress& peer_address);
   bool GetLocalAddr(SocketAddress& local_address);
+  SocketAddress GetPeerAddr() {
+    SocketAddress peer_address;
+    GetPeerAddr(peer_address);
+    return peer_address;
+  }
+  SocketAddress GetLocalAddr() {
+    SocketAddress local_address;
+    GetLocalAddr(local_address);
+    return local_address;
+  }
 
   ssize_t Send(const void* buf, size_t buf_len, int flags = 0);
   ssize_t SendAll(const void* buf, size_t buf_len, int flags = 0);
@@ -91,12 +114,16 @@ class Socket {
   }
 
  private:
+  Socket(const Socket& other) = delete;
+  Socket& operator=(const Socket& other) = delete;
+
   int sockfd_ = -1;
   int domain_ = AF_UNSPEC;
   int type_ = SOCK_STREAM;
-  bool is_connected_ = false;
-  SocketAddress peer_address_;
-  SocketAddress local_address_;
 };
+
+inline bool operator==(const Socket& lhs, const Socket& rhs) {
+  return lhs.sockfd() == rhs.sockfd() && lhs.domain() == rhs.domain() && lhs.type() == lhs.type();
+}
 
 }  // namespace gtl

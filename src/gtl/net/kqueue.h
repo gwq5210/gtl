@@ -174,7 +174,7 @@ class KqueuePoller : public Poller {
   virtual int Wait(int timeout_ms = -1) override {
     int ret = kq_.Wait(timeout_ms);
     if (ret < 0) {
-      return false;
+      return ret;
     }
     for (int i = 0; i < ret; ++i) {
       const Kqueue::Event& event = kq_.GetEvent(i);

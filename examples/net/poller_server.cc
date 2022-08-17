@@ -7,12 +7,52 @@
 #  include "gtl/net/epoll.h"
 #endif
 
+static const int kMsgSize = 13;
+
+struct Context {
+  gtl::Socket socket;
+  std::string in_msg;
+  int count = 0;
+};
+
+void HandleAccept(gtl::Poller& poller, Context* ctx) {
+  Context* client_context = new Context();
+  client_context->socket = ctx->socket.Accept();
+  if (client_context->socket < 0) {
+    return;
+  }
+  poller.Add(client_context->socket, gtl::Poller::kReadable, client_context);
+  GTL_INFO("new client_context: {}", fmt::ptr(client_context));
+}
+
+void HandleRead(gtl::Poller& poller, Context* ctx) {
+  ctx->in_msg = ctx->socket.RecvAll(kMsgSize);
+  ctx->count++;
+  GTL_INFO("count: {}, {} -> {}, msg: {}, size: {}", ctx->count, ctx->socket.GetPeerAddr().ToString(),
+           ctx->socket.GetLocalAddr().ToString(), ctx->in_msg, ctx->in_msg.size());
+  poller.Mod(ctx->socket, gtl::Poller::kWritable, ctx);
+}
+
+void HandleWrite(gtl::Poller& poller, Context* ctx) {
+  ssize_t send_size = ctx->socket.SendAll(ctx->in_msg);
+  GTL_INFO("count: {}, {} <- {}, msg: {}, size: {}, send_size: {}", ctx->count, ctx->socket.GetPeerAddr().ToString(),
+           ctx->socket.GetLocalAddr().ToString(), ctx->in_msg, ctx->in_msg.size(), send_size);
+  if (ctx->count < 2) {
+    poller.Mod(ctx->socket, gtl::Poller::kReadable, ctx);
+  } else {
+    poller.Del(ctx->socket, gtl::Poller::kReadable | gtl::Poller::kWritable, ctx);
+    GTL_INFO("delete client_context: {}", fmt::ptr(ctx));
+    delete ctx;
+  }
+}
+
 int main(int argc, char* argv[]) {
   GTL_SET_LEVEL(gtl::LogLevel::kDebug);
   const char* address_str = "[::]:9999";
   gtl::SocketAddress server_address(address_str);
-  gtl::Socket socket = gtl::Socket::ServerStart(server_address);
-  if (socket < 0) {
+  Context listen_context;
+  listen_context.socket = gtl::Socket::ServerStart(server_address);
+  if (listen_context.socket < 0) {
     return 0;
   }
 #if defined(__APPLE__)
@@ -24,29 +64,19 @@ int main(int argc, char* argv[]) {
   GTL_INFO("init begin");
   bool success = poller.Init();
   GTL_INFO("init status: {}", success);
-  success = poller.Add(socket, gtl::Poller::kReadable | gtl::Poller::kWritable, (void*)socket.sockfd());
+  success = poller.Add(listen_context.socket, gtl::Poller::kReadable | gtl::Poller::kWritable, (void*)&listen_context);
   GTL_INFO("Add status: {}", success);
   while (true) {
     int ret = poller.Wait();
     for (int i = 0; i < ret; ++i) {
       const gtl::Poller::Result& result = poller.GetResult(i);
-      int rfd = (uint64_t)result.ptr;
-      if (rfd == socket) {
-        if (gtl::Poller::EventReadable(result.events)) {
-          gtl::SocketAddress peer_address;
-          gtl::Socket client_socket = socket.Accept(&peer_address);
-          if (client_socket < 0) {
-            continue;
-          }
-          std::string in_msg = client_socket.RecvAll(13);
-          GTL_INFO("in msg: {} from {}, recv size: {}, local address: {}, socket peer address: {}", in_msg,
-                  peer_address.ToString(), in_msg.size(), client_socket.local_address().ToString(),
-                  client_socket.peer_address().ToString());
-          ssize_t ret = client_socket.SendAll(in_msg);
-          GTL_INFO("send msg ret {}", ret);
-          ret = client_socket.SendAll(in_msg);
-          GTL_INFO("send msg ret {}", ret);
-        }
+      Context* rctx = static_cast<Context*>(result.ptr);
+      if (rctx->socket == listen_context.socket && gtl::Poller::EventReadable(result.events)) {
+        HandleAccept(poller, rctx);
+      } else if (gtl::Poller::EventReadable(result.events)) {
+        HandleRead(poller, rctx);
+      } else if (gtl::Poller::EventWritable(result.events)) {
+        HandleWrite(poller, rctx);
       }
     }
   }

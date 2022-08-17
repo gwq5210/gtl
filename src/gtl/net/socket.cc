@@ -67,9 +67,6 @@ bool Socket::Connect(const SocketAddress& peer_address) {
     Close();
     return false;
   }
-  set_is_connected(true);
-  GetPeerAddr(peer_address_);
-  GetLocalAddr(local_address_);
   return true;
 }
 
@@ -84,11 +81,7 @@ Socket Socket::Accept(SocketAddress* peer_address /* = nullptr*/) {
   if (peer_address) {
     *peer_address = address;
   }
-  Socket client_socket = Socket(client_fd, domain_, type_);
-  client_socket.set_is_connected(true);
-  client_socket.GetPeerAddr(client_socket.peer_address_);
-  client_socket.GetLocalAddr(client_socket.local_address_);
-  return client_socket;
+  return Socket(client_fd, domain_, type_);
 }
 
 bool Socket::GetLocalAddr(SocketAddress& local_address) {

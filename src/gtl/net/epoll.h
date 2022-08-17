@@ -50,7 +50,7 @@ class Epoll {
   }
   ~Epoll() { Destroy(); }
 
-  bool Init(size_t max_events = 10240, bool et = true) {
+  bool Init(size_t max_events = 10240, bool et = false) {
     et_ = et;
     efd_ = epoll_create(1);
     max_events_ = max_events;
@@ -81,7 +81,7 @@ class Epoll {
   bool Del(int fd, uint32_t events, void* ptr = nullptr) { return Ctl(kDel, fd, events, ptr); }
   bool Ctl(int op, int fd, uint32_t events, void* ptr = nullptr) {
     Event event;
-    event.evnets = et ? (events | EPOLLET) | events;
+    event.events = et_ ? (events | EPOLLET) : events;
     event.data.ptr = ptr;
     int ret = epoll_ctl(efd_, op, fd, &event);
     if (ret != 0) {
@@ -96,7 +96,7 @@ class Epoll {
   Epoll& operator=(const Epoll& other) = delete;
 
   void Clear() {
-    et_ = true;
+    et_ = false;
     efd_ = -1;
     max_events_ = 10240;
     events_ = nullptr;
@@ -109,7 +109,7 @@ class Epoll {
     delete[] events_;
   }
 
-  bool et_ = true;
+  bool et_ = false;
   int efd_ = -1;
   size_t max_events_ = 10240;
   Event* events_ = nullptr;
@@ -117,7 +117,7 @@ class Epoll {
 
 class EpollPoller : public Poller {
  public:
-  static uint32_t GetEpollEvents(int events) {
+  static uint32_t GetEvents(int events) {
     uint32_t revents = 0;
     if (EventReadable(events)) {
       revents |= Epoll::kReadable;
@@ -138,20 +138,24 @@ class EpollPoller : public Poller {
     return revents;
   }
 
-  virtual bool Init() override { return epoll_.Init(); }
+  virtual bool Init(size_t max_events = 10240) override {
+    Poller::Init(max_events);
+    return epoll_.Init(max_events);
+  }
   virtual bool Add(int fd, int events, void* ptr = nullptr) override { return epoll_.Add(fd, GetEvents(events), ptr); }
   virtual bool Del(int fd, int events, void* ptr = nullptr) override { return epoll_.Del(fd, GetEvents(events), ptr); }
   virtual bool Mod(int fd, int events, void* ptr = nullptr) override { return epoll_.Mod(fd, GetEvents(events), ptr); }
-  virtual bool Wait(std::vector<Result>& results, int timeout_ms = -1) override {
-    results.clear();
+  virtual int Wait(int timeout_ms = -1) override {
     int ret = epoll_.Wait(timeout_ms);
     if (ret < 0) {
-      return false;
+      return ret;
     }
     for (int i = 0; i < ret; ++i) {
-      results.emplace_back(Result{ToPollerEvents(event.events), event.data.ptr});
+      const Epoll::Event& event = epoll_.GetEvent(i);
+      results_[i].events = ToPollerEvents(event.events);
+      results_[i].ptr = event.data.ptr;
     }
-    return true;
+    return ret;
   }
 
  private:

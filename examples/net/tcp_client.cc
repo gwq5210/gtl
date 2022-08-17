@@ -10,9 +10,11 @@ int main(int argc, char* argv[]) {
   }
   std::string out_msg = "Hello, world!";
   ssize_t ret = socket.SendAll(out_msg);
-  GTL_INFO("local address: {}, server address: {}, send size: {}", socket.local_address().ToString(), socket.peer_address().ToString(), ret);
+  GTL_INFO("local address: {}, server address: {}, send size: {}", socket.GetLocalAddr().ToString(), socket.GetPeerAddr().ToString(), ret);
   std::string in_msg = socket.RecvAll(out_msg.size());
   GTL_INFO("recv size: {}, in msg: {}", in_msg.size(), in_msg);
+  ret = socket.Send(out_msg);
+  GTL_INFO("local address: {}, server address: {}, send size: {}", socket.GetLocalAddr().ToString(), socket.GetPeerAddr().ToString(), ret);
   in_msg = socket.RecvAll(out_msg.size());
   GTL_INFO("recv size: {}, in msg: {}", in_msg.size(), in_msg);
   return 0;
