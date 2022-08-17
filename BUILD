@@ -111,3 +111,16 @@ cc_test(
         ":gtl",
     ],
 )
+
+cc_test(
+    name = "poller_server",
+    srcs = [
+        "examples/net/poller_server.cc",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":gtl",
+    ],
+)

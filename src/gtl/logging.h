@@ -28,11 +28,11 @@
 #define GTL_WARN_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kWarn, __VA_ARGS__)
 #define GTL_ERROR_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kError, __VA_ARGS__)
 #define GTL_CRITICAL_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kCritical, __VA_ARGS__)
-#define GTL_CHECK(CONDITION, ...)               \
-  do {                                          \
-    GTL_CRITICAL_IF(!(CONDITION), __VA_ARGS__); \
-    std::abort();                               \
+#define GTL_CHECK_LOG(CONDITION, FMT, ...)                                             \
+  do {                                                                                 \
   } while (false)
+    // GTL_CRITICAL_IF(!(CONDITION), "check (" #CONDITION ") failed, " FMT, __VA_ARGS__);
+#define GTL_CHECK(CONDITION) GTL_CHECK_LOG(CONDITION, "z")
 #define GTL_SET_LEVEL(LEVEL) spdlog::set_level(spdlog::level::level_enum(LEVEL))
 
 namespace gtl {
