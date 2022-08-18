@@ -21,18 +21,21 @@
 #define GTL_INFO(...) GTL_LOG(gtl::kInfo, __VA_ARGS__)
 #define GTL_WARN(...) GTL_LOG(gtl::kWarn, __VA_ARGS__)
 #define GTL_ERROR(...) GTL_LOG(gtl::kError, __VA_ARGS__)
-#define GTL_CRITICAL(CONDITION, ...) GTL_LOG(gtl::kCritical, __VA_ARGS__)
+#define GTL_CRITICAL(...) GTL_LOG(gtl::kCritical, __VA_ARGS__)
 #define GTL_TRACE_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kTrace, __VA_ARGS__)
 #define GTL_DEBUG_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kDebug, __VA_ARGS__)
 #define GTL_INFO_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kInfo, __VA_ARGS__)
 #define GTL_WARN_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kWarn, __VA_ARGS__)
 #define GTL_ERROR_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kError, __VA_ARGS__)
 #define GTL_CRITICAL_IF(CONDITION, ...) GTL_LOG_IF(CONDITION, gtl::kCritical, __VA_ARGS__)
-#define GTL_CHECK_LOG(CONDITION, FMT, ...)                                             \
-  do {                                                                                 \
+#define GTL_CHECK_LOG(CONDITION, FMT, ...)                            \
+  do {                                                                \
+    if (!(CONDITION)) {                                               \
+      GTL_INFO("[check (" #CONDITION ") failed]" FMT, ##__VA_ARGS__); \
+      std::abort();                                                   \
+    }                                                                 \
   } while (false)
-    // GTL_CRITICAL_IF(!(CONDITION), "check (" #CONDITION ") failed, " FMT, __VA_ARGS__);
-#define GTL_CHECK(CONDITION) GTL_CHECK_LOG(CONDITION, "z")
+#define GTL_CHECK(CONDITION) GTL_CHECK_LOG(CONDITION, "")
 #define GTL_SET_LEVEL(LEVEL) spdlog::set_level(spdlog::level::level_enum(LEVEL))
 
 namespace gtl {

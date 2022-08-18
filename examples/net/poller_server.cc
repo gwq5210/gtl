@@ -73,9 +73,11 @@ int main(int argc, char* argv[]) {
   GTL_INFO("Add status: {}", success);
   while (true) {
     int ret = poller.Wait();
+    GTL_INFO("wait done, ret: {}", ret);
     for (int i = 0; i < ret; ++i) {
       const gtl::Poller::Result& result = poller.GetResult(i);
       Context* rctx = static_cast<Context*>(result.ptr);
+      GTL_INFO("events: {}, info: {}", result.events, gtl::Socket::GetSocketInfo(rctx->socket));
       if (rctx->socket == listen_context.socket && gtl::Poller::EventReadable(result.events)) {
         HandleAccept(poller, rctx);
       } else if (gtl::Poller::EventReadable(result.events)) {

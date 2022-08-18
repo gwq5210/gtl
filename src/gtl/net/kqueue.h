@@ -81,7 +81,7 @@ class Kqueue {
     return ret;
   }
   const Event& GetEvent(int index) const {
-    GTL_CHECK_LOG(events_ && index >= 0 && index < max_events_, "1");
+    GTL_CHECK(events_ && index >= 0 && index < max_events_);
     return events_[index];
   }
   bool Add(int fd, int events, void* ptr = nullptr) { return Ctl(kAdd, fd, events, ptr); }

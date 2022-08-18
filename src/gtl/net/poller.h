@@ -27,12 +27,6 @@ class Poller {
     kWritable = 0x2,
   };
 
-  struct Data {
-    int fd = -1;
-    int events = 0;
-    void* ptr = nullptr;
-  };
-
   struct Result {
     Result(int ev = 0, void* p = nullptr) : events(ev), ptr(p) {}
     int events = 0;
