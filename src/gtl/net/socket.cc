@@ -1,5 +1,7 @@
 #include "gtl/net/socket.h"
 
+#include "fmt/format.h"
+
 namespace gtl {
 
 std::string Socket::DomainName(int domain) {
@@ -24,6 +26,33 @@ std::string Socket::TypeName(int type) {
     return "seq_packet";
   }
   return "";
+}
+
+std::string Socket::GetSocketInfo(const Socket& socket) {
+  std::string info = socket.ToString();
+  if (socket < 0) {
+    return info;
+  }
+
+  if (socket.IsNonBlocking()) {
+    info += " non_blocking";
+  }
+  if (socket.IsKeepAlive()) {
+    info += " keep_alive";
+  }
+  if (socket.IsReuseAddr()) {
+    info += " reuse_addr";
+  }
+  if (socket.IsReusePort()) {
+    info += " reuse_port";
+  }
+  if (socket.IsNoDelay()) {
+    info += " no_delay";
+  }
+  info += fmt::format(" recv_buff_size:{}", socket.GetRecvBufferSize());
+  info += fmt::format(" send_buff_size:{}", socket.GetSendBufferSize());
+
+  return info;
 }
 
 Socket Socket::Create(int domain, int type /* = SOCK_STREAM */) {
@@ -61,41 +90,41 @@ Socket Socket::ServerStart(const SocketAddress& address, int type /* = SOCK_STRE
     return socket;
   }
 
-  GTL_INFO("{}", socket.ToString());
+  socket.SetNonBlocking();
+  socket.EnableNoDelay();
+
+  GTL_INFO("{}", GetSocketInfo(socket));
   return socket;
 }
 
-bool Socket::Bind(const SocketAddress& address) {
+bool Socket::Bind(const SocketAddress& address) const {
   if (::bind(sockfd_, &address.addr(), address.socklen()) != 0) {
     GTL_ERROR("bind address({}) failed! errno:{}, errmsg:{}", address.ToString(), errno, strerror(errno));
-    Close();
     return false;
   }
   return true;
 }
 
-bool Socket::Listen(int backlog /* = 65535 */) {
+bool Socket::Listen(int backlog /* = 65535 */) const {
   if (!(type_ == SOCK_STREAM || type_ == SOCK_SEQPACKET)) {
     return true;
   }
   if (::listen(sockfd_, backlog) == -1) {
     GTL_ERROR("listen failed! errno:{}, errmsg:{}", errno, strerror(errno));
-    Close();
     return false;
   }
   return true;
 }
 
-bool Socket::Connect(const SocketAddress& peer_address) {
+bool Socket::Connect(const SocketAddress& peer_address) const {
   if (::connect(sockfd_, &peer_address.addr(), peer_address.socklen()) == -1) {
     GTL_ERROR("connect to address:{} failed, errno:{}, errmsg:{}", peer_address.ToString(), errno, strerror(errno));
-    Close();
     return false;
   }
   return true;
 }
 
-Socket Socket::Accept(SocketAddress* peer_address /* = nullptr*/) {
+Socket Socket::Accept(SocketAddress* peer_address /* = nullptr*/) const {
   SocketAddress address;
   int client_fd = ::accept(sockfd_, &address.addr(), &address.socklen());
   if (client_fd == -1) {
@@ -106,10 +135,12 @@ Socket Socket::Accept(SocketAddress* peer_address /* = nullptr*/) {
   if (peer_address) {
     *peer_address = address;
   }
-  return Socket(client_fd, domain_, type_);
+  Socket client_socket = Socket(client_fd, domain_, type_);
+  GTL_INFO("{}", GetSocketInfo(client_socket));
+  return client_socket;
 }
 
-bool Socket::GetLocalAddr(SocketAddress& local_address) {
+bool Socket::GetLocalAddr(SocketAddress& local_address) const {
   if (::getsockname(sockfd_, &local_address.addr(), &local_address.socklen()) != 0) {
     GTL_ERROR("getsockname failed! errno:{}, errmsg:{}", errno, strerror(errno));
     local_address.Clear();
@@ -118,7 +149,7 @@ bool Socket::GetLocalAddr(SocketAddress& local_address) {
   return true;
 }
 
-bool Socket::GetPeerAddr(SocketAddress& peer_address) {
+bool Socket::GetPeerAddr(SocketAddress& peer_address) const {
   if (::getpeername(sockfd_, &peer_address.addr(), &peer_address.socklen()) != 0) {
     GTL_ERROR("getpeername failed! errno:{}, errmsg:{}", errno, strerror(errno));
     peer_address.Clear();
@@ -127,7 +158,7 @@ bool Socket::GetPeerAddr(SocketAddress& peer_address) {
   return true;
 }
 
-ssize_t Socket::Send(const void* buf, size_t buf_len, int flags /* = 0*/) {
+ssize_t Socket::Send(const void* buf, size_t buf_len, int flags /* = 0*/) const {
   if (buf_len == 0) {
     return 0;
   }
@@ -143,7 +174,7 @@ ssize_t Socket::Send(const void* buf, size_t buf_len, int flags /* = 0*/) {
   return len;
 }
 
-ssize_t Socket::SendAll(const void* buf, size_t buf_len, int flags /* = 0*/) {
+ssize_t Socket::SendAll(const void* buf, size_t buf_len, int flags /* = 0*/) const {
   if (buf_len == 0) {
     return 0;
   }
@@ -163,7 +194,7 @@ ssize_t Socket::SendAll(const void* buf, size_t buf_len, int flags /* = 0*/) {
   return send_len;
 }
 
-ssize_t Socket::SendTo(const void* buf, size_t buf_len, const SocketAddress& peer_address, int flags /* = 0*/) {
+ssize_t Socket::SendTo(const void* buf, size_t buf_len, const SocketAddress& peer_address, int flags /* = 0*/) const {
   if (buf_len == 0) {
     return 0;
   }
@@ -179,7 +210,7 @@ ssize_t Socket::SendTo(const void* buf, size_t buf_len, const SocketAddress& pee
   return ret;
 }
 
-ssize_t Socket::Recv(void* buf, size_t buf_len, int flags /* = 0*/) {
+ssize_t Socket::Recv(void* buf, size_t buf_len, int flags /* = 0*/) const {
   if (buf_len == 0) {
     return 0;
   }
@@ -195,7 +226,7 @@ ssize_t Socket::Recv(void* buf, size_t buf_len, int flags /* = 0*/) {
   return len;
 }
 
-ssize_t Socket::RecvAll(void* buf, size_t buf_len, int flags /* = 0*/) {
+ssize_t Socket::RecvAll(void* buf, size_t buf_len, int flags /* = 0*/) const {
   if (buf_len == 0) {
     return 0;
   }
@@ -207,15 +238,20 @@ ssize_t Socket::RecvAll(void* buf, size_t buf_len, int flags /* = 0*/) {
   do {
     ssize_t len = ::recv(sockfd_, reinterpret_cast<char*>(buf) + read_len, buf_len - read_len, flags);
     if (len == -1) {
+      if (errno == EAGAIN) {
+        break;
+      }
       GTL_ERROR("recv failed, errno:{}, errmsg:{}", errno, strerror(errno));
       return -1;
+    } else if (len == 0) {
+      break;
     }
     read_len += len;
   } while (read_len < buf_len);
   return read_len;
 }
 
-ssize_t Socket::RecvFrom(void* buf, size_t buf_len, SocketAddress* peer_address, int flags /* = 0*/) {
+ssize_t Socket::RecvFrom(void* buf, size_t buf_len, SocketAddress* peer_address, int flags /* = 0*/) const {
   if (buf_len == 0) {
     return 0;
   }

@@ -20,3 +20,9 @@ new_git_repository(
   tag = "8.1.1",
   build_file = "@//:fmtlib.BUILD",
 )
+
+git_repository(
+    name = "gflags",
+    remote = "https://github.com/gflags/gflags.git",
+    tag = "v2.2.2"
+)

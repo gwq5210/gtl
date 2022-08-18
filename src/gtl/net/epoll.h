@@ -49,7 +49,7 @@ class Epoll {
   }
   ~Epoll() { Destroy(); }
 
-  bool Init(size_t max_events = 10240, bool et = false) {
+  bool Init(size_t max_events = 10240, bool et = true) {
     et_ = et;
     efd_ = epoll_create(1);
     max_events_ = max_events;
@@ -95,7 +95,7 @@ class Epoll {
   Epoll& operator=(const Epoll& other) = delete;
 
   void Clear() {
-    et_ = false;
+    et_ = true;
     efd_ = -1;
     max_events_ = 10240;
     events_ = nullptr;
@@ -108,7 +108,7 @@ class Epoll {
     delete[] events_;
   }
 
-  bool et_ = false;
+  bool et_ = true;
   int efd_ = -1;
   size_t max_events_ = 10240;
   Event* events_ = nullptr;
@@ -164,5 +164,3 @@ class EpollPoller : public Poller {
 };
 
 }  // namespace gtl
-
-#endif  // !defined(__APPLE__)

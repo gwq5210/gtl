@@ -16,6 +16,7 @@ cc_library(
     deps = [
         "@fmtlib",
         "@spdlog",
+        "@gflags//:gflags",
     ],
 )
 
