@@ -17,12 +17,6 @@
 #include "gtl/net/socket_address.h"
 #include "gtl/util/fd_util.h"
 
-#if !defined(__APPLE__)
-#  include "gtl/net/epoll.h"
-#else
-#  include "gtl/net/kqueue.h"
-#endif
-
 namespace gtl {
 
 class Socket {

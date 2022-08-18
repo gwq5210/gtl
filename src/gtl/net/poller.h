@@ -21,6 +21,7 @@ class Poller {
   virtual ~Poller() { Destroy(); }
   static bool EventReadable(int events) { return events & kReadable; }
   static bool EventWritable(int events) { return events & kWritable; }
+  static Poller* CreatePoller();
 
   enum Event {
     kReadable = 0x1,
@@ -33,6 +34,9 @@ class Poller {
     void* ptr = nullptr;
   };
 
+  void set_event_callback(std::function<void(int, void*)>&& func) { event_callback_ = std::move(func); }
+  void set_wait_callback(std::function<void(int)>&& func) { wait_callback_ = std::move(func); }
+
   virtual bool Init(size_t max_events = 10240) {
     max_events_ = max_events;
     results_ = new Result[max_events_];
@@ -44,6 +48,19 @@ class Poller {
   const Result& GetResult(int index) const {
     GTL_CHECK(results_ != nullptr && index >= 0 && index < max_events_);
     return results_[index];
+  }
+  void Dispatch(int timeout_ms = -1) {
+    int event_num = Wait(timeout_ms);
+    if (wait_callback_) {
+      wait_callback_(event_num);
+    }
+
+    if (event_callback_) {
+      for (int i = 0; i < event_num; ++i) {
+        const Result& result = GetResult(i);
+        event_callback_(result.events, result.ptr);
+      }
+    }
   }
 
  protected:
@@ -58,6 +75,14 @@ class Poller {
 
   Result* results_ = nullptr;
   size_t max_events_ = 10240;
+  std::function<void(int)> wait_callback_;
+  std::function<void(int, void*)> event_callback_;
 };
 
 }  // namespace gtl
+
+#if !defined(__APPLE__)
+#  include "gtl/net/epoll.h"
+#else
+#  include "gtl/net/kqueue.h"
+#endif

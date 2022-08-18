@@ -133,3 +133,17 @@ cc_test(
         ":gtl",
     ],
 )
+
+cc_test(
+    name = "reactor_server",
+    srcs = [
+        "examples/net/reactor_server.cc",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    copts = ["-Wall", "-Wreturn-type"],
+    deps = [
+        ":gtl",
+    ],
+)

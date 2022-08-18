@@ -1,4 +1,5 @@
 #include "gtl/net/poller.h"
+#include "gtl/net/reactor.h"
 #include "gtl/net/socket.h"
 
 static const int kMsgSize = 13;
@@ -73,24 +74,19 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-#if defined(__APPLE__)
-  gtl::KqueuePoller poller;
-#else
-  gtl::EpollPoller poller;
-#endif
+  gtl::Reactor reactor;
 
   GTL_INFO("init begin");
-  bool success = poller.Init();
+  bool success = reactor.Init();
   GTL_INFO("init status: {}", success);
-  success = poller.Add(listen_context.socket, gtl::Poller::kReadable | gtl::Poller::kWritable, (void*)&listen_context);
+  success = reactor.poller()->Add(listen_context.socket, gtl::Poller::kReadable | gtl::Poller::kWritable,
+                                  (void*)&listen_context);
   GTL_INFO("Add status: {}", success);
 
-  poller.set_wait_callback([](int event_num) { GTL_INFO("wait done, event_num: {}", event_num); });
-  poller.set_event_callback(std::bind(HandleEvents, std::ref(poller), std::ref(listen_context), std::placeholders::_1,
-                                      std::placeholders::_2));
+  reactor.poller()->set_wait_callback([](int event_num) { GTL_INFO("wait done, event_num: {}", event_num); });
+  reactor.poller()->set_event_callback(std::bind(HandleEvents, std::ref(*reactor.poller()), std::ref(listen_context),
+                                                 std::placeholders::_1, std::placeholders::_2));
 
-  while (true) {
-    poller.Dispatch();
-  }
+  reactor.Dispatch();
   return 0;
 }
