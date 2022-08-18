@@ -132,7 +132,7 @@ class Socket {
   bool GetSockOpt(int level, int optname, void* optval, socklen_t* optlen) const {
     int ret = ::getsockopt(sockfd_, level, optname, optval, optlen);
     if (ret != 0) {
-      GTL_ERROR("getsockopt failed, errno:{}, errmsg:{}", errno, strerror(errno));
+      GTL_TRACE("getsockopt level:{}, optname:{} failed, errno:{}, errmsg:{}", level, optname, errno, strerror(errno));
       return false;
     }
     return true;
@@ -140,7 +140,7 @@ class Socket {
   bool SetSockOpt(int level, int optname, const void* optval, socklen_t optlen) const {
     int ret = ::setsockopt(sockfd_, level, optname, optval, optlen);
     if (ret != 0) {
-      GTL_ERROR("setsockopt failed, errno:{}, errmsg:{}", errno, strerror(errno));
+      GTL_TRACE("setsockopt level:{}, optname:{} failed, errno:{}, errmsg:{}", level, optname, errno, strerror(errno));
       return false;
     }
     return true;

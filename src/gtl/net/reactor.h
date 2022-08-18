@@ -13,8 +13,8 @@ class Reactor {
   const Poller* poller() const { return poller_; }
 
   virtual bool Init();
-  // virtual bool RegisterHandler(EventHandler* handler);
-  // virtual bool RemoveHandler(EventHandler* handler);
+  virtual bool RegisterHandler(EventHandler* handler);
+  virtual bool RemoveHandler(EventHandler* handler);
   virtual bool Dispatch();
 
  private:

@@ -8,6 +8,14 @@ bool Reactor::Init() {
   return true;
 }
 
+bool Reactor::RegisterHandler(EventHandler* handler) {
+  return poller_->Add(handler->GetFd(), handler->events(), handler);
+}
+
+bool Reactor::RemoveHandler(EventHandler* handler) {
+  return poller_->Del(handler->GetFd(), handler->events(), handler);
+}
+
 bool Reactor::Dispatch() {
   while (true) {
     poller_->Dispatch();

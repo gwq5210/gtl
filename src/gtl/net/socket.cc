@@ -83,10 +83,12 @@ Socket Socket::ServerStart(const SocketAddress& address, int type /* = SOCK_STRE
   }
 
   if (!socket.Bind(address)) {
+    socket.Close();
     return socket;
   }
 
   if (!socket.Listen(backlog)) {
+    socket.Close();
     return socket;
   }
 
