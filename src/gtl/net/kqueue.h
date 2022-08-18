@@ -1,7 +1,5 @@
 #pragma once
 
-#if defined(__APPLE__)
-
 #include <errno.h>
 #include <string.h>
 #include <sys/event.h>
@@ -60,6 +58,7 @@ class Kqueue {
     events_ = other.events_;
 
     other.Clear();
+    return *this;
   }
   ~Kqueue() { Destroy(); }
 
@@ -85,14 +84,15 @@ class Kqueue {
     GTL_CHECK_LOG(events_ && index >= 0 && index < max_events_, "1");
     return events_[index];
   }
-  bool Add(int fd, int events, void* ptr = nullptr) {
-    return Ctl(kAdd, fd, events, ptr);
-  }
-  bool Del(int fd, int events, void* ptr = nullptr) {
-    return Ctl(kDel, fd, events, ptr);
-  }
-  bool Mod(int fd, int events, void* ptr = nullptr) {
-    Del(fd, kReadable | kWritable, ptr);
+  bool Add(int fd, int events, void* ptr = nullptr) { return Ctl(kAdd, fd, events, ptr); }
+  bool Del(int fd, int events, void* ptr = nullptr) { return Ctl(kDel, fd, events, ptr); }
+  bool Mod(int fd, int old_events, int events, void* ptr = nullptr) {
+    if (EventReadable(old_events)) {
+      Del(fd, kReadable, ptr);
+    }
+    if (EventWritable(old_events)) {
+      Del(fd, kWritable, ptr);
+    }
     return Add(fd, events, ptr);
   }
   bool Ctl(int op, int fd, int events, void* ptr = nullptr) {
@@ -108,7 +108,6 @@ class Kqueue {
     }
     return Ctl(ev, count);
   }
-
 
  private:
   Kqueue(const Kqueue& other) = delete;
@@ -170,7 +169,9 @@ class KqueuePoller : public Poller {
   }
   virtual bool Add(int fd, int events, void* ptr = nullptr) override { return kq_.Add(fd, GetEvents(events), ptr); }
   virtual bool Del(int fd, int events, void* ptr = nullptr) override { return kq_.Del(fd, GetEvents(events), ptr); }
-  virtual bool Mod(int fd, int events, void* ptr = nullptr) override { return kq_.Mod(fd, GetEvents(events), ptr); }
+  virtual bool Mod(int fd, int old_events, int events, void* ptr = nullptr) override {
+    return kq_.Mod(fd, GetEvents(old_events), GetEvents(events), ptr);
+  }
   virtual int Wait(int timeout_ms = -1) override {
     int ret = kq_.Wait(timeout_ms);
     if (ret < 0) {
@@ -189,5 +190,3 @@ class KqueuePoller : public Poller {
 };
 
 }  // namespace gtl
-
-#endif  // defined(__APPLE__)

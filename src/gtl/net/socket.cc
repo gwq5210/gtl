@@ -2,6 +2,30 @@
 
 namespace gtl {
 
+std::string Socket::DomainName(int domain) {
+  if (domain == AF_INET) {
+    return "IPv4";
+  } else if (domain == AF_INET6) {
+    return "IPv6";
+  } else if (domain == AF_UNIX || domain == AF_LOCAL) {
+    return "unix";
+  }
+  return "";
+}
+
+std::string Socket::TypeName(int type) {
+  if (type == SOCK_STREAM) {
+    return "stream";
+  } else if (type == SOCK_DGRAM) {
+    return "datagram";
+  } else if (type == SOCK_RAW) {
+    return "raw";
+  } else if (type == SOCK_SEQPACKET) {
+    return "seq_packet";
+  }
+  return "";
+}
+
 Socket Socket::Create(int domain, int type /* = SOCK_STREAM */) {
   int fd = ::socket(domain, type, 0);
   if (fd < 0) {
@@ -37,6 +61,7 @@ Socket Socket::ServerStart(const SocketAddress& address, int type /* = SOCK_STRE
     return socket;
   }
 
+  GTL_INFO("{}", socket.ToString());
   return socket;
 }
 

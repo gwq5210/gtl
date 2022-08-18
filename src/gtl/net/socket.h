@@ -12,12 +12,20 @@
 #include "gtl/logging.h"
 #include "gtl/net/socket_address.h"
 
+#if !defined(__APPLE__)
+#  include "gtl/net/epoll.h"
+#else
+#  include "gtl/net/kqueue.h"
+#endif
+
 namespace gtl {
 
 class Socket {
  public:
   static const int kNetBufferSize = 256 * 1024;
 
+  static std::string DomainName(int domain);
+  static std::string TypeName(int type);
   static Socket Create(int domain, int type = SOCK_STREAM);
   static Socket ConnectTo(const SocketAddress& peer_address, int type = SOCK_STREAM);
   static Socket ServerStart(const SocketAddress& address, int type = SOCK_STREAM, int backlog = 65535);
@@ -39,6 +47,7 @@ class Socket {
     type_ = other.type_;
 
     other.Clear();
+    return *this;
   }
   ~Socket() { Close(); }
 
@@ -52,6 +61,14 @@ class Socket {
     sockfd_ = -1;
     domain_ = AF_UNSPEC;
     type_ = SOCK_STREAM;
+  }
+
+  std::string ToString() const {
+    if (IsValid()) {
+      return fmt::format("socket[{}] {} {}", sockfd(), DomainName(domain_), TypeName(type_));
+    } else {
+      return "invalid_socket";
+    }
   }
 
   operator int() const { return sockfd_; }

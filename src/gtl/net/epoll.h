@@ -1,7 +1,5 @@
 #pragma once
 
-#if !defined(__APPLE__)
-
 #include <errno.h>
 #include <string.h>
 #include <sys/epoll.h>
@@ -47,6 +45,7 @@ class Epoll {
     events_ = other.events_;
 
     other.Clear();
+    return *this;
   }
   ~Epoll() { Destroy(); }
 
@@ -77,7 +76,7 @@ class Epoll {
     return events_[index];
   }
   bool Add(int fd, uint32_t events, void* ptr = nullptr) { return Ctl(kAdd, fd, events, ptr); }
-  bool Mod(int fd, uint32_t events, void* ptr = nullptr) { return Ctl(kMod, fd, events, ptr); }
+  bool Mod(int fd, uint32_t old_events, uint32_t events, void* ptr = nullptr) { return Ctl(kMod, fd, events, ptr); }
   bool Del(int fd, uint32_t events, void* ptr = nullptr) { return Ctl(kDel, fd, events, ptr); }
   bool Ctl(int op, int fd, uint32_t events, void* ptr = nullptr) {
     Event event;
@@ -144,7 +143,9 @@ class EpollPoller : public Poller {
   }
   virtual bool Add(int fd, int events, void* ptr = nullptr) override { return epoll_.Add(fd, GetEvents(events), ptr); }
   virtual bool Del(int fd, int events, void* ptr = nullptr) override { return epoll_.Del(fd, GetEvents(events), ptr); }
-  virtual bool Mod(int fd, int events, void* ptr = nullptr) override { return epoll_.Mod(fd, GetEvents(events), ptr); }
+  virtual bool Mod(int fd, int old_events, int events, void* ptr = nullptr) override {
+    return epoll_.Mod(fd, GetEvents(old_events), GetEvents(events), ptr);
+  }
   virtual int Wait(int timeout_ms = -1) override {
     int ret = epoll_.Wait(timeout_ms);
     if (ret < 0) {

@@ -1,12 +1,6 @@
 #include "gtl/net/poller.h"
 #include "gtl/net/socket.h"
 
-#if defined(__APPLE__)
-#  include "gtl/net/kqueue.h"
-#else
-#  include "gtl/net/epoll.h"
-#endif
-
 static const int kMsgSize = 13;
 
 struct Context {
@@ -30,7 +24,7 @@ void HandleRead(gtl::Poller& poller, Context* ctx) {
   ctx->count++;
   GTL_INFO("count: {}, {} -> {}, msg: {}, size: {}", ctx->count, ctx->socket.GetPeerAddr().ToString(),
            ctx->socket.GetLocalAddr().ToString(), ctx->in_msg, ctx->in_msg.size());
-  poller.Mod(ctx->socket, gtl::Poller::kWritable, ctx);
+  poller.Mod(ctx->socket, gtl::Poller::kReadable, gtl::Poller::kWritable, ctx);
 }
 
 void HandleWrite(gtl::Poller& poller, Context* ctx) {
@@ -38,9 +32,9 @@ void HandleWrite(gtl::Poller& poller, Context* ctx) {
   GTL_INFO("count: {}, {} <- {}, msg: {}, size: {}, send_size: {}", ctx->count, ctx->socket.GetPeerAddr().ToString(),
            ctx->socket.GetLocalAddr().ToString(), ctx->in_msg, ctx->in_msg.size(), send_size);
   if (ctx->count < 2) {
-    poller.Mod(ctx->socket, gtl::Poller::kReadable, ctx);
+    poller.Mod(ctx->socket, gtl::Poller::kWritable, gtl::Poller::kReadable, ctx);
   } else {
-    poller.Del(ctx->socket, gtl::Poller::kReadable | gtl::Poller::kWritable, ctx);
+    poller.Del(ctx->socket, gtl::Poller::kWritable, ctx);
     GTL_INFO("delete client_context: {}", fmt::ptr(ctx));
     delete ctx;
   }

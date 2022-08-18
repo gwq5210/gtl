@@ -11,7 +11,7 @@ cc_library(
     hdrs = glob(["src/**/*.h"]),
     includes = ["src"],
     visibility = ["//visibility:public"],
-    copts = ["-Wall"],
+    copts = ["-Wall", "-Wreturn-type"],
     linkopts = ["-pthread"],
     deps = [
         "@fmtlib",
@@ -27,6 +27,7 @@ cc_test(
     visibility = [
         "//visibility:public",
     ],
+    copts = ["-Wall", "-Wreturn-type"],
     deps = [
         ":gtl",
         "@googletest//:gtest",
@@ -42,6 +43,7 @@ cc_test(
     visibility = [
         "//visibility:public",
     ],
+    copts = ["-Wall", "-Wreturn-type"],
     deps = [
         ":gtl",
     ],
@@ -55,6 +57,7 @@ cc_test(
     visibility = [
         "//visibility:public",
     ],
+    copts = ["-Wall", "-Wreturn-type"],
     deps = [
         ":gtl",
     ],
@@ -68,6 +71,7 @@ cc_test(
     visibility = [
         "//visibility:public",
     ],
+    copts = ["-Wall", "-Wreturn-type"],
     deps = [
         ":gtl",
     ],
@@ -81,6 +85,7 @@ cc_test(
     visibility = [
         "//visibility:public",
     ],
+    copts = ["-Wall", "-Wreturn-type"],
     deps = [
         ":gtl",
     ],
@@ -94,6 +99,7 @@ cc_test(
     visibility = [
         "//visibility:public",
     ],
+    copts = ["-Wall", "-Wreturn-type"],
     deps = [
         ":gtl",
     ],
@@ -107,6 +113,7 @@ cc_test(
     visibility = [
         "//visibility:public",
     ],
+    copts = ["-Wall", "-Wreturn-type"],
     deps = [
         ":gtl",
     ],
@@ -120,6 +127,7 @@ cc_test(
     visibility = [
         "//visibility:public",
     ],
+    copts = ["-Wall", "-Wreturn-type"],
     deps = [
         ":gtl",
     ],

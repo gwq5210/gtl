@@ -45,7 +45,7 @@ class Poller {
   }
   virtual bool Add(int fd, int events, void* ptr = nullptr) = 0;
   virtual bool Del(int fd, int events, void* ptr = nullptr) = 0;
-  virtual bool Mod(int fd, int events, void* ptr = nullptr) = 0;
+  virtual bool Mod(int fd, int old_events, int events, void* ptr = nullptr) = 0;
   virtual int Wait(int timeout_ms = -1) = 0;
   const Result& GetResult(int index) const {
     GTL_CHECK(results_ != nullptr && index >= 0 && index < max_events_);
