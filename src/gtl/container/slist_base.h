@@ -12,6 +12,9 @@
 #include <utility>
 
 #include "gtl/algorithm/memory_op.h"
+#include "gtl/port.h"
+
+#define SListEntry(PTR, TYPE, MEMBER) ((TYPE*)((char*)PTR - GTL_OFFSETOF(TYPE, MEMBER)))
 
 namespace gtl {
 
