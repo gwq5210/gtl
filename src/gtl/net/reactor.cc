@@ -5,15 +5,8 @@ namespace gtl {
 bool Reactor::Init() {
   poller_ = Poller::CreatePoller();
   poller_->Init();
+  poller_->set_event_callback([this](int events, void* ptr) { HandleEvents(events, ptr); });
   return true;
-}
-
-bool Reactor::RegisterHandler(EventHandler* handler) {
-  return poller_->Add(handler->GetFd(), handler->events(), handler);
-}
-
-bool Reactor::RemoveHandler(EventHandler* handler) {
-  return poller_->Del(handler->GetFd(), handler->events(), handler);
 }
 
 bool Reactor::Dispatch() {
@@ -21,6 +14,12 @@ bool Reactor::Dispatch() {
     poller_->Dispatch();
   }
   return 0;
+}
+
+bool Reactor::HandleEvents(int events, void* ptr) {
+  EventHandler* handler = static_cast<EventHandler*>(ptr);
+  handler->HandleEvents(events);
+  return true;
 }
 
 }  // namespace gtl

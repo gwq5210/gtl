@@ -16,4 +16,24 @@ Poller* Poller::CreatePoller() {
 #endif
 }
 
+int Poller::AddEvents(int old_events, int events) {
+  if (Poller::EventReadable(events)) {
+    old_events |= Poller::kReadable;
+  }
+  if (Poller::EventWritable(events)) {
+    old_events |= Poller::kWritable;
+  }
+  return old_events;
+}
+
+int Poller::DelEvents(int old_events, int events) {
+  if (Poller::EventReadable(events)) {
+    old_events &= ~Poller::kReadable;
+  }
+  if (Poller::EventWritable(events)) {
+    old_events &= ~Poller::kWritable;
+  }
+  return old_events;
+}
+
 }  // namespace gtl

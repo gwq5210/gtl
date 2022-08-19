@@ -17,11 +17,38 @@ namespace gtl {
 
 class Poller {
  public:
-  Poller() = default;
-  virtual ~Poller() { Destroy(); }
   static bool EventReadable(int events) { return events & kReadable; }
   static bool EventWritable(int events) { return events & kWritable; }
+  static int AddEvents(int old_events, int events);
+  static int DelEvents(int old_events, int events);
   static Poller* CreatePoller();
+
+  Poller() = default;
+  Poller(Poller&& other) {
+    results_ = other.results_;
+    max_events_ = other.max_events_;
+    wait_callback_ = std::move(other.wait_callback_);
+    event_callback_ = std::move(other.event_callback_);
+
+    other.Clear();
+  }
+  virtual ~Poller() { Destroy(); }
+
+  Poller& operator=(Poller&& other) {
+    if (this == &other) {
+      return *this;
+    }
+
+    Destroy();
+
+    results_ = other.results_;
+    max_events_ = other.max_events_;
+    wait_callback_ = std::move(other.wait_callback_);
+    event_callback_ = std::move(other.event_callback_);
+
+    other.Clear();
+    return *this;
+  }
 
   enum Event {
     kReadable = 0x1,
@@ -67,6 +94,8 @@ class Poller {
   void Clear() {
     results_ = nullptr;
     max_events_ = 10240;
+    wait_callback_ = nullptr;
+    event_callback_ = nullptr;
   }
   void Destroy() {
     delete[] results_;

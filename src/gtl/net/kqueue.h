@@ -50,7 +50,12 @@ class Kqueue {
 
     other.Clear();
   }
+  ~Kqueue() { Destroy(); }
   Kqueue& operator=(Kqueue&& other) {
+    if (this == &other) {
+      return *this;
+    }
+
     Destroy();
 
     kfd_ = other.kfd_;
@@ -60,7 +65,6 @@ class Kqueue {
     other.Clear();
     return *this;
   }
-  ~Kqueue() { Destroy(); }
 
   bool Init(size_t max_events = 10240) {
     kfd_ = kqueue();
@@ -161,6 +165,22 @@ class KqueuePoller : public Poller {
       revents |= kWritable;
     }
     return revents;
+  }
+
+  KqueuePoller() = default;
+  KqueuePoller(KqueuePoller&& other) {
+    Poller::operator=(std::move(other));
+    kq_ = std::move(other.kq_);
+  }
+
+  KqueuePoller& operator=(KqueuePoller&& other) {
+    if (this == &other) {
+      return *this;
+    }
+
+    Poller::operator=(std::move(other));
+    kq_ = std::move(other.kq_);
+    return *this;
   }
 
   virtual bool Init(size_t max_events = 10240) override {

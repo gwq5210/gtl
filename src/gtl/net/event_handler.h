@@ -8,25 +8,34 @@ class Reactor;
 
 class EventHandler {
  public:
-  EventHandler(Reactor* reactor, int events) {}
+  EventHandler(Reactor* reactor) : reactor_(reactor) {}
+
+  int events() const { return events_; }
+
+  bool RegsiterEvents(int events);
+  bool ModifyEvents(int events);
+  bool RemoveEvents(int events);
+  bool RemoveAllEvents();
 
   virtual int GetFd() const = 0;
-  int events() const { return events_; }
-  void set_events(int events) {
-    events_ = 0;
-    if (Poller::EventReadable(events)) {
-      events_ |= Poller::kReadable;
+  virtual bool HandleReadEvents() = 0;
+  virtual bool HandleWriteEvents() = 0;
+
+  virtual bool HandleEvents(int revents) {
+    if (Poller::EventReadable(revents)) {
+      HandleReadEvents();
     }
-    if (Poller::EventWritable(events)) {
-      events_ |= Poller::kWritable;
+    if (Poller::EventWritable(revents)) {
+      HandleWriteEvents();
     }
+    return true;
   }
 
  private:
   EventHandler(const EventHandler& other) = delete;
   EventHandler& operator=(const EventHandler& other) = delete;
 
-  Reactor* recator_ = nullptr;
+  Reactor* reactor_ = nullptr;
   int events_ = 0;
 };
 

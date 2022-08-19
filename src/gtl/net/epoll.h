@@ -37,6 +37,10 @@ class Epoll {
     other.Clear();
   }
   Epoll& operator=(Epoll&& other) {
+    if (this == &other) {
+      return *this;
+    }
+
     Destroy();
 
     et_ = other.et_;
@@ -137,6 +141,22 @@ class EpollPoller : public Poller {
     return revents;
   }
 
+  EpollPoller() = default;
+  EpollPoller(EpollPoller&& other) {
+    Poller::operator=(std::move(other));
+    epoll_ = std::move(other.epoll_);
+  }
+
+  EpollPoller& operator=(EpollPoller&& other) {
+    if (this == &other) {
+      return *this;
+    }
+
+    Poller::operator=(std::move(other));
+    epoll_ = std::move(other.epoll_);
+    return *this;
+  }
+
   virtual bool Init(size_t max_events = 10240) override {
     Poller::Init(max_events);
     return epoll_.Init(max_events);
@@ -160,6 +180,9 @@ class EpollPoller : public Poller {
   }
 
  private:
+  EpollPoller(const EpollPoller& other) = delete;
+  EpollPoller& operator=(const EpollPoller& other) = delete;
+
   Epoll epoll_;
 };
 

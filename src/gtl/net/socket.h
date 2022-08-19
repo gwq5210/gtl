@@ -40,6 +40,10 @@ class Socket {
     other.Clear();
   }
   Socket& operator=(Socket&& other) {
+    if (this == &other) {
+      return *this;
+    }
+
     Close();
 
     sockfd_ = other.sockfd_;
