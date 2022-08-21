@@ -118,8 +118,18 @@ class GtlMemoryAllocator : public MemoryAllocator {
   struct BlockHeader {
     char name[kMaxBlockNameSize] = "unnamed";
     size_t size = 0;
-    doubly_list::ListNode list;
+    doubly_list::ListNode block_list;
     char data[];
+  };
+
+  struct FreeBlockHeader {
+    char name[kMaxBlockNameSize] = "unnamed";
+    size_t size = 0;
+    doubly_list::ListNode block_list;
+    union {
+      doubly_list::ListNode free_list;
+      char data[];
+    };
   };
 
   GtlMemoryAllocator() = default;
