@@ -16,15 +16,13 @@ namespace gtl {
 // 在给定地址 p 创建以参数 args... 初始化的 T 对象
 template <typename T, typename... Args>
 T* construct_at(T* p, Args&&... args) {
-  ::new (const_cast<void*>(static_cast<const volatile void*>(p))) T(std::forward<Args>(args)...);
-  return p;
+  return ::new (const_cast<void*>(static_cast<const volatile void*>(p))) T(std::forward<Args>(args)...);
 }
 
 // 在给定地址 p 创建默认初始化(default-initialization)的 T 对象
 template <typename T>
 T* default_construct_at(T* p) {
-  ::new (const_cast<void*>(static_cast<const volatile void*>(p))) T;
-  return p;
+  return ::new (const_cast<void*>(static_cast<const volatile void*>(p))) T;
 }
 
 // 获得对象或函数 arg 的实际地址，即使存在 operator& 的重载

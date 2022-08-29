@@ -15,9 +15,9 @@
 
 namespace gtl {
 
-static void* CurrentProgramBreak() { return sbrk(0); }
+inline void* CurrentProgramBreak() { return sbrk(0); }
 
-static void* NewHeapMemory(size_t size) {
+inline void* NewHeapMemory(size_t size) {
   void* ret = sbrk(size);
   if (ret == (void*)-1) {
     return nullptr;
@@ -25,7 +25,15 @@ static void* NewHeapMemory(size_t size) {
   return ret;
 }
 
-static void* NewAnonMemory(size_t size) {
+inline void* DeleteHeapMemory(size_t size) {
+  void* ret = sbrk(-size);
+  if (ret == (void*)-1) {
+    return nullptr;
+  }
+  return ret;
+}
+
+inline void* NewAnonMemory(size_t size) {
   void* ret = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
   if (ret == MAP_FAILED) {
     GTL_ERROR("mmap failed, errno:{}, errmsg:{}", errno, strerror(errno));
@@ -34,7 +42,7 @@ static void* NewAnonMemory(size_t size) {
   return ret;
 }
 
-static bool DeleteAnonMemory(void* ptr, size_t size) {
+inline bool DeleteAnonMemory(void* ptr, size_t size) {
   int ret = munmap(ptr, size);
   if (ret != 0) {
     GTL_ERROR("munmap failed, errno:{}, errmsg:{}", errno, strerror(errno));
@@ -93,7 +101,8 @@ class StdMemoryAllocator : public MemoryAllocator {
 特点：每次分配给文件的都是最合适该文件大小的分区。
 缺点：内存中留下许多难以利用的小的空闲区。
 
-四、最坏适应算法(Worst Fit)：该算法按大小递减的顺序形成空闲区链，分配时直接从空闲区链的第一个空闲区中分配（不能满足需要则不分配）。
+四、最坏适应算法(Worst
+Fit)：该算法按大小递减的顺序形成空闲区链，分配时直接从空闲区链的第一个空闲区中分配（不能满足需要则不分配）。
 很显然，如果第一个空闲分区不能满足，那么再没有空闲分区能满足需要。
 这种分配方法初看起来不太合理，但它也有很强的直观吸引力：在大空闲区中放入程序后，剩下的空闲区常常也很大，于是还能装下一个较大的新程序。
 最坏适应算法与最佳适应算法的排序正好相反，它的队列指针总是指向最大的空闲区，在进行分配时，总是从最大的空闲区开始查寻。
@@ -110,27 +119,31 @@ class GtlMemoryAllocator : public MemoryAllocator {
 
   static const int kMaxBlockNameSize = 32;
   static const int kBlockMinSize = 32;
-  static const int kMaxHeapMemorySize = 128 * 1024;
-  static const int kMaxAnonMemoryCount = 8;
-
-  enum BlockState {};
+  static const int kMallocMmapThreshold = 0;
 
   struct BlockHeader {
+    BlockHeader(size_t block_size, const std::string& block_name = "") : size(block_size) { set_name(block_name); }
+    void set_name(const std::string& block_name) {
+      if (!block_name.empty()) {
+        strncpy(name, block_name.c_str(), kMaxBlockNameSize);
+      } else {
+        strncpy(name, "unnamed", 7);
+      }
+      name[kMaxBlockNameSize - 1] = '\0';
+    }
+    void set_used(bool block_used) { used = block_used; }
     char name[kMaxBlockNameSize] = "unnamed";
+    bool used = false;
     size_t size = 0;
     doubly_list::ListNode block_list;
     char data[];
   };
 
   struct FreeBlockHeader {
-    char name[kMaxBlockNameSize] = "unnamed";
-    size_t size = 0;
-    doubly_list::ListNode block_list;
-    union {
-      doubly_list::ListNode free_list;
-      char data[];
-    };
+    doubly_list::ListNode free_list;
   };
+
+  static const int kBlockHeaderSize = sizeof(BlockHeader);
 
   GtlMemoryAllocator() = default;
   ~GtlMemoryAllocator() = default;
@@ -141,16 +154,21 @@ class GtlMemoryAllocator : public MemoryAllocator {
   virtual void Free(void* ptr) override;
   virtual void* Calloc(size_t nmemb, size_t size) override;
   virtual void* Realloc(void* ptr, size_t size) override;
-  void* NewMemory(size_t size);
-  void* FindBestFit();
-  void* FindFirstFit();
-  void* FindNextFit();
-  void* FindWorstFit();
   std::string MemoryInfo() const { return ""; }
 
  private:
-  BlockHeader block_head_;
-  BlockHeader free_head_;
+  void* AllocMemory(size_t size);
+  void FreeMemory(void* ptr, size_t size);
+  BlockHeader* NewBlock(size_t size);
+  void* DeleteBlock(BlockHeader* block);
+  BlockHeader* FindFreeBlock(size_t size) { return FindFirstFit(size); }
+  BlockHeader* FindBestFit(size_t size);
+  BlockHeader* FindFirstFit(size_t size);
+  BlockHeader* FindNextFit(size_t size);
+  BlockHeader* FindWorstFit(size_t size);
+
+  doubly_list::ListNode block_head_;
+  doubly_list::ListNode free_head_;
 };
 
 }  // namespace gtl

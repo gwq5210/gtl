@@ -8,4 +8,5 @@
  */
 
 #include "gtl/algorithm/heap_op.h"
+#include "gtl/algorithm/memory_op.h"
 #include "gtl/algorithm/seq_op.h"
