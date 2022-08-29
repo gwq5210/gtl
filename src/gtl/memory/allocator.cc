@@ -8,8 +8,7 @@ namespace gtl {
 void* GtlMemoryAllocator::Malloc(size_t size) {
   BlockHeader* block = FindFreeBlock(size);
   if (block != nullptr) {
-    FreeBlockHeader* free_block_header = reinterpret_cast<FreeBlockHeader*>(block->data);
-    doubly_list::Remove(&free_block_header->free_list);
+    doubly_list::Remove(&block->free_list);
     return block->data;
   }
 
@@ -64,7 +63,7 @@ GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindBestFit(size_t size) { 
 GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindFirstFit(size_t size) {
   GTL_CHECK(size > 0);
   for (doubly_list::ListNode* node = free_head_.next; node != &free_head_; node = node->next) {
-    BlockHeader* block = ListEntry(node, BlockHeader, data);
+    BlockHeader* block = ListEntry(node, BlockHeader, free_list);
     if (block->size >= size) {
       return block;
     }

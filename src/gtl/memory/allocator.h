@@ -136,14 +136,13 @@ class GtlMemoryAllocator : public MemoryAllocator {
     bool used = false;
     size_t size = 0;
     doubly_list::ListNode block_list;
-    char data[];
+    union {
+      doubly_list::ListNode free_list;
+      char data[1];
+    };
   };
 
-  struct FreeBlockHeader {
-    doubly_list::ListNode free_list;
-  };
-
-  static const int kBlockHeaderSize = sizeof(BlockHeader);
+  static const int kBlockHeaderSize = GTL_OFFSETOF(BlockHeader, data);
 
   GtlMemoryAllocator() = default;
   ~GtlMemoryAllocator() = default;
