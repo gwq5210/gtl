@@ -51,5 +51,6 @@ TEST(AllocatorTest, AllocatorTest) {
     GTL_INFO("new 128\n{}", allocator.MemoryInfo());
     allocator.Free(ptr3);
     allocator.Free(ptr4);
+    GTL_INFO("free all\n{}", allocator.MemoryInfo());
   }
 }

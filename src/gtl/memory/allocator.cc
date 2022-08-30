@@ -48,13 +48,13 @@ void GtlMemoryAllocator::AddToFreeList(BlockHeader* block) {
   GTL_CHECK(block != nullptr);
 
   block->set_used(false);
-  doubly_list::ListNode* pos = free_head_.next;
+  doubly_list::ListNode* pos = &free_head_;
   ListForEach(node, free_head_) {
     BlockHeader* node_block = ListEntry(node, BlockHeader, free_list);
     if (node_block->size >= block->size) {
+      pos = node;
       break;
     }
-    pos = node;
   }
   doubly_list::InsertBefore(pos, &block->free_list);
 }
@@ -142,6 +142,8 @@ GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::MergeRightBlock(BlockHeader
     MergeTwoBlock(block, rblock);
     node = next;
   }
+  RemoveFromFreeList(block);
+  AddToFreeList(block);
   return block;
 }
 

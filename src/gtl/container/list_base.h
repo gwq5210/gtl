@@ -133,10 +133,10 @@ inline std::size_t Size(ListHead* list_head) {
 
 inline bool Empty(ListHead* list_head) { return list_head->next == list_head; }
 
-inline ListNode* AddToTail(ListHead* list_head, ListNode* node) { return InsertBefore(list_head->prev, node); }
+inline ListNode* AddToTail(ListHead* list_head, ListNode* node) { return InsertBefore(list_head, node); }
 
 inline ListNode* AddToTail(ListHead* list_head, ListNode* first, ListNode* last) {
-  return InsertBefore(list_head->prev, first, last);
+  return InsertBefore(list_head, first, last);
 }
 
 inline ListNode* AddToHead(ListHead* list_head, ListNode* node) { return InsertBefore(list_head->next, node); }
