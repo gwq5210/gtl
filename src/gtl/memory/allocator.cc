@@ -9,7 +9,9 @@ void* GtlMemoryAllocator::Malloc(size_t size) {
   BlockHeader* block = FindFreeBlock(size);
   if (block != nullptr) {
     doubly_list::Remove(&block->free_list);
-    return block->data;
+    block->set_used(true);
+    GTL_INFO("find free block: {}, size: {}", fmt::ptr(block), block->size);
+    return BlockHeader::ToData(block);
   }
 
   block = static_cast<BlockHeader*>(NewBlock(size));
@@ -17,11 +19,21 @@ void* GtlMemoryAllocator::Malloc(size_t size) {
     return nullptr;
   }
 
+  GTL_INFO("new block: {}, size: {}", fmt::ptr(block), block->size);
   block->set_used(true);
-  return block;
+  return BlockHeader::ToData(block);
 }
 
-void GtlMemoryAllocator::Free(void* ptr) {}
+void GtlMemoryAllocator::Free(void* ptr) {
+  if (ptr == nullptr) {
+    return;
+  }
+
+  BlockHeader* block = BlockHeader::ToBlockHeader(ptr);
+  block->set_used(false);
+  doubly_list::AddToTail(&free_head_, &block->free_list);
+  GTL_INFO("free block: {}, size: {}", fmt::ptr(block), block->size);
+}
 
 void* GtlMemoryAllocator::Calloc(size_t nmemb, size_t size) { return nullptr; }
 
@@ -74,5 +86,15 @@ GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindFirstFit(size_t size) {
 GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindNextFit(size_t size) { return nullptr; }
 
 GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindWorstFit(size_t size) { return nullptr; }
+
+std::string GtlMemoryAllocator::MemoryInfo() const {
+  std::string info;
+  info = "FreeBlock:\n";
+  for (doubly_list::ListNode* node = free_head_.next; node != &free_head_; node = node->next) {
+    BlockHeader* block = ListEntry(node, BlockHeader, free_list);
+    info += fmt::format("block: {}, size: {}\n", fmt::ptr(block), block->size);
+  }
+  return info;
+}
 
 }  // namespace gtl

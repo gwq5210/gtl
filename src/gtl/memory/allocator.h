@@ -122,6 +122,10 @@ class GtlMemoryAllocator : public MemoryAllocator {
   static const int kMallocMmapThreshold = 0;
 
   struct BlockHeader {
+    static void* ToData(BlockHeader* block) { return block->data; }
+    static BlockHeader* ToBlockHeader(void* ptr) {
+      return reinterpret_cast<BlockHeader*>(static_cast<char*>(ptr) - kBlockHeaderSize);
+    }
     BlockHeader(size_t block_size, const std::string& block_name = "") : size(block_size) { set_name(block_name); }
     void set_name(const std::string& block_name) {
       if (!block_name.empty()) {
@@ -153,7 +157,7 @@ class GtlMemoryAllocator : public MemoryAllocator {
   virtual void Free(void* ptr) override;
   virtual void* Calloc(size_t nmemb, size_t size) override;
   virtual void* Realloc(void* ptr, size_t size) override;
-  std::string MemoryInfo() const { return ""; }
+  std::string MemoryInfo() const;
 
  private:
   void* AllocMemory(size_t size);
