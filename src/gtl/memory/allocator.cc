@@ -59,9 +59,35 @@ void GtlMemoryAllocator::AddToFreeList(BlockHeader* block) {
   doubly_list::InsertBefore(pos, &block->free_list);
 }
 
-void* GtlMemoryAllocator::Calloc(size_t nmemb, size_t size) { return nullptr; }
+void* GtlMemoryAllocator::Calloc(size_t nmemb, size_t size) {
+  size_t mem_size = nmemb * size;
+  if (mem_size == 0) {
+    return nullptr;
+  }
+  void* ptr = Malloc(mem_size);
+  if (ptr == nullptr) {
+    return nullptr;
+  }
 
-void* GtlMemoryAllocator::Realloc(void* ptr, size_t size) { return nullptr; }
+  memset(ptr, 0, mem_size);
+  return ptr;
+}
+
+void* GtlMemoryAllocator::Realloc(void* ptr, size_t size) {
+  if (ptr == nullptr) {
+    return Malloc(size);
+  } else if (size == 0) {
+    Free(ptr);
+    return nullptr;
+  }
+
+  BlockHeader* block = BlockHeader::ToBlockHeader(ptr);
+  if (block->size >= size) {
+    return ptr;
+  }
+
+  return nullptr;
+}
 
 void* GtlMemoryAllocator::AllocMemory(size_t size) {
   GTL_CHECK(size > 0);
