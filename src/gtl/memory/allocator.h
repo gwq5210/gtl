@@ -117,9 +117,17 @@ class GtlMemoryAllocator : public MemoryAllocator {
     return instance;
   }
 
+  static int NextBlockId() { return block_id_++; }
+
+  static std::string GenerateBlockName() {
+    int block_id = NextBlockId();
+    return fmt::format("block_{}", block_id);
+  }
+
   static const int kMaxBlockNameSize = 32;
   static const int kBlockMinSize = 32;
   static const int kMallocMmapThreshold = 0;
+  static std::atomic_int block_id_;
 
   struct BlockHeader {
     static void* ToData(BlockHeader* block) { return block->data; }
@@ -131,14 +139,16 @@ class GtlMemoryAllocator : public MemoryAllocator {
       if (!block_name.empty()) {
         strncpy(name, block_name.c_str(), kMaxBlockNameSize);
       } else {
-        strncpy(name, "unnamed", 7);
+        name[0] = '\0';
       }
       name[kMaxBlockNameSize - 1] = '\0';
     }
     void set_used(bool block_used) { used = block_used; }
-    char name[kMaxBlockNameSize] = "unnamed";
+    char name[kMaxBlockNameSize] = "";
     bool used = false;
+    bool heap = false;
     size_t size = 0;
+    BlockHeader* region = nullptr;
     doubly_list::ListNode block_list;
     union {
       doubly_list::ListNode free_list;
@@ -147,6 +157,16 @@ class GtlMemoryAllocator : public MemoryAllocator {
   };
 
   static const int kBlockHeaderSize = GTL_OFFSETOF(BlockHeader, data);
+  static std::string GetBlockInfo(BlockHeader* block) {
+    std::string info = fmt::format("[region: {}, block: {}, data: {}-{}] {} [{}] [{}]", fmt::ptr(block->region),
+                                   fmt::ptr(block), fmt::ptr(BlockHeader::ToData(block)),
+                                   fmt::ptr(static_cast<char*>(BlockHeader::ToData(block)) + block->size), block->size,
+                                   block->used ? "USED" : "FREE", block->heap ? "HEAP" : "MMAP");
+    if (block->name[0] != '\0') {
+      info += fmt::format(" [{}]", block->name);
+    }
+    return info;
+  }
 
   GtlMemoryAllocator() = default;
   ~GtlMemoryAllocator() = default;
@@ -167,8 +187,13 @@ class GtlMemoryAllocator : public MemoryAllocator {
   BlockHeader* FindFreeBlock(size_t size) { return FindFirstFit(size); }
   BlockHeader* FindBestFit(size_t size);
   BlockHeader* FindFirstFit(size_t size);
-  BlockHeader* FindNextFit(size_t size);
   BlockHeader* FindWorstFit(size_t size);
+  void AddToFreeList(BlockHeader* block);
+  void RemoveFromFreeList(BlockHeader* block);
+  BlockHeader* SplitBlock(BlockHeader* block, size_t new_size);
+  BlockHeader* MergeBlock(BlockHeader* block);
+  BlockHeader* MergeRightBlock(BlockHeader* block);
+  BlockHeader* MergeTwoBlock(BlockHeader* lblock, BlockHeader* rblock);
 
   doubly_list::ListNode block_head_;
   doubly_list::ListNode free_head_;
