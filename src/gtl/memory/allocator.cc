@@ -5,9 +5,9 @@
 
 namespace gtl {
 
-std::atomic_int GtlMemoryAllocator::block_id_(0);
+std::atomic_int SimpleMemoryAllocator::block_id_(0);
 
-void* GtlMemoryAllocator::Malloc(size_t size) {
+void* SimpleMemoryAllocator::Malloc(size_t size) {
   BlockHeader* block = FindFreeBlock(size);
   if (block != nullptr) {
     RemoveFromFreeList(block);
@@ -26,7 +26,7 @@ void* GtlMemoryAllocator::Malloc(size_t size) {
   return BlockHeader::ToData(block);
 }
 
-void GtlMemoryAllocator::Free(void* ptr) {
+void SimpleMemoryAllocator::Free(void* ptr) {
   if (ptr == nullptr) {
     return;
   }
@@ -37,14 +37,15 @@ void GtlMemoryAllocator::Free(void* ptr) {
   MergeBlock(block);
 }
 
-void GtlMemoryAllocator::RemoveFromFreeList(BlockHeader* block) {
+void SimpleMemoryAllocator::RemoveFromFreeList(BlockHeader* block) {
   GTL_CHECK(block != nullptr && !block->used);
 
   block->set_used(true);
   doubly_list::Remove(&block->free_list);
+  --free_block_count_;
 }
 
-void GtlMemoryAllocator::AddToFreeList(BlockHeader* block) {
+void SimpleMemoryAllocator::AddToFreeList(BlockHeader* block) {
   GTL_CHECK(block != nullptr);
 
   block->set_used(false);
@@ -57,9 +58,10 @@ void GtlMemoryAllocator::AddToFreeList(BlockHeader* block) {
     }
   }
   doubly_list::InsertBefore(pos, &block->free_list);
+  ++free_block_count_;
 }
 
-void* GtlMemoryAllocator::Calloc(size_t nmemb, size_t size) {
+void* SimpleMemoryAllocator::Calloc(size_t nmemb, size_t size) {
   size_t mem_size = nmemb * size;
   if (mem_size == 0) {
     return nullptr;
@@ -73,7 +75,7 @@ void* GtlMemoryAllocator::Calloc(size_t nmemb, size_t size) {
   return ptr;
 }
 
-void* GtlMemoryAllocator::Realloc(void* ptr, size_t size) {
+void* SimpleMemoryAllocator::Realloc(void* ptr, size_t size) {
   if (ptr == nullptr) {
     return Malloc(size);
   } else if (size == 0) {
@@ -89,22 +91,17 @@ void* GtlMemoryAllocator::Realloc(void* ptr, size_t size) {
   return nullptr;
 }
 
-void* GtlMemoryAllocator::AllocMemory(size_t size) {
+void* SimpleMemoryAllocator::AllocMemory(size_t size) {
   GTL_CHECK(size > 0);
-  if (size > kMallocMmapThreshold) {
-    return NewAnonMemory(size);
-  }
-  return NewHeapMemory(size);
+  return NewAnonMemory(size);
 }
 
-void GtlMemoryAllocator::FreeMemory(void* ptr, size_t size) {
+void SimpleMemoryAllocator::FreeMemory(void* ptr, size_t size) {
   GTL_CHECK(ptr != nullptr && size > 0);
-  if (size > kMallocMmapThreshold) {
-    DeleteAnonMemory(ptr, size);
-  }
+  DeleteAnonMemory(ptr, size);
 }
 
-GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::NewBlock(size_t size) {
+SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::NewBlock(size_t size) {
   if (size < kBlockMinSize) {
     size = kBlockMinSize;
   }
@@ -113,13 +110,13 @@ GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::NewBlock(size_t size) {
     return nullptr;
   }
   BlockHeader* block = gtl::construct_at(static_cast<BlockHeader*>(ptr), size, GenerateBlockName());
-  block->heap = (size <= kMallocMmapThreshold);
+  block->heap = false;
   block->region = block;
   doubly_list::AddToTail(&block_head_, &block->block_list);
   return block;
 }
 
-GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::SplitBlock(BlockHeader* block, size_t new_size) {
+SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::SplitBlock(BlockHeader* block, size_t new_size) {
   GTL_CHECK(block != nullptr && new_size > 0 && block->size >= new_size);
 
   if (block->size - new_size < kBlockHeaderSize + kBlockMinSize) {
@@ -143,7 +140,7 @@ GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::SplitBlock(BlockHeader* blo
   return new_block;
 }
 
-GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::MergeBlock(BlockHeader* block) {
+SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::MergeBlock(BlockHeader* block) {
   GTL_CHECK(block != nullptr && !block->used);
   BlockHeader* begin_block = block;
   for (doubly_list::ListNode* node = block->block_list.prev; node != &free_head_; node = node->prev) {
@@ -156,7 +153,7 @@ GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::MergeBlock(BlockHeader* blo
   return MergeRightBlock(begin_block);
 }
 
-GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::MergeRightBlock(BlockHeader* block) {
+SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::MergeRightBlock(BlockHeader* block) {
   GTL_CHECK(block != nullptr && !block->used);
   doubly_list::ListNode* node = block->block_list.next;
   while (node != &block_head_) {
@@ -168,31 +165,52 @@ GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::MergeRightBlock(BlockHeader
     MergeTwoBlock(block, rblock);
     node = next;
   }
+  // 合并相邻block之后重新对free_list排序
   RemoveFromFreeList(block);
   AddToFreeList(block);
   return block;
 }
 
-GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::MergeTwoBlock(BlockHeader* lblock, BlockHeader* rblock) {
+SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::MergeTwoBlock(BlockHeader* lblock, BlockHeader* rblock) {
   GTL_CHECK(lblock != nullptr && rblock != nullptr && !lblock->used && !rblock->used);
 
+  GTL_INFO("merge two block begin");
   GTL_INFO("lblock: {}", GetBlockInfo(lblock));
   GTL_INFO("rblock: {}", GetBlockInfo(rblock));
 
   doubly_list::Remove(&rblock->block_list);
-  doubly_list::Remove(&rblock->free_list);
+  RemoveFromFreeList(rblock);
   lblock->size = lblock->size + rblock->size + kBlockHeaderSize;
 
-  GTL_INFO("nblock: {}", GetBlockInfo(lblock));
+  GTL_INFO("new_block: {}", GetBlockInfo(lblock));
+  GTL_INFO("merge two block end");
   return lblock;
 }
 
-void* GtlMemoryAllocator::DeleteBlock(BlockHeader* block) {
-  GTL_CHECK(block != nullptr && !block->used);
-  return nullptr;
+void SimpleMemoryAllocator::DeleteBlock(BlockHeader* block) {
+  FreeMemory(block, block->size + kBlockHeaderSize);
 }
 
-GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindBestFit(size_t size) {
+bool SimpleMemoryAllocator::IsBlockFree(BlockHeader* block) {
+  if (block->used) {
+    return false;
+  }
+  bool is_end = false;
+  if (block->block_list.next == &block_head_) {
+    is_end = true;
+  } else {
+    BlockHeader* next_block = ListEntry(block->block_list.next, BlockHeader, block_list);
+    if (next_block->region != block->region) {
+      is_end = true;
+    }
+  }
+  if (block->region == block && is_end) {
+    return true;
+  }
+  return false;
+}
+
+SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::FindBestFit(size_t size) {
   GTL_CHECK(size > 0);
   BlockHeader* result = nullptr;
   ListForEach(node, free_head_) {
@@ -207,7 +225,7 @@ GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindBestFit(size_t size) {
   return result;
 }
 
-GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindFirstFit(size_t size) {
+SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::FindFirstFit(size_t size) {
   GTL_CHECK(size > 0);
   ListForEach(node, free_head_) {
     BlockHeader* block = ListEntry(node, BlockHeader, free_list);
@@ -218,7 +236,7 @@ GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindFirstFit(size_t size) {
   return nullptr;
 }
 
-GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindWorstFit(size_t size) {
+SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::FindWorstFit(size_t size) {
   GTL_CHECK(size > 0);
   ListForEachPrev(node, free_head_) {
     BlockHeader* block = ListEntry(node, BlockHeader, free_list);
@@ -229,7 +247,7 @@ GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindWorstFit(size_t size) {
   return nullptr;
 }
 
-std::string GtlMemoryAllocator::MemoryInfo() const {
+std::string SimpleMemoryAllocator::MemoryInfo() const {
   std::string info;
   info = "-- BlockList --\n";
   ListForEach(node, block_head_) {
@@ -237,7 +255,7 @@ std::string GtlMemoryAllocator::MemoryInfo() const {
     info += GetBlockInfo(block) + "\n";
   }
 
-  info += "\n-- FreeBlockList --\n";
+  info += fmt::format("\n-- FreeBlockList[{}] --\n", free_block_count_);
   ListForEach(node, free_head_) {
     BlockHeader* block = ListEntry(node, BlockHeader, free_list);
     info += fmt::format("[{}] -> ", fmt::ptr(block));

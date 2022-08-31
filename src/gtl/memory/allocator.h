@@ -110,10 +110,10 @@ Fit)：该算法按大小递减的顺序形成空闲区链，分配时直接从�
 特点：给文件分配分区后剩下的空闲区不至于太小，产生碎片的几率最小，对中小型文件分配分区操作有利。
 缺点：使存储器中缺乏大的空闲区，对大型文件的分区分配不利。
 */
-class GtlMemoryAllocator : public MemoryAllocator {
+class SimpleMemoryAllocator : public MemoryAllocator {
  public:
-  static GtlMemoryAllocator& GetInstance() {
-    static GtlMemoryAllocator instance;
+  static SimpleMemoryAllocator& GetInstance() {
+    static SimpleMemoryAllocator instance;
     return instance;
   }
 
@@ -126,7 +126,6 @@ class GtlMemoryAllocator : public MemoryAllocator {
 
   static const int kMaxBlockNameSize = 32;
   static const int kBlockMinSize = 32;
-  static const int kMallocMmapThreshold = 0;
   static std::atomic_int block_id_;
 
   struct BlockHeader {
@@ -168,10 +167,10 @@ class GtlMemoryAllocator : public MemoryAllocator {
     return info;
   }
 
-  GtlMemoryAllocator() = default;
-  ~GtlMemoryAllocator() = default;
-  GtlMemoryAllocator(const GtlMemoryAllocator& other) = delete;
-  GtlMemoryAllocator& operator=(const GtlMemoryAllocator& other) = delete;
+  SimpleMemoryAllocator() = default;
+  ~SimpleMemoryAllocator() = default;
+  SimpleMemoryAllocator(const SimpleMemoryAllocator& other) = delete;
+  SimpleMemoryAllocator& operator=(const SimpleMemoryAllocator& other) = delete;
 
   virtual void* Malloc(size_t size) override;
   virtual void Free(void* ptr) override;
@@ -183,7 +182,7 @@ class GtlMemoryAllocator : public MemoryAllocator {
   void* AllocMemory(size_t size);
   void FreeMemory(void* ptr, size_t size);
   BlockHeader* NewBlock(size_t size);
-  void* DeleteBlock(BlockHeader* block);
+  void DeleteBlock(BlockHeader* block);
   BlockHeader* FindFreeBlock(size_t size) { return FindFirstFit(size); }
   BlockHeader* FindBestFit(size_t size);
   BlockHeader* FindFirstFit(size_t size);
@@ -194,8 +193,10 @@ class GtlMemoryAllocator : public MemoryAllocator {
   BlockHeader* MergeBlock(BlockHeader* block);
   BlockHeader* MergeRightBlock(BlockHeader* block);
   BlockHeader* MergeTwoBlock(BlockHeader* lblock, BlockHeader* rblock);
+  bool IsBlockFree(BlockHeader* block);
 
   doubly_list::ListNode block_head_;
+  size_t free_block_count_ = 0;
   doubly_list::ListNode free_head_;
 };
 

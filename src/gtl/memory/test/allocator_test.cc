@@ -3,7 +3,7 @@
  * @author gwq5210 (gwq5210@qq.com)
  * @brief allocator单元测试
  * @date 2022-08-30
- * 
+ *
  * @copyright Copyright (c) 2022. All rights reserved.
  */
 
@@ -12,7 +12,7 @@
 #include "gtl/memory/allocator.h"
 
 TEST(AllocatorTest, AllocatorTest) {
-  gtl::GtlMemoryAllocator& allocator = gtl::GtlMemoryAllocator::GetInstance();
+  gtl::SimpleMemoryAllocator& allocator = gtl::SimpleMemoryAllocator::GetInstance();
   {
     size_t size = 128;
     char* ptr = static_cast<char*>(allocator.Malloc(size));
