@@ -101,4 +101,15 @@ class RWMutex {
   Handle rwlock_;
 };
 
+class LockGuard {
+ public:
+  LockGuard(Mutex& mutex) : mutex_(mutex) { mutex_.Lock(); }
+  ~LockGuard() { mutex_.Unlock(); }
+  LockGuard(const LockGuard& other) = delete;
+  LockGuard& operator=(const LockGuard& other) = delete;
+
+ private:
+  Mutex& mutex_;
+};
+
 }  // namespace gtl

@@ -11,6 +11,7 @@
 #include "gtl/container/list_base.h"
 #include "gtl/logging.h"
 #include "gtl/memory/allocator.h"
+#include "gtl/thread/mutex.h"
 
 #include "fmt/format.h"
 
@@ -137,6 +138,7 @@ class SimpleMemoryAllocator : public MemoryAllocator {
   doubly_list::ListNode block_head_;
   size_t free_block_count_ = 0;
   doubly_list::ListNode free_head_;
+  Mutex mutex_;
 };
 
 }  // namespace gtl

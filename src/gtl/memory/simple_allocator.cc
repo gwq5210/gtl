@@ -8,12 +8,16 @@ namespace gtl {
 std::atomic_int SimpleMemoryAllocator::block_id_(0);
 
 void* SimpleMemoryAllocator::Malloc(size_t size) {
-  BlockHeader* block = FindFreeBlock(size);
-  if (block != nullptr) {
-    RemoveFromFreeList(block);
-    SplitBlock(block, size);
-    GTL_INFO("find free block: {}, size: {}", fmt::ptr(block), block->size);
-    return BlockHeader::ToData(block);
+  BlockHeader* block = nullptr;
+  {
+    LockGuard lock_guard(mutex_);
+    block = FindFreeBlock(size);
+    if (block != nullptr) {
+      RemoveFromFreeList(block);
+      SplitBlock(block, size);
+      GTL_INFO("find free block: {}, size: {}", fmt::ptr(block), block->size);
+      return BlockHeader::ToData(block);
+    }
   }
 
   block = static_cast<BlockHeader*>(NewBlock(size));
@@ -31,6 +35,7 @@ void SimpleMemoryAllocator::Free(void* ptr) {
     return;
   }
 
+  LockGuard lock_guard(mutex_);
   BlockHeader* block = BlockHeader::ToBlockHeader(ptr);
   AddToFreeList(block);
   GTL_INFO("free block: {}", GetBlockInfo(block));
@@ -112,7 +117,31 @@ void* SimpleMemoryAllocator::Realloc(void* ptr, size_t size) {
     return ptr;
   }
 
-  return nullptr;
+  {
+    // 相同region的block是空闲的且合起来之后有足够的空间
+    LockGuard lock_guard(mutex_);
+    BlockHeader* next_block = nullptr;
+    if (block->block_list.next != &block_head_) {
+      next_block = ListEntry(block->block_list.next, BlockHeader, block_list);
+      if (next_block->region != block->region || next_block->used ||
+          block->size + next_block->size + kBlockHeaderSize < size) {
+        next_block = nullptr;
+      }
+    }
+    if (next_block) {
+      MergeTwoBlock(block, next_block);
+      SplitBlock(block, size);
+      return ptr;
+    }
+  }
+
+  void* new_ptr = Malloc(size);
+  if (new_ptr == nullptr) {
+    return nullptr;
+  }
+  memcpy(new_ptr, ptr, block->size);
+  Free(ptr);
+  return new_ptr;
 }
 
 void* SimpleMemoryAllocator::AllocMemory(size_t size) {
@@ -196,13 +225,13 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::MergeRightBlock(Block
 }
 
 SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::MergeTwoBlock(BlockHeader* lblock, BlockHeader* rblock) {
-  GTL_CHECK(lblock != nullptr && rblock != nullptr && !lblock->used && !rblock->used);
+  GTL_CHECK(lblock != nullptr && rblock != nullptr && !rblock->used);
 
   GTL_INFO("merge two block begin");
   GTL_INFO("lblock: {}", GetBlockInfo(lblock));
   GTL_INFO("rblock: {}", GetBlockInfo(rblock));
 
-  doubly_list::Remove(&rblock->block_list);
+  RemoveFromBlockList(rblock);
   RemoveFromFreeList(rblock);
   lblock->size = lblock->size + rblock->size + kBlockHeaderSize;
 

@@ -56,4 +56,22 @@ TEST(AllocatorTest, AllocatorTest) {
     allocator.Free(ptr4);
     GTL_INFO("free all\n{}", allocator.MemoryInfo());
   }
+
+  {
+    size_t size = 129;
+    GTL_INFO("new 129 begin\n{}", allocator.MemoryInfo());
+    char* ptr = static_cast<char*>(allocator.Malloc(size));
+    ASSERT_NE(ptr, nullptr);
+    memset(ptr, 0, size);
+    GTL_INFO("new 129 end\n{}", allocator.MemoryInfo());
+
+    size_t new_size = 256;
+    char* realloc_ptr = static_cast<char*>(allocator.Realloc(ptr, new_size));
+    ASSERT_NE(realloc_ptr, nullptr);
+    EXPECT_EQ(realloc_ptr, ptr);
+    GTL_INFO("realloc 256 end\n{}", allocator.MemoryInfo());
+
+    allocator.Free(realloc_ptr);
+    GTL_INFO("free 256 end\n{}", allocator.MemoryInfo());
+  }
 }
