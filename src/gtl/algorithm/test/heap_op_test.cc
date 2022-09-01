@@ -79,5 +79,5 @@ TEST(HeapOpTest, HeapOpTest) {
     EXPECT_EQ(std::is_heap_until(vec_copy.begin(), vec_copy.end()),
               gtl::is_heap_until(vec_copy.begin(), vec_copy.end()));
   }
-  GTL_INFO("heap op end: {}", gtl::DefaultAllocator().MemoryInfo());
+  GTL_DEBUG("heap op end: {}", gtl::DefaultAllocator().MemoryInfo());
 }

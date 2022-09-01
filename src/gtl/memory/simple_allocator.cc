@@ -16,7 +16,7 @@ void* SimpleMemoryAllocator::Malloc(size_t size) {
     if (block != nullptr) {
       RemoveFromFreeList(block);
       SplitBlock(block, size);
-      GTL_DEBUG("find free block: {}, size: {}", fmt::ptr(block), block->size);
+      GTL_DEBUG("find free block: {}", GetBlockInfo(block));
       return BlockHeader::ToData(block);
     }
   }
@@ -25,6 +25,7 @@ void* SimpleMemoryAllocator::Malloc(size_t size) {
   if (block == nullptr) {
     return nullptr;
   }
+  SplitBlock(block, size);
 
   block->set_used(true);
   GTL_DEBUG("new block: {}", GetBlockInfo(block));
@@ -41,9 +42,9 @@ void SimpleMemoryAllocator::Free(void* ptr) {
   AddToFreeList(block);
   GTL_DEBUG("free block: {}", GetBlockInfo(block));
   BlockHeader* merged_block = MergeBlock(block);
-  GTL_DEBUG("merged block: {}", GetBlockInfo(merged_block));
+  GTL_TRACE("merged block: {}", GetBlockInfo(merged_block));
   if (region_count_ > kMaxBlockCount && IsBlockFree(merged_block)) {
-    GTL_DEBUG("free merged block: {}", GetBlockInfo(merged_block));
+    GTL_TRACE("free merged block: {}", GetBlockInfo(merged_block));
     DeleteBlock(merged_block);
   }
 }
@@ -156,8 +157,8 @@ void SimpleMemoryAllocator::FreeMemory(void* ptr, size_t size) {
 }
 
 SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::NewBlock(size_t size) {
-  if (size < kMinBlockMemorySize) {
-    size = kMinBlockMemorySize;
+  if (size < kAllocateBlockMemorySize) {
+    size = kAllocateBlockMemorySize;
   }
   void* ptr = AllocMemory(size + kBlockHeaderSize);
   if (ptr == nullptr) {
@@ -178,7 +179,7 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::SplitBlock(BlockHeade
     return nullptr;
   }
 
-  GTL_DEBUG("split block: {}", GetBlockInfo(block));
+  GTL_TRACE("split block: {}", GetBlockInfo(block));
 
   BlockHeader* new_block = gtl::construct_at(reinterpret_cast<BlockHeader*>(block->data + new_size),
                                              block->size - new_size - kBlockHeaderSize, GenerateBlockName());
@@ -189,8 +190,8 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::SplitBlock(BlockHeade
 
   block->size = new_size;
 
-  GTL_DEBUG("old block: {}", GetBlockInfo(block));
-  GTL_DEBUG("new block: {}", GetBlockInfo(new_block));
+  GTL_TRACE("old block: {}", GetBlockInfo(block));
+  GTL_TRACE("new block: {}", GetBlockInfo(new_block));
 
   return new_block;
 }
@@ -229,16 +230,16 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::MergeRightBlock(Block
 SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::MergeTwoBlock(BlockHeader* lblock, BlockHeader* rblock) {
   GTL_CHECK(lblock != nullptr && rblock != nullptr && !rblock->used);
 
-  GTL_DEBUG("merge two block begin");
-  GTL_DEBUG("lblock: {}", GetBlockInfo(lblock));
-  GTL_DEBUG("rblock: {}", GetBlockInfo(rblock));
+  GTL_TRACE("merge two block begin");
+  GTL_TRACE("lblock: {}", GetBlockInfo(lblock));
+  GTL_TRACE("rblock: {}", GetBlockInfo(rblock));
 
   RemoveFromBlockList(rblock);
   RemoveFromFreeList(rblock);
   lblock->size = lblock->size + rblock->size + kBlockHeaderSize;
 
-  GTL_DEBUG("new_block: {}", GetBlockInfo(lblock));
-  GTL_DEBUG("merge two block end");
+  GTL_TRACE("new_block: {}", GetBlockInfo(lblock));
+  GTL_TRACE("merge two block end");
   return lblock;
 }
 

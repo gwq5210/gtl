@@ -60,9 +60,10 @@ class SimpleMemoryAllocator : public MemoryAllocator {
     return fmt::format("block_{}", block_id);
   }
 
-  static const int kMaxBlockCount = 32;
+  static const int kMaxBlockCount = 1024;
   static const int kMaxBlockNameSize = 32;
-  static const int kMinBlockMemorySize = 32;
+  static const int kAllocateBlockMemorySize = 128 * 1024;
+  static const int kMinBlockMemorySize = 16;
   static std::atomic_int block_id_;
 
   struct BlockHeader {

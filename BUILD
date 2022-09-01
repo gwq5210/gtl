@@ -7,11 +7,12 @@ cc_library(
     srcs = glob([
         "src/gtl/net/*.cc",
         "src/gtl/thread/*.cc",
+        "src/gtl/memory/*.cc",
     ]),
     hdrs = glob(["src/**/*.h"]),
     includes = ["src"],
     visibility = ["//visibility:public"],
-    copts = ["-Wall", "-Wreturn-type"],
+    copts = ["-O2", "-Wall", "-Wreturn-type"],
     linkopts = ["-pthread"],
     deps = [
         "@fmtlib",

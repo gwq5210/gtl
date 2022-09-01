@@ -6,9 +6,9 @@ void LeakStatsAtExit() {
   MemoryAllocator& allocator = DefaultAllocator();
   std::string info = allocator.LeakStats();
   if (info.empty()) {
-    GTL_WARN("no memory leak found");
+    fprintf(stderr, "no memory leak found\n");
   } else if (info != "unsupported") {
-    GTL_WARN("{}", info);
+    fprintf(stderr, "%s\n", info.c_str());
   }
 }
 

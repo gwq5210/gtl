@@ -38,7 +38,6 @@ TEST(AllocatorTest, AllocatorTest) {
     size_t new_size = 256;
     char* ptr2 = static_cast<char*>(allocator.Malloc(new_size));
     ASSERT_NE(ptr2, nullptr);
-    ASSERT_NE(ptr2, ptr);
     memset(ptr2, 0, new_size);
     GTL_INFO("new 256 end\n{}", allocator.MemoryInfo());
 
