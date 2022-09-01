@@ -1,4 +1,4 @@
-#include "gtl/memory/allocator.h"
+#include "gtl/memory/simple_allocator.h"
 
 #include "gtl/algorithm/memory_op.h"
 #include "gtl/logging.h"
@@ -21,8 +21,8 @@ void* SimpleMemoryAllocator::Malloc(size_t size) {
     return nullptr;
   }
 
-  GTL_INFO("new block: {}, size: {}", fmt::ptr(block), block->size);
   block->set_used(true);
+  GTL_INFO("new block: {}", GetBlockInfo(block));
   return BlockHeader::ToData(block);
 }
 
@@ -33,8 +33,13 @@ void SimpleMemoryAllocator::Free(void* ptr) {
 
   BlockHeader* block = BlockHeader::ToBlockHeader(ptr);
   AddToFreeList(block);
-  GTL_INFO("free block: {}, size: {}", fmt::ptr(block), block->size);
-  MergeBlock(block);
+  GTL_INFO("free block: {}", GetBlockInfo(block));
+  BlockHeader* merged_block = MergeBlock(block);
+  GTL_INFO("merged block: {}", GetBlockInfo(merged_block));
+  if (block_count_ > kMaxBlockCount && IsBlockFree(merged_block)) {
+    GTL_INFO("free merged block: {}", GetBlockInfo(merged_block));
+    DeleteBlock(merged_block);
+  }
 }
 
 void SimpleMemoryAllocator::RemoveFromFreeList(BlockHeader* block) {
@@ -59,6 +64,25 @@ void SimpleMemoryAllocator::AddToFreeList(BlockHeader* block) {
   }
   doubly_list::InsertBefore(pos, &block->free_list);
   ++free_block_count_;
+}
+
+void SimpleMemoryAllocator::RemoveFromBlockList(BlockHeader* block) {
+  GTL_CHECK(block != nullptr);
+
+  doubly_list::Remove(&block->block_list);
+  --block_count_;
+}
+
+void SimpleMemoryAllocator::AddToBlockListTail(BlockHeader* block) {
+  GTL_CHECK(block != nullptr);
+  doubly_list::AddToTail(&block_head_, &block->block_list);
+  ++block_count_;
+}
+
+void SimpleMemoryAllocator::AddToBlockList(BlockHeader* prev_block, BlockHeader* block) {
+  GTL_CHECK(block != nullptr);
+  doubly_list::InsertBefore(&prev_block->block_list, &block->block_list);
+  ++block_count_;
 }
 
 void* SimpleMemoryAllocator::Calloc(size_t nmemb, size_t size) {
@@ -102,8 +126,8 @@ void SimpleMemoryAllocator::FreeMemory(void* ptr, size_t size) {
 }
 
 SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::NewBlock(size_t size) {
-  if (size < kBlockMinSize) {
-    size = kBlockMinSize;
+  if (size < kMinBlockMemorySize) {
+    size = kMinBlockMemorySize;
   }
   void* ptr = AllocMemory(size + kBlockHeaderSize);
   if (ptr == nullptr) {
@@ -112,14 +136,14 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::NewBlock(size_t size)
   BlockHeader* block = gtl::construct_at(static_cast<BlockHeader*>(ptr), size, GenerateBlockName());
   block->heap = false;
   block->region = block;
-  doubly_list::AddToTail(&block_head_, &block->block_list);
+  AddToBlockListTail(block);
   return block;
 }
 
 SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::SplitBlock(BlockHeader* block, size_t new_size) {
   GTL_CHECK(block != nullptr && new_size > 0 && block->size >= new_size);
 
-  if (block->size - new_size < kBlockHeaderSize + kBlockMinSize) {
+  if (block->size - new_size < kBlockHeaderSize + kMinBlockMemorySize) {
     return nullptr;
   }
 
@@ -129,7 +153,7 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::SplitBlock(BlockHeade
                                              block->size - new_size - kBlockHeaderSize, GenerateBlockName());
   new_block->heap = block->heap;
   new_block->region = block;
-  doubly_list::InsertBefore(block->block_list.next, &new_block->block_list);
+  AddToBlockList(ListEntry(block->block_list.next, BlockHeader, block_list), new_block);
   AddToFreeList(new_block);
 
   block->size = new_size;
@@ -188,6 +212,8 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::MergeTwoBlock(BlockHe
 }
 
 void SimpleMemoryAllocator::DeleteBlock(BlockHeader* block) {
+  RemoveFromFreeList(block);
+  RemoveFromBlockList(block);
   FreeMemory(block, block->size + kBlockHeaderSize);
 }
 
@@ -204,10 +230,7 @@ bool SimpleMemoryAllocator::IsBlockFree(BlockHeader* block) {
       is_end = true;
     }
   }
-  if (block->region == block && is_end) {
-    return true;
-  }
-  return false;
+  return block->region == block && is_end;
 }
 
 SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::FindBestFit(size_t size) {
@@ -249,7 +272,7 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::FindWorstFit(size_t s
 
 std::string SimpleMemoryAllocator::MemoryInfo() const {
   std::string info;
-  info = "-- BlockList --\n";
+  info = fmt::format("-- BlockList[{}] --\n", block_count_);
   ListForEach(node, block_head_) {
     BlockHeader* block = ListEntry(node, BlockHeader, block_list);
     info += GetBlockInfo(block) + "\n";
