@@ -105,7 +105,7 @@ class SimpleMemoryAllocator : public MemoryAllocator {
   }
 
   SimpleMemoryAllocator() = default;
-  ~SimpleMemoryAllocator() = default;
+  virtual ~SimpleMemoryAllocator() {}
   SimpleMemoryAllocator(const SimpleMemoryAllocator& other) = delete;
   SimpleMemoryAllocator& operator=(const SimpleMemoryAllocator& other) = delete;
 

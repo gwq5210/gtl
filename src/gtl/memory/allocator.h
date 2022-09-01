@@ -53,7 +53,7 @@ inline bool DeleteAnonMemory(void* ptr, size_t size) {
 class MemoryAllocator {
  public:
   MemoryAllocator() = default;
-  ~MemoryAllocator() = default;
+  virtual ~MemoryAllocator() {}
   MemoryAllocator(const MemoryAllocator& other) = delete;
   MemoryAllocator& operator=(const MemoryAllocator& other) = delete;
 
@@ -73,7 +73,7 @@ class StdMemoryAllocator : public MemoryAllocator {
   }
 
   StdMemoryAllocator() = default;
-  ~StdMemoryAllocator() = default;
+  virtual ~StdMemoryAllocator() {}
   StdMemoryAllocator(const StdMemoryAllocator& other) = delete;
   StdMemoryAllocator& operator=(const StdMemoryAllocator& other) = delete;
 
