@@ -53,7 +53,7 @@ inline bool DeleteAnonMemory(void* ptr, size_t size) {
 class MemoryAllocator {
  public:
   MemoryAllocator() = default;
-  virtual ~MemoryAllocator() {}
+  ~MemoryAllocator() = default;
   MemoryAllocator(const MemoryAllocator& other) = delete;
   MemoryAllocator& operator=(const MemoryAllocator& other) = delete;
 
@@ -72,15 +72,16 @@ class StdMemoryAllocator : public MemoryAllocator {
     return instance;
   }
 
-  StdMemoryAllocator() = default;
-  virtual ~StdMemoryAllocator() {}
-  StdMemoryAllocator(const StdMemoryAllocator& other) = delete;
-  StdMemoryAllocator& operator=(const StdMemoryAllocator& other) = delete;
-
   virtual void* Malloc(size_t size) { return ::malloc(size); }
   virtual void Free(void* ptr) { ::free(ptr); }
   virtual void* Calloc(size_t nmemb, size_t size) { return ::calloc(nmemb, size); }
   virtual void* Realloc(void* ptr, size_t size) { return ::realloc(ptr, size); }
+
+ private:
+  StdMemoryAllocator() = default;
+  ~StdMemoryAllocator() = default;
+  StdMemoryAllocator(const StdMemoryAllocator& other) = delete;
+  StdMemoryAllocator& operator=(const StdMemoryAllocator& other) = delete;
 };
 
 }  // namespace gtl

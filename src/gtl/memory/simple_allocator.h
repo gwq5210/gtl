@@ -104,11 +104,6 @@ class SimpleMemoryAllocator : public MemoryAllocator {
     return info;
   }
 
-  SimpleMemoryAllocator() = default;
-  virtual ~SimpleMemoryAllocator() {}
-  SimpleMemoryAllocator(const SimpleMemoryAllocator& other) = delete;
-  SimpleMemoryAllocator& operator=(const SimpleMemoryAllocator& other) = delete;
-
   virtual void* Malloc(size_t size) override;
   virtual void Free(void* ptr) override;
   virtual void* Calloc(size_t nmemb, size_t size) override;
@@ -117,6 +112,11 @@ class SimpleMemoryAllocator : public MemoryAllocator {
   virtual std::string LeakStats() const override;
 
  private:
+  SimpleMemoryAllocator() = default;
+  ~SimpleMemoryAllocator() = default;
+  SimpleMemoryAllocator(const SimpleMemoryAllocator& other) = delete;
+  SimpleMemoryAllocator& operator=(const SimpleMemoryAllocator& other) = delete;
+
   void* AllocMemory(size_t size);
   void FreeMemory(void* ptr, size_t size);
   BlockHeader* NewBlock(size_t size);

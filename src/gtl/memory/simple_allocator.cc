@@ -304,18 +304,26 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::FindWorstFit(size_t s
 
 std::string SimpleMemoryAllocator::MemoryInfo() const {
   std::string info;
+  size_t total_bytes = 0;
+  size_t free_bytes = 0;
   info = fmt::format("-- BlockList[{}/{}] --\n", region_count_, block_count_);
   ListForEach(node, block_head_) {
     BlockHeader* block = ListEntry(node, BlockHeader, block_list);
     info += GetBlockInfo(block) + "\n";
+    total_bytes += block->size;
   }
 
   info += fmt::format("\n-- FreeBlockList[{}] --\n", free_block_count_);
   ListForEach(node, free_head_) {
     BlockHeader* block = ListEntry(node, BlockHeader, free_list);
     info += fmt::format("[{}] -> ", fmt::ptr(block));
+    free_bytes += block->size;
   }
   info += "[NULL]\n";
+
+  info += "\n-- Memory Summary --\n";
+  info += fmt::format("total {} bytes\n", total_bytes);
+  info += fmt::format("free {} bytes\n", free_bytes);
   return info;
 }
 
