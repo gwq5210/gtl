@@ -35,7 +35,6 @@ class Vector {
   using const_reverse_iterator = typename StorageType::const_reverse_iterator;
   using size_type = typename StorageType::size_type;
   using difference_type = typename StorageType::difference_type;
-  using allocator_type = typename StorageType::allocator_type;
 
   // constructor
   Vector() = default;
@@ -87,8 +86,6 @@ class Vector {
   void assign(InputIt first, InputIt last) {
     assign_range(std::distance(first, last), first, last);
   }
-
-  allocator_type get_allocator() const { return d_.get_allocator(); }
 
   // Element access
   reference at(size_type i) { return d_.at(i); }

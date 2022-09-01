@@ -1,6 +1,7 @@
 #include "gtl/memory/simple_allocator.h"
 
 #include "gtl/algorithm/memory_op.h"
+#include "gtl/container/list_base.h"
 #include "gtl/logging.h"
 
 namespace gtl {
@@ -15,7 +16,7 @@ void* SimpleMemoryAllocator::Malloc(size_t size) {
     if (block != nullptr) {
       RemoveFromFreeList(block);
       SplitBlock(block, size);
-      GTL_INFO("find free block: {}, size: {}", fmt::ptr(block), block->size);
+      GTL_DEBUG("find free block: {}, size: {}", fmt::ptr(block), block->size);
       return BlockHeader::ToData(block);
     }
   }
@@ -26,7 +27,7 @@ void* SimpleMemoryAllocator::Malloc(size_t size) {
   }
 
   block->set_used(true);
-  GTL_INFO("new block: {}", GetBlockInfo(block));
+  GTL_DEBUG("new block: {}", GetBlockInfo(block));
   return BlockHeader::ToData(block);
 }
 
@@ -38,11 +39,11 @@ void SimpleMemoryAllocator::Free(void* ptr) {
   LockGuard lock_guard(mutex_);
   BlockHeader* block = BlockHeader::ToBlockHeader(ptr);
   AddToFreeList(block);
-  GTL_INFO("free block: {}", GetBlockInfo(block));
+  GTL_DEBUG("free block: {}", GetBlockInfo(block));
   BlockHeader* merged_block = MergeBlock(block);
-  GTL_INFO("merged block: {}", GetBlockInfo(merged_block));
-  if (block_count_ > kMaxBlockCount && IsBlockFree(merged_block)) {
-    GTL_INFO("free merged block: {}", GetBlockInfo(merged_block));
+  GTL_DEBUG("merged block: {}", GetBlockInfo(merged_block));
+  if (region_count_ > kMaxBlockCount && IsBlockFree(merged_block)) {
+    GTL_DEBUG("free merged block: {}", GetBlockInfo(merged_block));
     DeleteBlock(merged_block);
   }
 }
@@ -165,6 +166,7 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::NewBlock(size_t size)
   BlockHeader* block = gtl::construct_at(static_cast<BlockHeader*>(ptr), size, GenerateBlockName());
   block->heap = false;
   block->region = block;
+  ++region_count_;
   AddToBlockListTail(block);
   return block;
 }
@@ -176,19 +178,19 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::SplitBlock(BlockHeade
     return nullptr;
   }
 
-  GTL_INFO("split block: {}", GetBlockInfo(block));
+  GTL_DEBUG("split block: {}", GetBlockInfo(block));
 
   BlockHeader* new_block = gtl::construct_at(reinterpret_cast<BlockHeader*>(block->data + new_size),
                                              block->size - new_size - kBlockHeaderSize, GenerateBlockName());
   new_block->heap = block->heap;
-  new_block->region = block;
+  new_block->region = block->region;
   AddToBlockList(ListEntry(block->block_list.next, BlockHeader, block_list), new_block);
   AddToFreeList(new_block);
 
   block->size = new_size;
 
-  GTL_INFO("old block: {}", GetBlockInfo(block));
-  GTL_INFO("new block: {}", GetBlockInfo(new_block));
+  GTL_DEBUG("old block: {}", GetBlockInfo(block));
+  GTL_DEBUG("new block: {}", GetBlockInfo(new_block));
 
   return new_block;
 }
@@ -227,16 +229,16 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::MergeRightBlock(Block
 SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::MergeTwoBlock(BlockHeader* lblock, BlockHeader* rblock) {
   GTL_CHECK(lblock != nullptr && rblock != nullptr && !rblock->used);
 
-  GTL_INFO("merge two block begin");
-  GTL_INFO("lblock: {}", GetBlockInfo(lblock));
-  GTL_INFO("rblock: {}", GetBlockInfo(rblock));
+  GTL_DEBUG("merge two block begin");
+  GTL_DEBUG("lblock: {}", GetBlockInfo(lblock));
+  GTL_DEBUG("rblock: {}", GetBlockInfo(rblock));
 
   RemoveFromBlockList(rblock);
   RemoveFromFreeList(rblock);
   lblock->size = lblock->size + rblock->size + kBlockHeaderSize;
 
-  GTL_INFO("new_block: {}", GetBlockInfo(lblock));
-  GTL_INFO("merge two block end");
+  GTL_DEBUG("new_block: {}", GetBlockInfo(lblock));
+  GTL_DEBUG("merge two block end");
   return lblock;
 }
 
@@ -244,6 +246,7 @@ void SimpleMemoryAllocator::DeleteBlock(BlockHeader* block) {
   RemoveFromFreeList(block);
   RemoveFromBlockList(block);
   FreeMemory(block, block->size + kBlockHeaderSize);
+  --region_count_;
 }
 
 bool SimpleMemoryAllocator::IsBlockFree(BlockHeader* block) {
@@ -301,7 +304,7 @@ SimpleMemoryAllocator::BlockHeader* SimpleMemoryAllocator::FindWorstFit(size_t s
 
 std::string SimpleMemoryAllocator::MemoryInfo() const {
   std::string info;
-  info = fmt::format("-- BlockList[{}] --\n", block_count_);
+  info = fmt::format("-- BlockList[{}/{}] --\n", region_count_, block_count_);
   ListForEach(node, block_head_) {
     BlockHeader* block = ListEntry(node, BlockHeader, block_list);
     info += GetBlockInfo(block) + "\n";
@@ -313,6 +316,28 @@ std::string SimpleMemoryAllocator::MemoryInfo() const {
     info += fmt::format("[{}] -> ", fmt::ptr(block));
   }
   info += "[NULL]\n";
+  return info;
+}
+
+std::string SimpleMemoryAllocator::LeakStats() const {
+  std::string info;
+  size_t leak_bytes = 0;
+  size_t leak_block_count = 0;
+  info = fmt::format("-- LeakStats[{}/{}] --\n", region_count_, block_count_);
+  ListForEach(node, block_head_) {
+    BlockHeader* block = ListEntry(node, BlockHeader, block_list);
+    if (block->used) {
+      info += GetBlockInfo(block) + "\n";
+      leak_bytes += block->size;
+      ++leak_block_count;
+    }
+  }
+  if (leak_block_count > 0) {
+    info += "-- Leak Summary --\n";
+    info += fmt::format("{} blocks lost ({} bytes)", leak_block_count, leak_bytes);
+  } else {
+    info = "";
+  }
   return info;
 }
 

@@ -12,6 +12,7 @@
 #include <utility>
 
 #include "gtl/algorithm/memory_op.h"
+#include "gtl/memory/default_allocator.h"
 #include "gtl/port.h"
 
 #define SListEntry(PTR, TYPE, MEMBER) ((TYPE*)((char*)PTR - GTL_OFFSETOF(TYPE, MEMBER)))
@@ -52,18 +53,17 @@ struct SListNodeT : public SListNode {
   static const SListNodeT* From(const SListNode* slist_node) { return static_cast<const SListNodeT*>(slist_node); }
   static const T& Value(const SListNode* slist_node) { return From(slist_node)->val; }
   static const T& CValue(const SListNode* slist_node) { return From(slist_node)->val; }
-  template <typename Allocator, typename... Args>
-  static SListNodeT* New(Allocator& alloc, Args&&... args) {
-    SListNodeT* node = alloc.allocate(1);
+  template <typename... Args>
+  static SListNodeT* New(Args&&... args) {
+    SListNodeT* node = static_cast<SListNodeT*>(DefaultAllocator().Malloc(sizeof(SListNodeT)));
     node->ConstructVal(std::forward<Args>(args)...);
     node->next = nullptr;
     return node;
   }
-  template <typename Allocator>
-  static void Delete(Allocator& alloc, SListNode* node) {
+  static void Delete(SListNode* node) {
     auto* t = From(node);
     t->DestroyVal();
-    alloc.deallocate(t, 1);
+    DefaultAllocator().Free(node);
   }
 };
 

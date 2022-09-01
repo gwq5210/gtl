@@ -46,7 +46,7 @@ template <typename T>
 class List {
  public:
   List() {
-    dummy_head_ = node_allocator::allocate(); // 分配一个空间，不设置值
+    dummy_head_ = new ListHead(); // 分配一个空间，不设置值
     dummy_head_->prev = dummy_head_; // 头尾都指向自己
     dummy_head_->next = dummy_head_;
   }
@@ -54,7 +54,7 @@ class List {
   iterator begin() { return dummy_head_->next; } // begin是next节点
   iterator end() { return dummy_head_; } // end是虚拟节点自身
  private:
-  ListNode<T>* dummy_head_;
+  ListHead* dummy_head_;
 };
 ```
 

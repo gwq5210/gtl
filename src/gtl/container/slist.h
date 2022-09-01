@@ -14,10 +14,9 @@
 #include <type_traits>
 
 #include "gtl/algorithm/algorithm.h"
-#include "gtl/util/common.h"
-#include "gtl/container/compressed_pair.h"
 #include "gtl/algorithm/memory_op.h"
 #include "gtl/container/slist_base.h"
+#include "gtl/util/common.h"
 
 namespace gtl {
 
@@ -105,10 +104,8 @@ class SList {
   using difference_type = std::ptrdiff_t;
   using iterator = SListIterator<T, difference_type>;
   using const_iterator = SListConstIterator<T, difference_type>;
-  using allocator_type = std::allocator<T>;
-  using NodeAllocator = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
 
-  SList() : size_alloc_(0) { init(); }
+  SList() : size_(0) { init(); }
   explicit SList(size_type count) : SList() { insert_after(before_begin(), count, T()); }
   SList(size_type count, const T& v) : SList() { insert_after(before_begin(), count, v); }
   template <typename InputIt>
@@ -118,7 +115,7 @@ class SList {
   SList(const SList& other) : SList() { insert_after(before_begin(), other.begin(), other.end()); }
   SList(SList&& other) : SList() {
     gtl::swap(slist_head_, other.slist_head_);
-    gtl::swap(size_alloc_, other.size_alloc_);
+    gtl::swap(size_, other.size_);
   }
   SList(std::initializer_list<T> il) : SList() { insert_after(before_begin(), il); }
   ~SList() { destroy_list(); }
@@ -151,11 +148,9 @@ class SList {
     if (this != &other) {
       clear();
       gtl::swap(slist_head_, other.slist_head_);
-      gtl::swap(size_alloc_, other.size_alloc_);
+      gtl::swap(size_, other.size_);
     }
   }
-
-  allocator_type get_allocator() const { return static_cast<allocator_type>(get_node_allocator()); }
 
   // Element access
   T& front() { return *begin(); }
@@ -179,7 +174,7 @@ class SList {
 
   // Capacity
   bool empty() const { return size() == 0; }
-  size_type size() const { return get_size(); }
+  size_type size() const { return size_; }
 
   // Modifiers
   iterator insert_after(const_iterator after, const T& v) { return emplace_after(after, v); }
@@ -202,7 +197,7 @@ class SList {
   iterator insert_after(const_iterator after, T&& v) { return emplace_after(after, std::move(v)); }
   template <typename... Args>
   iterator emplace_after(const_iterator after, Args&&... args) {
-    ++get_size();
+    ++size_;
     return iterator(singly_list::InsertAfter(slist_head_, after.node, new_node(std::forward<Args>(args)...)));
   }
   template <typename... Args>
@@ -221,7 +216,7 @@ class SList {
     SListNode* curr = pos.node->next;
     SListNode* next = singly_list::RemoveAfter(slist_head_, pos.node);
     delete_node(curr);
-    --get_size();
+    --size_;
     return iterator(next);
   }
   iterator erase_after(const_iterator first, const_iterator last) {
@@ -230,7 +225,7 @@ class SList {
       SListNode* next = singly_list::RemoveAfter(slist_head_, first.node);
       delete_node(node);
       node = next;
-      --get_size();
+      --size_;
     }
     return iterator(last.node);
   }
@@ -375,7 +370,7 @@ class SList {
 
   void swap(SList& other) {
     gtl::swap(slist_head_, other.slist_head_);
-    gtl::swap(size_alloc_, other.size_alloc_);
+    gtl::swap(size_, other.size_);
   }
 
  private:
@@ -418,8 +413,8 @@ class SList {
         SListNode* next = singly_list::RemoveAfter(other.slist_head_, first.node);
         after_node = singly_list::InsertAfter(slist_head_, after_node, node);
         if (this != &other) {
-          --other.get_size();
-          ++get_size();
+          --other.size_;
+          ++size_;
         }
         node = next;
       }
@@ -427,25 +422,21 @@ class SList {
   }
   template <typename... Args>
   Node* new_node(Args&&... args) {
-    return Node::New(get_node_allocator(), std::forward<Args>(args)...);
+    return Node::New(std::forward<Args>(args)...);
   }
-  void delete_node(SListNode* node) { return Node::Delete(get_node_allocator(), node); }
+  void delete_node(SListNode* node) { return Node::Delete(node); }
   void init() {
     slist_head_ = new SListHead();
-    get_size() = 0;
+    size_ = 0;
   }
   void destroy_list() {
     clear();
     delete slist_head_;
     slist_head_ = nullptr;
   }
-  size_type& get_size() { return size_alloc_.first(); }
-  const size_type& get_size() const { return size_alloc_.first(); }
-  NodeAllocator& get_node_allocator() { return size_alloc_.second(); }
-  const NodeAllocator& get_node_allocator() const { return size_alloc_.second(); }
 
   SListHead* slist_head_;
-  CompressedPair<size_type, NodeAllocator> size_alloc_;
+  size_type size_;
 };  // class SList
 
 template <typename T>

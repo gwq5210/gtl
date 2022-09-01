@@ -212,7 +212,6 @@ class Deque {
   static constexpr std::ptrdiff_t block_capacity_ = 16;
 
   using Block = UStorage<T, block_capacity_>;
-  using BlockAllocator = std::allocator<Block>;
   using BlockStorage = UStorage<Block>;
   using value_type = T;
   using reference = T&;
@@ -221,7 +220,6 @@ class Deque {
   using const_pointer = const T*;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using allocator_type = typename Block::allocator_type;
   using iterator = DequeIterator<Deque>;
   using const_iterator = ConstDequeIterator<Deque>;
   using reverse_iterator = gtl::reverse_iterator<iterator>;

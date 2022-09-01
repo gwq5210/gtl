@@ -27,7 +27,6 @@ class LRUCache {
   using ConstIterator = gtl::ListConstIterator<NodeValue>;
   using SizeType = std::size_t;
   using HashTableType = HashTable<Key, std::pair<Key, ListNode*>, MapKeyFunc<Key, ListNode*>>;
-  using Allocator = std::allocator<ListNodeT>;
 
   static constexpr SizeType kLRUCacheMinBucketSize = 16;
 
@@ -53,14 +52,14 @@ class LRUCache {
       ListNodeT::Value(node) = value;
       return std::make_pair(Iterator(node), true);
     } else {
-      auto* new_node = ListNodeT::New(allocator_, value);
+      auto* new_node = ListNodeT::New(value);
       doubly_list::AddToHead(&lru_, new_node);
       ht_.emplace(key, new_node);
       if (Size() > Capacity()) {
         auto* tail = lru_.prev;
         ht_.erase(get_key_func_(ListNodeT::Value(tail)));
         doubly_list::Remove(tail);
-        ListNodeT::Delete(allocator_, tail);
+        ListNodeT::Delete(tail);
       }
       return std::make_pair(Iterator(new_node), true);
     }
@@ -105,7 +104,6 @@ class LRUCache {
   ExtractKey get_key_func_;
   HashTableType ht_;
   doubly_list::ListHead lru_;
-  Allocator allocator_;
   SizeType capacity_;
 };
 

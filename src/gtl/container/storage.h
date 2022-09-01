@@ -9,8 +9,9 @@
 
 #pragma once
 
-#include "gtl/iterator/iterator.h"
 #include "gtl/algorithm/algorithm.h"
+#include "gtl/iterator/iterator.h"
+#include "gtl/memory/default_allocator.h"
 
 namespace gtl {
 
@@ -21,7 +22,7 @@ namespace gtl {
  * @tparam fixed_capacity 区域的容量
  */
 template <typename T, size_t fixed_capacity = 0>
-class UStorage : public std::allocator<T> {
+class UStorage {
  public:
   using value_type = T;
   using reference = T&;
@@ -32,7 +33,6 @@ class UStorage : public std::allocator<T> {
   using const_iterator = const T*;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using allocator_type = std::allocator<T>;
 
   UStorage() : data_(nullptr) {}
   explicit UStorage(size_type n) { allocate(); }
@@ -74,16 +74,15 @@ class UStorage : public std::allocator<T> {
 
   // Capacity
   size_type capacity() const { return fixed_capacity; }
-  void allocate() { data_ = allocator_type::allocate(fixed_capacity); }
+  void allocate() { data_ = static_cast<T*>(DefaultAllocator().Malloc(sizeof(T) * capacity())); }
   void release() {
     if (begin()) {
-      allocator_type::deallocate(begin(), capacity());
+      DefaultAllocator().Free(begin());
       data_ = nullptr;
     }
   }
   void swap(UStorage& other) { gtl::swap(data_, other.data_); }
   void init() { data_ = nullptr; }
-  allocator_type get_allocator() const { return *this; }
 
   T* data_;
 };  // class UStorage
@@ -92,7 +91,7 @@ class UStorage : public std::allocator<T> {
  * @brief 管理动态空间的类，包含数据指针和容量大小
  */
 template <typename T>
-class UStorage<T, 0> : public std::allocator<T> {
+class UStorage<T, 0> {
  public:
   using value_type = T;
   using reference = T&;
@@ -103,14 +102,11 @@ class UStorage<T, 0> : public std::allocator<T> {
   using const_iterator = const T*;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using allocator_type = std::allocator<T>;
 
   static constexpr size_type min_capacity_ = 16;
 
   UStorage() : data_(nullptr), capacity_(0) {}
-  explicit UStorage(size_type n) {
-    allocate(n);
-  }
+  explicit UStorage(size_type n) { allocate(n); }
   UStorage(const UStorage& other) = delete;
   UStorage& operator=(const UStorage& other) = delete;
   UStorage(UStorage&& other) {
@@ -153,12 +149,11 @@ class UStorage<T, 0> : public std::allocator<T> {
   size_type capacity() const { return capacity_; }
   void allocate(size_type n) {
     capacity_ = std::max(n, min_capacity_);
-    ;
-    data_ = allocator_type::allocate(capacity_);
+    data_ = static_cast<T*>(DefaultAllocator().Malloc(sizeof(T) * capacity_));
   }
   void release() {
     if (begin()) {
-      allocator_type::deallocate(begin(), capacity());
+      DefaultAllocator().Free(begin());
       data_ = nullptr;
     }
     capacity_ = 0;
@@ -171,7 +166,6 @@ class UStorage<T, 0> : public std::allocator<T> {
     data_ = nullptr;
     capacity_ = 0;
   }
-  allocator_type get_allocator() const { return *this; }
 
   T* data_;
   size_type capacity_;
@@ -206,7 +200,6 @@ class Storage : public UStorage<T, fix_capacity> {
   using const_reverse_iterator = gtl::reverse_iterator<const_iterator>;
   using size_type = typename Base::size_type;
   using difference_type = typename Base::difference_type;
-  using allocator_type = typename Base::allocator_type;
 
   Storage() : size_(0) {}
   explicit Storage(size_type n) : Base(n), size_(0) {}

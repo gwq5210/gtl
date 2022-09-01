@@ -22,7 +22,6 @@ class UnorderedMap {
   using difference_type = typename MapHashTable::difference_type;
   using hasher = typename MapHashTable::hasher;
   using key_equal = typename MapHashTable::key_equal;
-  using allocator_type = typename MapHashTable::allocator_type;
   using reference = value_type&;
   using const_reference = const value_type&;
   using pointer = value_type*;
@@ -50,8 +49,6 @@ class UnorderedMap {
     mht_.assign(unique_, ilist);
     return *this;
   }
-
-  allocator_type get_allocator() const { mht_.get_allocator(); }
 
   // Iterators
   iterator begin() { return mht_.begin(); }

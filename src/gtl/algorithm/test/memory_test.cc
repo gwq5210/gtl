@@ -14,8 +14,8 @@
 
 using gtl::Vector;
 
-TEST(memory_test, memory_test) {
-  int n = 1024;
+TEST(MemoryTest, MemoryTest) {
+  int n = 102400;
   char* buffer = new char[sizeof(Vector<int>)];
   const Vector<int>* vec_ptr = reinterpret_cast<Vector<int>*>(buffer);
   const Vector<int>& vec = *vec_ptr;

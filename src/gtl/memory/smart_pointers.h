@@ -14,7 +14,6 @@
 #include <atomic>
 #include <memory>
 
-#include "gtl/container/compressed_pair.h"
 #include "gtl/logging.h"
 
 namespace gtl {

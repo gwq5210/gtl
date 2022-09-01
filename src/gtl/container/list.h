@@ -14,11 +14,10 @@
 #include <type_traits>
 
 #include "gtl/algorithm/algorithm.h"
-#include "gtl/util/common.h"
-#include "gtl/container/compressed_pair.h"
-#include "gtl/iterator/iterator.h"
-#include "gtl/container/list_base.h"
 #include "gtl/algorithm/memory_op.h"
+#include "gtl/container/list_base.h"
+#include "gtl/iterator/iterator.h"
+#include "gtl/util/common.h"
 
 namespace gtl {
 
@@ -129,15 +128,13 @@ class List {
   using const_pointer = const T*;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using allocator_type = std::allocator<T>;
-  using NodeAllocator = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
 
   using iterator = ListIterator<T, difference_type>;
   using const_iterator = ListConstIterator<T, difference_type>;
   using reverse_iterator = gtl::reverse_iterator<iterator>;
   using const_reverse_iterator = gtl::reverse_iterator<const_iterator>;
 
-  List() : dummy_head_(nullptr), size_alloc_(0) { init(); }
+  List() : dummy_head_(nullptr), size_(0) { init(); }
   explicit List(size_type count) {
     init();
     insert(begin(), count, T());
@@ -158,7 +155,7 @@ class List {
   List(List&& other) {
     init();
     gtl::swap(dummy_head_, other.dummy_head_);
-    gtl::swap(get_size(), other.get_size());
+    gtl::swap(size_, other.size_);
   }
   List(std::initializer_list<T> il) {
     init();
@@ -193,10 +190,8 @@ class List {
   void assign(List&& other) {
     clear();
     gtl::swap(dummy_head_, other.dummy_head_);
-    gtl::swap(get_size(), other.get_size());
+    gtl::swap(size_, other.size_);
   }
-
-  allocator_type get_allocator() const { return static_cast<allocator_type>(get_node_allocator()); }
 
   // Element access
   T& front() { return *begin(); }
@@ -220,7 +215,7 @@ class List {
 
   // Capacity
   bool empty() const { return size() == 0; }
-  size_type size() const { return get_size(); }
+  size_type size() const { return size_; }
 
   // Modifiers
   iterator insert(const_iterator before, const T& v) { return emplace(before, v); }
@@ -241,7 +236,7 @@ class List {
   iterator insert(const_iterator before, T&& v) { return emplace(before, std::move(v)); }
   template <typename... Args>
   iterator emplace(const_iterator before, Args&&... args) {
-    ++get_size();
+    ++size_;
     return iterator(doubly_list::InsertBefore(before.node, new_node(std::forward<Args>(args)...)));
   }
   template <typename... Args>
@@ -268,7 +263,7 @@ class List {
         ListNode* next = node->next;
         delete_node(node);
         node = next;
-        --get_size();
+        --size_;
       }
     }
     return iterator(last.node);
@@ -449,8 +444,8 @@ class List {
         ListNode* next = doubly_list::Remove(node);
         doubly_list::InsertBefore(before.node, node);
         if (this != &other) {
-          --other.get_size();
-          ++get_size();
+          --other.size_;
+          ++size_;
         }
         node = next;
       }
@@ -458,26 +453,22 @@ class List {
   }
   template <typename... Args>
   Node* new_node(Args&&... args) {
-    return Node::New(get_node_allocator(), std::forward<Args>(args)...);
+    return Node::New(std::forward<Args>(args)...);
   }
-  void delete_node(ListNode* node) { return Node::Delete(get_node_allocator(), node); }
+  void delete_node(ListNode* node) { return Node::Delete(node); }
 
   void init() {
     dummy_head_ = new ListNode();
-    get_size() = 0;
+    size_ = 0;
   }
   void destroy_list() {
     clear();
     delete dummy_head_;
     dummy_head_ = nullptr;
   }
-  size_type& get_size() { return size_alloc_.first(); }
-  const size_type& get_size() const { return size_alloc_.first(); }
-  NodeAllocator& get_node_allocator() { return size_alloc_.second(); }
-  const NodeAllocator& get_node_allocator() const { return size_alloc_.second(); }
 
   ListHead* dummy_head_;
-  CompressedPair<size_type, NodeAllocator> size_alloc_;
+  size_type size_;
 };  // class List
 
 template <typename T>

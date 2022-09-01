@@ -12,6 +12,7 @@
 #include "gtl/memory/simple_allocator.h"
 
 TEST(AllocatorTest, AllocatorTest) {
+  GTL_SET_LEVEL(gtl::LogLevel::kDebug);
   gtl::SimpleMemoryAllocator& allocator = gtl::SimpleMemoryAllocator::GetInstance();
   {
     size_t size = 128;
@@ -74,4 +75,5 @@ TEST(AllocatorTest, AllocatorTest) {
     allocator.Free(realloc_ptr);
     GTL_INFO("free 256 end\n{}", allocator.MemoryInfo());
   }
+  GTL_SET_LEVEL(gtl::LogLevel::kInfo);
 }

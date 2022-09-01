@@ -12,6 +12,8 @@
 #include <utility>
 
 #include "gtl/algorithm/memory_op.h"
+#include "gtl/container/list_node.h"
+#include "gtl/memory/default_allocator.h"
 #include "gtl/port.h"
 
 #define ListEntry(PTR, TYPE, MEMBER) ((TYPE*)((char*)PTR - GTL_OFFSETOF(TYPE, MEMBER)))
@@ -28,49 +30,22 @@ namespace gtl {
 
 namespace doubly_list {
 
-struct ListNode {
-  ListNode* next;
-  ListNode* prev;
-  ListNode() : next(this), prev(this) {}
-  ListNode(ListNode* n, ListNode* p) : next(n), prev(p) {}
-};
-
-using ListHead = ListNode;
+template <typename T>
+template <typename... Args>
+ListNodeT<T>* ListNodeT<T>::New(Args&&... args) {
+  ListNodeT* node = static_cast<ListNodeT*>(gtl::DefaultAllocator().Malloc(sizeof(ListNodeT)));
+  node->ConstructVal(std::forward<Args>(args)...);
+  node->next = nullptr;
+  node->prev = nullptr;
+  return node;
+}
 
 template <typename T>
-struct ListNodeT : public ListNode {
-  T val;
-
-  ListNodeT() = default;
-  ListNodeT(const T& v) : val(v) {}
-  ListNodeT(T&& v) : val(std::move(v)) {}
-
-  template <typename... Args>
-  void ConstructVal(Args&&... args) {
-    gtl::construct_at(&val, std::forward<Args>(args)...);
-  }
-  void DestroyVal() { gtl::destroy_at(&val); }
-
-  static ListNodeT* From(ListNode* list_node) { return static_cast<ListNodeT*>(list_node); }
-  static T& Value(ListNode* list_node) { return From(list_node)->val; }
-  static const ListNodeT* From(const ListNode* list_node) { return static_cast<const ListNodeT*>(list_node); }
-  static const T& Value(const ListNode* list_node) { return From(list_node)->val; }
-  static const T& CValue(const ListNode* list_node) { return From(list_node)->val; }
-  template <typename Allocator, typename... Args>
-  static ListNodeT* New(Allocator& alloc, Args&&... args) {
-    ListNodeT* node = alloc.allocate(1);
-    node->ConstructVal(std::forward<Args>(args)...);
-    node->next = nullptr;
-    node->prev = nullptr;
-    return node;
-  }
-  template <typename Allocator>
-  static void Delete(Allocator& alloc, ListNode* node) {
-    auto* t = From(node);
-    t->DestroyVal();
-    alloc.deallocate(t, 1);
-  }
-};
+void ListNodeT<T>::Delete(ListNode* node) {
+  auto* t = From(node);
+  t->DestroyVal();
+  gtl::DefaultAllocator().Free(node);
+}
 
 inline ListNode* Remove(ListNode* curr) {
   ListNode* next = curr->next;

@@ -8,7 +8,6 @@
 
 #include <string>
 
-#include "gtl/container/list_base.h"
 #include "gtl/logging.h"
 
 #include "fmt/format.h"
@@ -62,6 +61,8 @@ class MemoryAllocator {
   virtual void Free(void* ptr) = 0;
   virtual void* Calloc(size_t nmemb, size_t size) = 0;
   virtual void* Realloc(void* ptr, size_t size) = 0;
+  virtual std::string MemoryInfo() const { return "unsupported"; }
+  virtual std::string LeakStats() const { return "unsupported"; }
 };
 
 class StdMemoryAllocator : public MemoryAllocator {

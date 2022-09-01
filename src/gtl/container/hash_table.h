@@ -16,12 +16,11 @@
 #include <memory>
 #include <utility>
 
-#include "gtl/util/common.h"
-#include "gtl/container/compressed_pair.h"
 #include "gtl/container/slist.h"
 #include "gtl/container/storage.h"
 #include "gtl/container/vector.h"
 #include "gtl/logging.h"
+#include "gtl/util/common.h"
 
 namespace gtl {
 
@@ -52,15 +51,13 @@ class HashTable {
   using const_pointer = const value_type*;
   using hasher = Hash;
   using key_equal = KeyEqual;
-  using allocator_type = std::allocator<value_type>;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
   using iterator = SListIterator<value_type, difference_type>;
   using const_iterator = SListConstIterator<value_type, difference_type>;
   using local_iterator = SListIterator<value_type, difference_type>;
   using const_local_iterator = SListConstIterator<value_type, difference_type>;
-  // using NodeAllocator = typename std::allocator_traits<allocator_type>::rebind_alloc<Node>;
-  using NodeAllocator = std::allocator<Node>;
+
   struct HashNode {
     HashNode() : node_before_begin(nullptr), node_finish(nullptr) {}
     HashNode(SListNode* b, SListNode* f) : node_before_begin(b), node_finish(f) {}
@@ -117,7 +114,7 @@ class HashTable {
   // constructor
   HashTable() : HashTable(min_bucket_size_) {}
   HashTable(size_type bucket_count)
-      : max_load_factor_(default_max_load_factor_), buckets_(alloc_buckets(bucket_count)), size_alloc_(0) {}
+      : max_load_factor_(default_max_load_factor_), buckets_(alloc_buckets(bucket_count)), size_(0) {}
   template <typename InputIt>
   HashTable(bool unique, InputIt first, InputIt last, size_type bucket_count = 0)
       : HashTable(bucket_count ? bucket_count : gtl::distance(first, last)) {
@@ -135,8 +132,6 @@ class HashTable {
   HashTable& operator=(HashTable&& other) { return assign(std::move(other)); }
   HashTable& operator=(std::initializer_list<value_type> ilist) { return assign(false, ilist); }
 
-  allocator_type get_allocator() const { return static_cast<allocator_type>(get_node_allocator()); }
-
   // Iterators
   iterator begin() { return iterator(head_.next); }
   const_iterator begin() const { return const_iterator(head_.next); }
@@ -147,7 +142,7 @@ class HashTable {
 
   // Capacity
   bool empty() const { return head_.next == nullptr; }
-  size_type size() const { return get_size(); }
+  size_type size() const { return size_; }
   size_type max_size() const { return std::numeric_limits<difference_type>::max(); }
 
   // Modifiers
@@ -277,7 +272,7 @@ class HashTable {
     std::swap(max_load_factor_, other.max_load_factor_);
     std::swap(head_, other.head_);
     buckets_.swap(other.buckets_);
-    std::swap(get_size(), other.get_size());
+    std::swap(size_, other.size_);
   }
 
   // Lookup
@@ -402,14 +397,10 @@ class HashTable {
  private:
   template <typename... Args>
   Node* NewNode(Args&&... args) {
-    return Node::New(get_node_allocator(), std::forward<Args>(args)...);
+    return Node::New(std::forward<Args>(args)...);
   }
-  void DeleteNode(SListNode* node) { return Node::Delete(get_node_allocator(), node); }
-  size_type& get_size() { return size_alloc_.first(); }
-  const size_type& get_size() const { return size_alloc_.first(); }
-  void incr_size(size_type n) { get_size() += n; }
-  NodeAllocator& get_node_allocator() { return size_alloc_.second(); }
-  const NodeAllocator& get_node_allocator() const { return size_alloc_.second(); }
+  void DeleteNode(SListNode* node) { return Node::Delete(node); }
+  void incr_size(size_type n) { size_ += n; }
   BucketStorage alloc_buckets(size_type size) {
     size = std::max(next2power(size), min_bucket_size_);
     BucketStorage buckets(size);
@@ -420,7 +411,7 @@ class HashTable {
     max_load_factor_ = default_max_load_factor_;
     head_.next = nullptr;
     buckets_ = alloc_buckets(min_bucket_size_);
-    get_size() = 0;
+    size_ = 0;
   }
   void release() {
     SListNode* node = head_.next;
@@ -430,7 +421,7 @@ class HashTable {
       node = head_.next;
     }
     head_.next = nullptr;
-    get_size() = 0;
+    size_ = 0;
     gtl::fill_n(buckets_.begin(), buckets_.capacity(), HashNode());
   }
   FindNodeResult find_node(const key_type& key) const {
@@ -535,7 +526,7 @@ class HashTable {
     SListNode old_head = head_;
     buckets_.swap(new_buckets);  // 与旧桶数组交换
     head_.next = nullptr;
-    get_size() = 0;
+    size_ = 0;
 
     GTL_DEBUG("rehash new bucket count {} {}", bucket_count(), new_bucket_count);
     SListNode* prev = &old_head;  // 旧链表的伪头节点，便于实现
@@ -562,7 +553,7 @@ class HashTable {
   const key_type& get_key(const value_type& value) const { return get_key_func_(value); }
   void move_from(HashTable&& other) {
     max_load_factor_ = other.max_load_factor_;
-    get_size() = other.size();
+    size_ = other.size();
     buckets_.swap(other.buckets_);
     gtl::swap(head_, other.head_);
 
@@ -596,7 +587,7 @@ class HashTable {
   SListNode head_;
   float max_load_factor_;
   BucketStorage buckets_;
-  CompressedPair<size_type, NodeAllocator> size_alloc_;
+  size_type size_;
 };  // class HashTable
 
 template <typename Key, typename Value, typename ExtractKey, typename Hash, typename KeyEqual>

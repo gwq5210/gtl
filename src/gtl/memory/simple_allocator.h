@@ -8,9 +8,10 @@
 
 #include <string>
 
-#include "gtl/container/list_base.h"
+#include "gtl/container/list_node.h"
 #include "gtl/logging.h"
 #include "gtl/memory/allocator.h"
+#include "gtl/port.h"
 #include "gtl/thread/mutex.h"
 
 #include "fmt/format.h"
@@ -93,7 +94,7 @@ class SimpleMemoryAllocator : public MemoryAllocator {
 
   static const int kBlockHeaderSize = GTL_OFFSETOF(BlockHeader, data);
   static std::string GetBlockInfo(BlockHeader* block) {
-    std::string info = fmt::format("[region: {}, block: {}, data: {}-{}] {} [{}] [{}]", fmt::ptr(block->region),
+    std::string info = fmt::format("[region: {}, block: {}, data: {}-{}] {:>10} [{}] [{}]", fmt::ptr(block->region),
                                    fmt::ptr(block), fmt::ptr(BlockHeader::ToData(block)),
                                    fmt::ptr(static_cast<char*>(BlockHeader::ToData(block)) + block->size), block->size,
                                    block->used ? "USED" : "FREE", block->heap ? "HEAP" : "MMAP");
@@ -112,7 +113,8 @@ class SimpleMemoryAllocator : public MemoryAllocator {
   virtual void Free(void* ptr) override;
   virtual void* Calloc(size_t nmemb, size_t size) override;
   virtual void* Realloc(void* ptr, size_t size) override;
-  std::string MemoryInfo() const;
+  virtual std::string MemoryInfo() const override;
+  virtual std::string LeakStats() const override;
 
  private:
   void* AllocMemory(size_t size);
@@ -134,9 +136,10 @@ class SimpleMemoryAllocator : public MemoryAllocator {
   BlockHeader* MergeTwoBlock(BlockHeader* lblock, BlockHeader* rblock);
   bool IsBlockFree(BlockHeader* block);
 
-  size_t block_count_ = 0;
+  std::atomic_int region_count_{0};
+  std::atomic_int block_count_{0};
   doubly_list::ListNode block_head_;
-  size_t free_block_count_ = 0;
+  std::atomic_int free_block_count_{0};
   doubly_list::ListNode free_head_;
   Mutex mutex_;
 };
