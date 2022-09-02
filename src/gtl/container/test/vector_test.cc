@@ -32,7 +32,7 @@ using gtl::SList;
 using gtl::Vector;
 using gtl::test::Person;
 
-TEST(vector_test, constructor_assign_iterator_test) {
+TEST(VectorTest, ConstructorAssignIteratorTest) {
   Vector<int> empty_vec;
   EXPECT_EQ(empty_vec.size(), 0);
   EXPECT_EQ(empty_vec.empty(), true);
@@ -218,7 +218,7 @@ TEST(vector_test, constructor_assign_iterator_test) {
   EXPECT_EQ(vec_move.empty(), true);
 }
 
-TEST(vector_test, modifiers_iterators_test) {
+TEST(VectorTest, ModifiersIteratorsTest) {
   int n = 10240;
   std::vector<int> std_vec(3);
   printf("std_vec capacity %zu\n", std_vec.capacity());

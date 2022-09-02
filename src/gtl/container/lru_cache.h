@@ -16,7 +16,8 @@
 
 namespace gtl {
 
-template <typename Key, typename Value, typename ExtractKey, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
+template <typename Key, typename Value, typename ExtractKey, typename Hash = std::hash<Key>,
+          typename KeyEqual = std::equal_to<Key>>
 class LRUCache {
  public:
   using KeyType = Key;
@@ -33,7 +34,7 @@ class LRUCache {
   LRUCache(SizeType capacity) : capacity_(capacity) {}
   LRUCache(const LRUCache& other) = delete;
   LRUCache(LRUCache&& other) {}
-  ~LRUCache() {}
+  ~LRUCache() { Destroy(); }
 
   LRUCache& operator=(const LRUCache& other) = delete;
   LRUCache& operator=(LRUCache&& other) { return *this; }
@@ -56,10 +57,7 @@ class LRUCache {
       doubly_list::AddToHead(&lru_, new_node);
       ht_.emplace(key, new_node);
       if (Size() > Capacity()) {
-        auto* tail = lru_.prev;
-        ht_.erase(get_key_func_(ListNodeT::Value(tail)));
-        doubly_list::Remove(tail);
-        ListNodeT::Delete(tail);
+        DestroyNode(lru_.prev);
       }
       return std::make_pair(Iterator(new_node), true);
     }
@@ -101,6 +99,15 @@ class LRUCache {
     return ListNodeT::Value(node).second;
   }
 
+  void DestroyNode(ListNode* node) {
+    ht_.erase(get_key_func_(ListNodeT::Value(node)));
+    doubly_list::Remove(node);
+    ListNodeT::Delete(node);
+  }
+  void Destroy() {
+    ListForEachPrevSafe(node, lru_) { DestroyNode(node); }
+  }
+
   ExtractKey get_key_func_;
   HashTableType ht_;
   doubly_list::ListHead lru_;
@@ -130,11 +137,8 @@ class LRUMap : public LRUCache<Key, std::pair<Key, Value>, MapKeyFunc<Key, Value
   LRUMap& operator=(const LRUMap& other) = delete;
   LRUMap& operator=(LRUMap&& other) = default;
 
-  std::pair<Iterator, bool> Set(const Key& key, const Value& value) {
-    return Set(std::make_pair(key, value));
-  }
+  std::pair<Iterator, bool> Set(const Key& key, const Value& value) { return Set(std::make_pair(key, value)); }
 };
-
 
 template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>>
 using LRUSet = LRUCache<Key, Key, SetKeyFunc<Key, Key>, Hash, KeyEqual>;

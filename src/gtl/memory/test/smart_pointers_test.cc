@@ -22,7 +22,7 @@ using gtl::test::Person;
 using gtl::test::Student;
 using gtl::test::Teacher;
 
-TEST(smart_pointers_test, auto_ptr_test) {
+TEST(SmartPointersTest, AutoPtrTest) {
   {
     gtl::auto_ptr<Person> p;
     EXPECT_EQ(p.get(), nullptr);
@@ -103,7 +103,7 @@ TEST(smart_pointers_test, auto_ptr_test) {
   }
 }
 
-TEST(smart_pointers_test, unique_ptr_test) {
+TEST(SmartPointersTest, UniquePtrTest) {
   {
     gtl::unique_ptr<Person> p;
     EXPECT_EQ(p.get(), nullptr);
@@ -251,7 +251,7 @@ TEST(smart_pointers_test, unique_ptr_test) {
   }
 }
 
-TEST(smart_pointers_test, shared_ptr_test) {
+TEST(SmartPointersTest, SharedPtrTest) {
   {
     gtl::shared_ptr<Person> p;
     EXPECT_EQ(p.get(), nullptr);

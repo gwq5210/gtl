@@ -10,9 +10,9 @@
 #pragma once
 
 #include "gtl/algorithm/algorithm.h"
-#include "gtl/iterator/iterator.h"
 #include "gtl/container/storage.h"
 #include "gtl/container/vector.h"
+#include "gtl/iterator/iterator.h"
 #include "gtl/logging.h"
 
 namespace gtl {
@@ -344,8 +344,8 @@ class Deque {
   }
 
  private:
-  size_type end_block_capacity() const { return end_.block()->capacity() - end_.offset(); }
-  size_type begin_block_capacity() const { return begin_.offset(); }
+  size_type end_block_capacity() const { return end_.block() ? end_.block()->capacity() - end_.offset() : 0; }
+  size_type begin_block_capacity() const { return begin_.block() ? begin_.offset() : 0; }
   void reserve_at_front(size_type count);
   void reserve_at_back(size_type count);
   void reallocate_block_storage(size_type block_count, bool add_at_front);
@@ -397,14 +397,14 @@ template <typename T>
 typename Deque<T>::iterator Deque<T>::insert_n(const_iterator before, size_type count, const T& v) {
   size_type pos = before - begin();
   if (count > 0) {
-    if (before == begin()) {
+    if (before == end()) {
+      reserve_at_back(count);
+      gtl::uninitialized_fill_n(end(), count, v);
+      end_ += count;
+    } else if (before == begin()) {
       reserve_at_front(count);
       begin_ -= count;
       gtl::uninitialized_fill_n(begin(), count, v);
-    } else if (before == end()) {
-      reserve_at_front(count);
-      gtl::uninitialized_fill_n(end(), count, v);
-      end_ += count;
     } else {
       size_type right_count = end() - before;
       if (pos <= right_count) {
@@ -446,14 +446,14 @@ typename Deque<T>::iterator Deque<T>::insert_range(const_iterator before, InputI
   size_type pos = before - begin();
   if (first != last) {
     count = count ? count : gtl::distance(first, last);
-    if (before == begin()) {
+    if (before == end()) {
+      reserve_at_back(count);
+      gtl::uninitialized_copy(first, last, end());
+      end_ += count;
+    } else if (before == begin()) {
       reserve_at_front(count);
       begin_ -= count;
       gtl::uninitialized_copy(first, last, begin());
-    } else if (before == end()) {
-      reserve_at_front(count);
-      gtl::uninitialized_copy(first, last, end());
-      end_ += count;
     } else {
       size_type right_count = end() - before;
       if (pos <= right_count) {
@@ -491,16 +491,16 @@ typename Deque<T>::iterator Deque<T>::insert_range(const_iterator before, InputI
 template <typename T>
 template <typename... Args>
 typename Deque<T>::iterator Deque<T>::emplace(const_iterator before, Args&&... args) {
-  if (before == begin()) {
-    reserve_at_front(1);
-    --begin_;
-    gtl::construct_at(begin_.curr(), std::forward<Args>(args)...);
-    return begin();
-  } else if (before == end()) {
+  if (before == end()) {
     reserve_at_back(1);
     gtl::construct_at(end_.curr(), std::forward<Args>(args)...);
     ++end_;
     return end() - 1;
+  } else if (before == begin()) {
+    reserve_at_front(1);
+    --begin_;
+    gtl::construct_at(begin_.curr(), std::forward<Args>(args)...);
+    return begin();
   }
   size_type pos = before - begin();
   size_type right_count = end() - before;
@@ -528,16 +528,16 @@ typename Deque<T>::iterator Deque<T>::erase(const_iterator first, const_iterator
   if (first == last) {
     return iterator(last.block(), last.offset());
   }
-  if (first == begin()) {
+  if (last == end()) {
+    gtl::destroy(first, last);
+    gtl::destroy(first == begin() ? first.block() : first.block() + 1, last.block() + 1);
+    end_.CopyFrom(first);
+    return end();
+  } else if (first == begin()) {
     gtl::destroy(first, last);
     gtl::destroy(first.block(), last.block());
     begin_.CopyFrom(last);
     return begin();
-  } else if (last == end()) {
-    gtl::destroy(first, last);
-    gtl::destroy(first.block() + 1, last.block() + 1);
-    end_.CopyFrom(first);
-    return end();
   }
   size_type left_count = first - begin();
   size_type right_count = end() - last;
@@ -559,12 +559,13 @@ typename Deque<T>::iterator Deque<T>::erase(const_iterator first, const_iterator
 template <typename T>
 void Deque<T>::reserve_at_front(size_type count) {
   size_type n = begin_block_capacity();
+  GTL_DEBUG("reserve_at_front begin, begin_block_capacity: {}, count: {}, size: {}", n, count, size());
   if (count <= n) {
     return;
   }
   n = front_capacity();
-  GTL_DEBUG("front_capacity {} {}", n, count);
   size_type block_count = count / block_capacity_ + (count % block_capacity_ || empty() ? 1 : 0);
+  GTL_DEBUG("front_capacity {} {}, block_count: {}", n, count, block_count);
   if (count > n) {
     count -= n;
     block_count = count / block_capacity_ + (count % block_capacity_ || empty() ? 1 : 0);
@@ -581,12 +582,13 @@ void Deque<T>::reserve_at_front(size_type count) {
 template <typename T>
 void Deque<T>::reserve_at_back(size_type count) {
   size_type n = end_block_capacity();
+  GTL_DEBUG("reserve_at_back begin, end_block_capacity: {}, count: {}, size: {}", n, count, size());
   if (count < n) {
     return;
   }
   n = back_capacity();
-  GTL_DEBUG("back_capacity {} {}", n, count);
   size_type block_count = count / block_capacity_ + 1;
+  GTL_DEBUG("back_capacity {}, block_count: {}, count: {}", n, block_count, count);
   if (count >= n) {
     count -= n;
     block_count = count / block_capacity_ + 1;
@@ -600,6 +602,7 @@ void Deque<T>::reserve_at_back(size_type count) {
   for (; block_count > 0; --block_count) {
     gtl::construct_at(++it, block_capacity_);
   }
+  GTL_DEBUG("reserve_at_back end");
 }
 
 template <typename T>

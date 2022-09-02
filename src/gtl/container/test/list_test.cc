@@ -18,7 +18,7 @@
 using gtl::List;
 using gtl::Vector;
 
-TEST(list_test, constructor_assign_iterator_test) {
+TEST(ListTest, ConstructorAssignTteratorTest) {
   {
     List<int> l;
     List<int> l_copy(l);
@@ -180,7 +180,7 @@ TEST(list_test, constructor_assign_iterator_test) {
   }
 }
 
-TEST(list_test, modifiers_iterators_test) {
+TEST(ListTest, ModifiersIteratorsTest) {
   int n = 102400;
   List<int> l;
   for (int i = 0; i < n; ++i) {
@@ -202,7 +202,7 @@ TEST(list_test, modifiers_iterators_test) {
   EXPECT_EQ(l.empty(), true);
 }
 
-TEST(list_test, operations_test) {
+TEST(ListTest, OperationsTest) {
   int n = 102400;
   List<int> l1;
   List<int> l2;

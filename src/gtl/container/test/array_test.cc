@@ -22,7 +22,7 @@ using gtl::Array;
 using gtl::List;
 using gtl::Vector;
 
-TEST(array_test, constructor_operations_test) {
+TEST(ArrayTest, ConstructorOperationsTest) {
   Array<int, 0> empty_arr;
   EXPECT_EQ(empty_arr.size(), 0);
   EXPECT_EQ(empty_arr.empty(), true);

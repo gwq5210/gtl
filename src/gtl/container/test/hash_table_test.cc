@@ -49,7 +49,7 @@ void print_iset(const ISet& iset) {
   }
 }
 
-TEST(hash_table_test, constructor_assign_test) {
+TEST(HashTableTest, ConstructorAssignTest) {
   int n = 10000;
   Vector<IIMapValue> vec;
   for (int i = 0; i < n; i++) {
@@ -116,7 +116,7 @@ TEST(hash_table_test, constructor_assign_test) {
   EXPECT_EQ(iset.bucket_count(), ISet::min_bucket_size_);
 }
 
-TEST(hash_table_test, modifiers_lookup_test) {
+TEST(HashTableTest, ModifiersLookupTest) {
   int n = 10000;
   ISet iset;
   for (int i = 0; i < n; ++i) {

@@ -15,7 +15,7 @@
 
 using gtl::examples::CowString;
 
-TEST(cow_string_test, cow_string_test) {
+TEST(CowStringTest, CowStringTest) {
   {
     CowString cs;
     EXPECT_EQ(cs.size(), 0);

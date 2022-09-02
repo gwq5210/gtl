@@ -24,7 +24,7 @@ using gtl::Stack;
 using gtl::Vector;
 
 TEST(StackTest, StackTest) {
-  GTL_SET_LEVEL(gtl::LogLevel::kDebug);
+  GTL_SET_LEVEL(gtl::LogLevel::kInfo);
   {
     int n = 0;
     {
@@ -48,16 +48,15 @@ TEST(StackTest, StackTest) {
       Stack<int> s(l.begin(), l.end());
       EXPECT_EQ(s.size(), n);
       EXPECT_EQ(s.empty(), false);
-      // for (int i = n - 1; i >= 0; --i) {
-      //   EXPECT_EQ(s.top(), i);
-      //   s.pop();
-      // }
-      // EXPECT_EQ(s.size(), 0);
-      // EXPECT_EQ(s.empty(), true);
+      for (int i = n - 1; i >= 0; --i) {
+        EXPECT_EQ(s.top(), i);
+        s.pop();
+      }
+      EXPECT_EQ(s.size(), 0);
+      EXPECT_EQ(s.empty(), true);
     }
     GTL_DEBUG("stack3: {}", gtl::DefaultAllocator().MemoryInfo());
 
-    /*
     {
       Stack<int> s;
       for (int i = 0; i < n; ++i) {
@@ -92,7 +91,6 @@ TEST(StackTest, StackTest) {
       EXPECT_EQ(s.empty(), true);
     }
     GTL_DEBUG("stack5: {}", gtl::DefaultAllocator().MemoryInfo());
-    */
   }
   GTL_DEBUG("stack6: {}", gtl::DefaultAllocator().MemoryInfo());
 }

@@ -24,5 +24,6 @@ TEST(MemoryTest, MemoryTest) {
   for (int v : vec) {
     EXPECT_EQ(v, 0);
   }
+  gtl::destroy_at(vec_ptr);
   delete[] buffer;
 }

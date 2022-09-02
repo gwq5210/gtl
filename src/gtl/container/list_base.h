@@ -17,14 +17,16 @@
 #include "gtl/port.h"
 
 #define ListEntry(PTR, TYPE, MEMBER) ((TYPE*)((char*)PTR - GTL_OFFSETOF(TYPE, MEMBER)))
-#define ListForEach(NODE, HEAD) for (doubly_list::ListNode* NODE = (HEAD).next; NODE != &(HEAD); NODE = NODE->next)
-#define ListForEachSafe(NODE, HEAD)                                                                                 \
-  for (doubly_list::ListNode* NODE = (HEAD).next, doubly_list::ListNode* NODE_##next = NODE->next; NODE != &(HEAD); \
-       NODE = NODE_##next, NODE_##next = NODE->next)
-#define ListForEachPrev(NODE, HEAD) for (doubly_list::ListNode* NODE = (HEAD).prev; NODE != &(HEAD); NODE = NODE->prev)
-#define ListForEachPrevSafe(NODE, HEAD)                                                                             \
-  for (doubly_list::ListNode* NODE = (HEAD).prev, doubly_list::ListNode* NODE_##prev = NODE->prev; NODE != &(HEAD); \
-       NODE = NODE_##prev, NODE_##prev = NODE->prev)
+#define ListForEach(NODE, HEAD) \
+  for (::gtl::doubly_list::ListNode* NODE = (HEAD).next; NODE != &(HEAD); NODE = NODE->next)
+#define ListForEachSafe(NODE, HEAD)                                                                  \
+  for (::gtl::doubly_list::ListNode* NODE = (HEAD).next, *NODE##_next = NODE->next; NODE != &(HEAD); \
+       NODE = NODE##_next, NODE##_next = NODE->next)
+#define ListForEachPrev(NODE, HEAD) \
+  for (::gtl::doubly_list::ListNode* NODE = (HEAD).prev; NODE != &(HEAD); NODE = NODE->prev)
+#define ListForEachPrevSafe(NODE, HEAD)                                                              \
+  for (::gtl::doubly_list::ListNode* NODE = (HEAD).prev, *NODE##_prev = NODE->prev; NODE != &(HEAD); \
+       NODE = NODE##_prev, NODE##_prev = NODE->prev)
 
 namespace gtl {
 

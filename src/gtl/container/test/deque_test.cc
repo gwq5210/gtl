@@ -22,6 +22,7 @@
 #include "gtl/container/slist.h"
 #include "gtl/container/stack.h"
 #include "gtl/container/vector.h"
+#include "gtl/memory/default_allocator.h"
 #include "gtl/test/test_class.h"
 
 using gtl::Array;
@@ -30,7 +31,7 @@ using gtl::List;
 using gtl::SList;
 using gtl::test::Person;
 
-TEST(deque_test, constructor_assign_iterator_test) {
+TEST(DequeTest, ConstructorAssignIteratorTest) {
   Deque<int> empty_dq;
   EXPECT_EQ(empty_dq.size(), 0);
   EXPECT_EQ(empty_dq.empty(), true);
@@ -204,8 +205,8 @@ TEST(deque_test, constructor_assign_iterator_test) {
   EXPECT_EQ(dq_move.empty(), true);
 }
 
-TEST(deque_test, modifiers_iterators_test) {
-  int n = 1024;
+TEST(DequeTest, ModifiersIteratorsTest) {
+  int n = 1025;
   Deque<int> dq;
   for (int i = 0; i < n; ++i) {
     dq.push_back(i);

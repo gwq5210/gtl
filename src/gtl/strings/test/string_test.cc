@@ -90,7 +90,7 @@ void string_test(const std::string& str, int capacity, StringCore<char>::StringT
   EXPECT_EQ(ss5.use_count(), 1);
 }
 
-TEST(string_test, basic_test) {
+TEST(StringTest, BasicTest) {
   int capacity = StringCore<char>::kMaxSmallSize;
   StringCore<char>::StringType type = StringCore<char>::StringType::kSmall;
   std::string str("hello world!");

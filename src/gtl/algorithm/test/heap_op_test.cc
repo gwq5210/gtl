@@ -20,7 +20,6 @@
 using gtl::Vector;
 
 TEST(HeapOpTest, HeapOpTest) {
-  GTL_SET_LEVEL(gtl::LogLevel::kInfo);
   {
     int n = 102400;
     Vector<int> vec(n);
