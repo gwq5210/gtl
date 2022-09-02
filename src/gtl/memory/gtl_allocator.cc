@@ -1,0 +1,353 @@
+#include "gtl/memory/gtl_allocator.h"
+
+#include "gtl/algorithm/memory_op.h"
+#include "gtl/container/list_base.h"
+#include "gtl/logging.h"
+
+namespace gtl {
+
+std::atomic_int GtlMemoryAllocator::block_id_(0);
+
+void* GtlMemoryAllocator::Malloc(size_t size) {
+  BlockHeader* block = nullptr;
+  {
+    LockGuard lock_guard(mutex_);
+    block = FindFreeBlock(size);
+    if (block != nullptr) {
+      RemoveFromFreeList(block);
+      SplitBlock(block, size);
+      GTL_DEBUG("find free block: {}", GetBlockInfo(block));
+      return BlockHeader::ToData(block);
+    }
+  }
+
+  block = static_cast<BlockHeader*>(NewBlock(size));
+  if (block == nullptr) {
+    return nullptr;
+  }
+  SplitBlock(block, size);
+
+  block->set_used(true);
+  GTL_DEBUG("new block: {}", GetBlockInfo(block));
+  return BlockHeader::ToData(block);
+}
+
+void GtlMemoryAllocator::Free(void* ptr) {
+  if (ptr == nullptr) {
+    return;
+  }
+
+  LockGuard lock_guard(mutex_);
+  BlockHeader* block = BlockHeader::ToBlockHeader(ptr);
+  AddToFreeList(block);
+  GTL_DEBUG("free block: {}", GetBlockInfo(block));
+  BlockHeader* merged_block = MergeBlock(block);
+  GTL_TRACE("merged block: {}", GetBlockInfo(merged_block));
+  if (region_count_ > kMaxBlockCount && IsBlockFree(merged_block)) {
+    GTL_TRACE("free merged block: {}", GetBlockInfo(merged_block));
+    DeleteBlock(merged_block);
+  }
+}
+
+void GtlMemoryAllocator::RemoveFromFreeList(BlockHeader* block) {
+  GTL_CHECK(block != nullptr && !block->used);
+
+  block->set_used(true);
+  doubly_list::Remove(&block->free_list);
+  --free_block_count_;
+}
+
+void GtlMemoryAllocator::AddToFreeList(BlockHeader* block) {
+  GTL_CHECK(block != nullptr);
+
+  block->set_used(false);
+  doubly_list::ListNode* pos = &free_head_;
+  ListForEach(node, free_head_) {
+    BlockHeader* node_block = ListEntry(node, BlockHeader, free_list);
+    if (node_block->size >= block->size) {
+      pos = node;
+      break;
+    }
+  }
+  doubly_list::InsertBefore(pos, &block->free_list);
+  ++free_block_count_;
+}
+
+void GtlMemoryAllocator::RemoveFromBlockList(BlockHeader* block) {
+  GTL_CHECK(block != nullptr);
+
+  doubly_list::Remove(&block->block_list);
+  --block_count_;
+}
+
+void GtlMemoryAllocator::AddToBlockListTail(BlockHeader* block) {
+  GTL_CHECK(block != nullptr);
+  doubly_list::AddToTail(&block_head_, &block->block_list);
+  ++block_count_;
+}
+
+void GtlMemoryAllocator::AddToBlockList(BlockHeader* prev_block, BlockHeader* block) {
+  GTL_CHECK(block != nullptr);
+  doubly_list::InsertBefore(&prev_block->block_list, &block->block_list);
+  ++block_count_;
+}
+
+void* GtlMemoryAllocator::Calloc(size_t nmemb, size_t size) {
+  size_t mem_size = nmemb * size;
+  if (mem_size == 0) {
+    return nullptr;
+  }
+  void* ptr = Malloc(mem_size);
+  if (ptr == nullptr) {
+    return nullptr;
+  }
+
+  memset(ptr, 0, mem_size);
+  return ptr;
+}
+
+void* GtlMemoryAllocator::Realloc(void* ptr, size_t size) {
+  if (ptr == nullptr) {
+    return Malloc(size);
+  } else if (size == 0) {
+    Free(ptr);
+    return nullptr;
+  }
+
+  BlockHeader* block = BlockHeader::ToBlockHeader(ptr);
+  if (block->size >= size) {
+    return ptr;
+  }
+
+  {
+    // 相同region的block是空闲的且合起来之后有足够的空间
+    LockGuard lock_guard(mutex_);
+    BlockHeader* next_block = nullptr;
+    if (block->block_list.next != &block_head_) {
+      next_block = ListEntry(block->block_list.next, BlockHeader, block_list);
+      if (next_block->region != block->region || next_block->used ||
+          block->size + next_block->size + kBlockHeaderSize < size) {
+        next_block = nullptr;
+      }
+    }
+    if (next_block) {
+      MergeTwoBlock(block, next_block);
+      SplitBlock(block, size);
+      return ptr;
+    }
+  }
+
+  void* new_ptr = Malloc(size);
+  if (new_ptr == nullptr) {
+    return nullptr;
+  }
+  memcpy(new_ptr, ptr, block->size);
+  Free(ptr);
+  return new_ptr;
+}
+
+void* GtlMemoryAllocator::AllocMemory(size_t size) {
+  GTL_CHECK(size > 0);
+  return NewAnonMemory(size);
+}
+
+void GtlMemoryAllocator::FreeMemory(void* ptr, size_t size) {
+  GTL_CHECK(ptr != nullptr && size > 0);
+  DeleteAnonMemory(ptr, size);
+}
+
+GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::NewBlock(size_t size) {
+  if (size < kAllocateBlockMemorySize) {
+    size = kAllocateBlockMemorySize;
+  }
+  void* ptr = AllocMemory(size + kBlockHeaderSize);
+  if (ptr == nullptr) {
+    return nullptr;
+  }
+  BlockHeader* block = gtl::construct_at(static_cast<BlockHeader*>(ptr), size, GenerateBlockName());
+  block->heap = false;
+  block->region = block;
+  ++region_count_;
+  AddToBlockListTail(block);
+  return block;
+}
+
+GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::SplitBlock(BlockHeader* block, size_t new_size) {
+  GTL_CHECK(block != nullptr && new_size > 0 && block->size >= new_size);
+
+  if (block->size - new_size < kBlockHeaderSize + kMinBlockMemorySize) {
+    return nullptr;
+  }
+
+  GTL_TRACE("split block: {}", GetBlockInfo(block));
+
+  BlockHeader* new_block = gtl::construct_at(reinterpret_cast<BlockHeader*>(block->data + new_size),
+                                             block->size - new_size - kBlockHeaderSize, GenerateBlockName());
+  new_block->heap = block->heap;
+  new_block->region = block->region;
+  AddToBlockList(ListEntry(block->block_list.next, BlockHeader, block_list), new_block);
+  AddToFreeList(new_block);
+
+  block->size = new_size;
+
+  GTL_TRACE("old block: {}", GetBlockInfo(block));
+  GTL_TRACE("new block: {}", GetBlockInfo(new_block));
+
+  return new_block;
+}
+
+GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::MergeBlock(BlockHeader* block) {
+  GTL_CHECK(block != nullptr && !block->used);
+  BlockHeader* begin_block = block;
+  for (doubly_list::ListNode* node = block->block_list.prev; node != &free_head_; node = node->prev) {
+    BlockHeader* lblock = ListEntry(node, BlockHeader, block_list);
+    if (lblock->used || lblock->region != block->region) {
+      break;
+    }
+    begin_block = lblock;
+  }
+  return MergeRightBlock(begin_block);
+}
+
+GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::MergeRightBlock(BlockHeader* block) {
+  GTL_CHECK(block != nullptr && !block->used);
+  doubly_list::ListNode* node = block->block_list.next;
+  while (node != &block_head_) {
+    doubly_list::ListNode* next = node->next;
+    BlockHeader* rblock = ListEntry(node, BlockHeader, block_list);
+    if (rblock->used || block->region != rblock->region) {
+      break;
+    }
+    MergeTwoBlock(block, rblock);
+    node = next;
+  }
+  // 合并相邻block之后重新对free_list排序
+  RemoveFromFreeList(block);
+  AddToFreeList(block);
+  return block;
+}
+
+GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::MergeTwoBlock(BlockHeader* lblock, BlockHeader* rblock) {
+  GTL_CHECK(lblock != nullptr && rblock != nullptr && !rblock->used);
+
+  GTL_TRACE("merge two block begin");
+  GTL_TRACE("lblock: {}", GetBlockInfo(lblock));
+  GTL_TRACE("rblock: {}", GetBlockInfo(rblock));
+
+  RemoveFromBlockList(rblock);
+  RemoveFromFreeList(rblock);
+  lblock->size = lblock->size + rblock->size + kBlockHeaderSize;
+
+  GTL_TRACE("new_block: {}", GetBlockInfo(lblock));
+  GTL_TRACE("merge two block end");
+  return lblock;
+}
+
+void GtlMemoryAllocator::DeleteBlock(BlockHeader* block) {
+  RemoveFromFreeList(block);
+  RemoveFromBlockList(block);
+  FreeMemory(block, block->size + kBlockHeaderSize);
+  --region_count_;
+}
+
+bool GtlMemoryAllocator::IsBlockFree(BlockHeader* block) {
+  if (block->used) {
+    return false;
+  }
+  bool is_end = false;
+  if (block->block_list.next == &block_head_) {
+    is_end = true;
+  } else {
+    BlockHeader* next_block = ListEntry(block->block_list.next, BlockHeader, block_list);
+    if (next_block->region != block->region) {
+      is_end = true;
+    }
+  }
+  return block->region == block && is_end;
+}
+
+GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindBestFit(size_t size) {
+  GTL_CHECK(size > 0);
+  BlockHeader* result = nullptr;
+  ListForEach(node, free_head_) {
+    BlockHeader* block = ListEntry(node, BlockHeader, free_list);
+    if (block->size == size) {
+      return block;
+    }
+    if (block->size > size && (result == nullptr || result->size > block->size)) {
+      result = block;
+    }
+  }
+  return result;
+}
+
+GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindFirstFit(size_t size) {
+  GTL_CHECK(size > 0);
+  ListForEach(node, free_head_) {
+    BlockHeader* block = ListEntry(node, BlockHeader, free_list);
+    if (block->size >= size) {
+      return block;
+    }
+  }
+  return nullptr;
+}
+
+GtlMemoryAllocator::BlockHeader* GtlMemoryAllocator::FindWorstFit(size_t size) {
+  GTL_CHECK(size > 0);
+  ListForEachPrev(node, free_head_) {
+    BlockHeader* block = ListEntry(node, BlockHeader, free_list);
+    if (block->size >= size) {
+      return block;
+    }
+  }
+  return nullptr;
+}
+
+std::string GtlMemoryAllocator::MemoryInfo() const {
+  std::string info;
+  size_t total_bytes = 0;
+  size_t free_bytes = 0;
+  info = fmt::format("-- BlockList[{}/{}] --\n", region_count_, block_count_);
+  ListForEach(node, block_head_) {
+    BlockHeader* block = ListEntry(node, BlockHeader, block_list);
+    info += GetBlockInfo(block) + "\n";
+    total_bytes += block->size;
+  }
+
+  info += fmt::format("\n-- FreeBlockList[{}] --\n", free_block_count_);
+  ListForEach(node, free_head_) {
+    BlockHeader* block = ListEntry(node, BlockHeader, free_list);
+    info += fmt::format("[{}] -> ", fmt::ptr(block));
+    free_bytes += block->size;
+  }
+  info += "[NULL]\n";
+
+  info += "\n-- Memory Summary --\n";
+  info += fmt::format("total {} bytes\n", total_bytes);
+  info += fmt::format("free {} bytes\n", free_bytes);
+  return info;
+}
+
+std::string GtlMemoryAllocator::LeakStats() const {
+  std::string info;
+  size_t leak_bytes = 0;
+  size_t leak_block_count = 0;
+  info = fmt::format("-- LeakStats[{}/{}] --\n", region_count_, block_count_);
+  ListForEach(node, block_head_) {
+    BlockHeader* block = ListEntry(node, BlockHeader, block_list);
+    if (block->used) {
+      info += GetBlockInfo(block) + "\n";
+      leak_bytes += block->size;
+      ++leak_block_count;
+    }
+  }
+  if (leak_block_count > 0) {
+    info += "-- Leak Summary --\n";
+    info += fmt::format("{} blocks lost ({} bytes)", leak_block_count, leak_bytes);
+  } else {
+    info = "";
+  }
+  return info;
+}
+
+}  // namespace gtl
