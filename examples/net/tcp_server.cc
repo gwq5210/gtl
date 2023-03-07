@@ -8,6 +8,9 @@ int main(int argc, char* argv[]) {
   if (socket < 0) {
     return 0;
   }
+  socket.SetNonBlocking(false);
+  socket.SetSockOptInt(SOL_SOCKET, SO_REUSEADDR, 1);
+  socket.SetSockOptInt(SOL_SOCKET, SO_REUSEPORT, 1);
   while (true) {
     gtl::SocketAddress peer_address;
     gtl::Socket client_socket = socket.Accept(&peer_address);

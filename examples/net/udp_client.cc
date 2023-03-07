@@ -22,5 +22,6 @@ int main(int argc, char* argv[]) {
 
   GTL_INFO("local address: {}", socket.GetLocalAddr().ToString());
   GTL_INFO("peer address: {}", socket.GetPeerAddr().ToString());
+  pause();
   return 0;
 }

@@ -8,6 +8,7 @@ int main(int argc, char* argv[]) {
   if (socket < 0) {
     return 0;
   }
+  socket.SetNonBlocking(false);
 
   GTL_INFO("local address: {}", socket.GetLocalAddr().ToString());
   GTL_INFO("peer address: {}", socket.GetPeerAddr().ToString());

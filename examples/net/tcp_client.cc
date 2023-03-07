@@ -17,5 +17,6 @@ int main(int argc, char* argv[]) {
   GTL_INFO("local address: {}, server address: {}, send size: {}", socket.GetLocalAddr().ToString(), socket.GetPeerAddr().ToString(), ret);
   in_msg = socket.RecvAll(out_msg.size());
   GTL_INFO("recv size: {}, in msg: {}", in_msg.size(), in_msg);
+  pause();
   return 0;
 }
