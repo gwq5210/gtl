@@ -1,18 +1,20 @@
 #include "gtl/net/socket.h"
 
-#include "gflags/gflags.h"
-
-DEFINE_string(server_address, "127.0.0.1:9999", "server address");
-
 int main(int argc, char* argv[]) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-
   GTL_SET_LEVEL(gtl::LogLevel::kDebug);
-  gtl::SocketAddress server_address(FLAGS_server_address);
-  gtl::Socket socket = gtl::Socket::ConnectTo(server_address);
-  if (socket < 0) {
-    return 0;
+  const char* address_str = "[::1]:9999";
+  gtl::SocketAddress server_address(address_str);
+  gtl::Socket socket = gtl::Socket::Create(server_address.family());
+  socket.EnableReuseAddr();
+
+  if (!socket.Bind(server_address)) {
+    return -1;
   }
+
+  if (!socket.Connect(server_address)) {
+    return -1;
+  }
+  GTL_INFO("connect to self {} successfully", server_address.ToString());
   std::string out_msg = "Hello, world!";
   ssize_t ret = socket.SendAll(out_msg);
   GTL_INFO("local address: {}, server address: {}, send size: {}", socket.GetLocalAddr().ToString(), socket.GetPeerAddr().ToString(), ret);

@@ -80,6 +80,34 @@ cc_test(
 )
 
 cc_test(
+    name = "self_connect",
+    srcs = [
+        "examples/net/self_connect.cc",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    copts = ["-Wall", "-Wreturn-type"],
+    deps = [
+        ":gtl",
+    ],
+)
+
+cc_test(
+    name = "reuse_addr_test",
+    srcs = [
+        "examples/net/reuse_addr_test.cc",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    copts = ["-Wall", "-Wreturn-type"],
+    deps = [
+        ":gtl",
+    ],
+)
+
+cc_test(
     name = "tcp_server",
     srcs = [
         "examples/net/tcp_server.cc",

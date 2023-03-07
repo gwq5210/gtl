@@ -2,18 +2,18 @@
 
 #include "gflags/gflags.h"
 
+DEFINE_string(server_address, "127.0.0.1:9999", "server address");
+
 int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   GTL_SET_LEVEL(gtl::LogLevel::kDebug);
-  const char* address_str = "[::]:9999";
-  gtl::SocketAddress server_address(address_str);
+  gtl::SocketAddress server_address(FLAGS_server_address);
   gtl::Socket socket = gtl::Socket::ServerStart(server_address);
   if (socket < 0) {
     return 0;
   }
   socket.SetNonBlocking(false);
-  socket.EnableReusePort();
   while (true) {
     gtl::SocketAddress peer_address;
     gtl::Socket client_socket = socket.Accept(&peer_address);
