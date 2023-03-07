@@ -1,6 +1,10 @@
 #include "gtl/net/socket.h"
 
+#include "gflags/gflags.h"
+
 int main(int argc, char* argv[]) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
   GTL_SET_LEVEL(gtl::LogLevel::kDebug);
   const char* address_str = "[::1]:9999";
   gtl::SocketAddress server_address(address_str);

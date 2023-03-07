@@ -2,6 +2,8 @@
 #include "gtl/net/reactor.h"
 #include "gtl/net/socket.h"
 
+#include "gflags/gflags.h"
+
 static const int kMsgSize = 13;
 
 struct Context {
@@ -65,6 +67,8 @@ void HandleEvents(gtl::Poller& poller, Context& listen_context, int events, void
 }
 
 int main(int argc, char* argv[]) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
   GTL_SET_LEVEL(gtl::LogLevel::kDebug);
   const char* address_str = "[::]:9999";
   gtl::SocketAddress server_address(address_str);

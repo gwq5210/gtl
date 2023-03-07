@@ -1,8 +1,14 @@
 #include "gtl/net/socket.h"
 
 #include "fmt/format.h"
+#include "gflags/gflags.h"
 
 namespace gtl {
+
+//supported since Linux 3.9.
+DEFINE_bool(reuse_port, false, "Enable SO_REUSEPORT for all listened sockets");
+
+DEFINE_bool(reuse_addr, true, "Enable SO_REUSEADDR for all listened sockets");
 
 std::string Socket::DomainName(int domain) {
   if (domain == AF_INET) {
@@ -82,6 +88,13 @@ Socket Socket::ServerStart(const SocketAddress& address, int type /* = SOCK_STRE
     return socket;
   }
 
+  if (FLAGS_reuse_addr) {
+    socket.EnableReuseAddr();
+  }
+  if (FLAGS_reuse_port) {
+    socket.EnableReusePort();
+  }
+
   if (!socket.Bind(address)) {
     socket.Close();
     return socket;
@@ -91,9 +104,6 @@ Socket Socket::ServerStart(const SocketAddress& address, int type /* = SOCK_STRE
     socket.Close();
     return socket;
   }
-
-  socket.SetNonBlocking();
-  socket.EnableNoDelay();
 
   GTL_INFO("{}", GetSocketInfo(socket));
   return socket;
